@@ -1,0 +1,7 @@
+[package]
+name = "wani_clone"
+version = "0.1.0"
+edition = "2021"
+description = "WaniKani clone"
+
+[dependencies]
