@@ -14,6 +14,8 @@ CREATE TABLE vocabularies (
     user_meaning_note TEXT,
     user_reading_note TEXT,
 
+    -- TODO: Add context patterns and sentenses
+
     PRIMARY KEY (id, name)
 );
 
