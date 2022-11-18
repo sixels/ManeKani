@@ -47,7 +47,7 @@
           ;
           src = ./.;
 
-          nativeBuildInputs = with pkgs; [ pkg-config ];
+          nativeBuildInputs = with pkgs; [ pkg-config clippy ];
           buildInputs = with pkgs; [ openssl ];
         };
 
@@ -58,6 +58,8 @@
             rustfmt
             nixpkgs-fmt
             pkg-config
+            clippy
+            diesel-cli
           ];
           buildInputs = with pkgs; [ openssl postgresql ];
 
@@ -67,7 +69,7 @@
                    PGPORT="5433" \
                    PGUSER="$USER"
 
-            # Having issues with direnv
+            # Having issues with direnv triggering `EXIT` all the time
             # trap "'$PWD/nix/pg.sh' down" EXIT
             $PWD/nix/pg.sh up
           '';
