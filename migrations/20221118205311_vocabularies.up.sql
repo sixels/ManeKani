@@ -24,8 +24,8 @@ CREATE TABLE vocabularies_kanjis (
     vocabulary_id uuid,
     kanji_id uuid,
     PRIMARY KEY (vocabulary_id, kanji_id),
-    CONSTRAINT fk_vocabulary FOREIGN KEY(vocabulary_id) REFERENCES vocabularies(id)
-    CONSTRAINT fk_kanji FOREIGN KEY(kanji_id) REFERENCES kanjis(id),
+    CONSTRAINT fk_vocabulary FOREIGN KEY(vocabulary_id) REFERENCES vocabularies(id),
+    CONSTRAINT fk_kanji FOREIGN KEY(kanji_id) REFERENCES kanjis(id)
 );
 
 -- update `updated_at` automatically
