@@ -1,3 +1,3 @@
-fn main() {
-    println!("Hello!");
-}
+#[warn(clippy::pedantic)]
+
+fn main() {}
