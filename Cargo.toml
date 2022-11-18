@@ -1,7 +1,21 @@
 [package]
-name = "wani_clone"
+name = "waniklone"
 version = "0.1.0"
 edition = "2021"
 description = "WaniKani clone"
 
 [dependencies]
+dotenvy = "0.15"
+sqlx = { version = "0.6.2", features = [
+    "runtime-actix-native-tls",
+    "time",
+    "postgres",
+    "migrate",
+    "uuid",
+] }
+time = "0.3.17"
+typed-builder = "0.11.0"
+uuid = "1.2.2"
+
+# [workspace]
+# members = ["migration"]
