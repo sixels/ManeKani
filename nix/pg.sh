@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 _destroy_db() {
     pg_ctl -D $PGDATA stop
 
