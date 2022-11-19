@@ -3,7 +3,7 @@ CREATE TABLE radicals (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    name TEXT NOT NULL,
+    name TEXT UNIQUE NOT NULL,
     user_synonyms TEXT [],
     symbol VARCHAR(5) NOT NULL UNIQUE,
     meaning_mnemonic TEXT NOT NULL,

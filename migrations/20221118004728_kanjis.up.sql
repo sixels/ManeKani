@@ -3,7 +3,7 @@ CREATE TABLE kanjis (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    name TEXT,
+    name TEXT UNIQUE,
     alt_names TEXT [] NOT NULL,
     user_synonyms TEXT [],
     symbol VARCHAR(5) NOT NULL UNIQUE,
@@ -21,10 +21,10 @@ CREATE TABLE kanjis (
 
 CREATE TABLE kanjis_radicals (
     kanji_id uuid,
-    radical_id uuid,
-    PRIMARY KEY (kanji_id, radical_id),
+    radical_name TEXT,
+    PRIMARY KEY (kanji_id, radical_name),
     CONSTRAINT fk_kanji FOREIGN KEY(kanji_id) REFERENCES kanjis(id),
-    CONSTRAINT fk_radical FOREIGN KEY(radical_id) REFERENCES radicals(id)
+    CONSTRAINT fk_radical FOREIGN KEY(radical_name) REFERENCES radicals(name)
 );
 
 -- update `updated_at` automatically
