@@ -1,26 +1,13 @@
-use sqlx::{pool::PoolConnection, Postgres};
+use crate::{
+    entities::radical::{InsertRadical, Radical},
+    repositories::{radical::RadicalRepository, RepositoryError},
+};
 
-use crate::entities::radical::{InsertRadical, Radical};
-
-pub async fn execute(
-    db: &mut PoolConnection<Postgres>,
-    radical: &InsertRadical,
-) -> sqlx::Result<Radical> {
-    let InsertRadical {
-        name,
-        symbol,
-        meaning_mnemonic,
-    } = radical;
-
-    sqlx::query_as!(
-        Radical,
-        "INSERT INTO radicals (name, symbol, meaning_mnemonic) VALUES ($1, $2, $3) RETURNING *",
-        name,
-        symbol,
-        meaning_mnemonic
-    )
-    .fetch_one(db)
-    .await
+pub async fn execute<R>(db: &mut R, radical: &InsertRadical) -> Result<Radical, RepositoryError>
+where
+    R: RadicalRepository,
+{
+    db.insert(radical).await
 }
 
 #[cfg(test)]
@@ -29,11 +16,8 @@ mod tests {
 
     use sqlx::PgPool;
 
-    // https://www.ibm.com/docs/en/db2-for-zos/13?topic=codes-sqlstate-values-common-error
-    const SQLSTATE_ERROR_UNIQUE_INDEX_VIOLATION: &str = "23505";
-
     #[sqlx::test]
-    async fn it_should_create_a_new_radical(pool: PgPool) -> sqlx::Result<()> {
+    async fn it_should_create_a_new_radical(pool: PgPool) -> Result<(), RepositoryError> {
         let mut conn = pool.acquire().await?;
 
         let radical = InsertRadical::builder()
@@ -56,7 +40,9 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn it_should_collide_with_an_existing_radical(pool: PgPool) -> sqlx::Result<()> {
+    async fn it_should_collide_with_an_existing_radical(
+        pool: PgPool,
+    ) -> Result<(), RepositoryError> {
         let mut conn = pool.acquire().await?;
 
         let radical = InsertRadical::builder()
@@ -70,8 +56,7 @@ mod tests {
         let _ = execute(&mut conn, &radical).await?;
         let radical = execute(&mut conn, &radical).await;
 
-        assert!(matches!(radical, Err(sqlx::Error::Database(e))
-            if e.code() == Some(SQLSTATE_ERROR_UNIQUE_INDEX_VIOLATION.into())));
+        assert!(matches!(radical, Err(RepositoryError::Conflict)));
 
         Ok(())
     }

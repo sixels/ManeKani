@@ -1,40 +1,13 @@
-use sqlx::{pool::PoolConnection, Postgres};
+use crate::{
+    entities::kanji::{InsertKanji, Kanji},
+    repositories::{kanji::KanjiRepository, RepositoryError},
+};
 
-use crate::entities::kanji::{InsertKanji, Kanji};
-
-pub async fn execute(
-    db: &mut PoolConnection<Postgres>,
-    kanji: &InsertKanji,
-) -> sqlx::Result<Kanji> {
-    let InsertKanji {
-        name,
-        alt_names,
-        symbol,
-        reading,
-        onyomi,
-        kunyomi,
-        nanori,
-        meaning_mnemonic,
-        reading_mnemonic,
-    } = kanji;
-
-    sqlx::query_as!(
-        Kanji,
-        "INSERT INTO kanjis
-            (name, alt_names, symbol, reading, onyomi, kunyomi, nanori, meaning_mnemonic, reading_mnemonic)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-        name,
-        alt_names,
-        symbol,
-        reading,
-        onyomi,
-        kunyomi,
-        nanori,
-        meaning_mnemonic,
-        reading_mnemonic
-    )
-    .fetch_one(db)
-    .await
+pub async fn execute<K>(db: &mut K, kanji: &InsertKanji) -> Result<Kanji, RepositoryError>
+where
+    K: KanjiRepository,
+{
+    db.insert(kanji).await
 }
 
 #[cfg(test)]
@@ -43,11 +16,8 @@ mod tests {
 
     use sqlx::PgPool;
 
-    // https://www.ibm.com/docs/en/db2-for-zos/13?topic=codes-sqlstate-values-common-error
-    const SQLSTATE_ERROR_UNIQUE_INDEX_VIOLATION: &str = "23505";
-
     #[sqlx::test]
-    async fn it_should_create_a_new_kanji(pool: PgPool) -> sqlx::Result<()> {
+    async fn it_should_create_a_new_kanji(pool: PgPool) -> Result<(), RepositoryError> {
         let mut conn = pool.acquire().await?;
 
         let kanji = InsertKanji::builder()
@@ -80,7 +50,7 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn it_should_collide_with_an_existing_kanji(pool: PgPool) -> sqlx::Result<()> {
+    async fn it_should_collide_with_an_existing_kanji(pool: PgPool) -> Result<(), RepositoryError> {
         let mut conn = pool.acquire().await?;
 
         let kanji = InsertKanji::builder()
@@ -100,8 +70,7 @@ mod tests {
         let _ = execute(&mut conn, &kanji).await?;
         let collision = execute(&mut conn, &kanji).await;
 
-        assert!(matches!(collision, Err(sqlx::Error::Database(e))
-            if e.code() == Some(SQLSTATE_ERROR_UNIQUE_INDEX_VIOLATION.into())));
+        assert!(matches!(collision, Err(RepositoryError::Conflict)));
 
         Ok(())
     }

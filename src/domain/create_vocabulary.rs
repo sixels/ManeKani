@@ -1,36 +1,13 @@
-use sqlx::{pool::PoolConnection, Postgres};
+use crate::{
+    entities::vocabulary::{InsertVocabulary, Vocabulary},
+    repositories::{vocabulary::VocabularyRepository, RepositoryError},
+};
 
-use crate::entities::vocabulary::{InsertVocabulary, Vocabulary};
-
-pub async fn execute(
-    db: &mut PoolConnection<Postgres>,
-    vocab: &InsertVocabulary,
-) -> sqlx::Result<Vocabulary> {
-    let InsertVocabulary {
-        name,
-        alt_names,
-        word,
-        word_type,
-        reading,
-        meaning_mnemonic,
-        reading_mnemonic,
-    } = vocab;
-
-    sqlx::query_as!(
-        Vocabulary,
-        "INSERT INTO vocabularies
-            (name, alt_names, word, word_type, reading, meaning_mnemonic, reading_mnemonic)
-        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-        name,
-        alt_names,
-        word,
-        word_type,
-        reading,
-        meaning_mnemonic,
-        reading_mnemonic
-    )
-    .fetch_one(db)
-    .await
+pub async fn execute<R>(db: &mut R, vocab: &InsertVocabulary) -> Result<Vocabulary, RepositoryError>
+where
+    R: VocabularyRepository,
+{
+    db.insert(vocab).await
 }
 
 #[cfg(test)]
@@ -39,11 +16,8 @@ mod tests {
 
     use sqlx::PgPool;
 
-    // https://www.ibm.com/docs/en/db2-for-zos/13?topic=codes-sqlstate-values-common-error
-    const SQLSTATE_ERROR_UNIQUE_INDEX_VIOLATION: &str = "23505";
-
     #[sqlx::test]
-    async fn it_should_create_a_new_vocabulary(pool: PgPool) -> sqlx::Result<()> {
+    async fn it_should_create_a_new_vocabulary(pool: PgPool) -> Result<(), RepositoryError> {
         let mut conn = pool.acquire().await?;
 
         let radical = InsertVocabulary::builder()
@@ -75,7 +49,9 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn it_should_collide_with_an_existing_vocabulary(pool: PgPool) -> sqlx::Result<()> {
+    async fn it_should_collide_with_an_existing_vocabulary(
+        pool: PgPool,
+    ) -> Result<(), RepositoryError> {
         let mut conn = pool.acquire().await?;
 
         let radical = InsertVocabulary::builder()
@@ -95,8 +71,7 @@ mod tests {
         let _ = execute(&mut conn, &radical).await?;
         let collision = execute(&mut conn, &radical).await;
 
-        assert!(matches!(collision, Err(sqlx::Error::Database(e))
-            if e.code() == Some(SQLSTATE_ERROR_UNIQUE_INDEX_VIOLATION.into())));
+        assert!(matches!(collision, Err(RepositoryError::Conflict)));
 
         Ok(())
     }
