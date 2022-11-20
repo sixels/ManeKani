@@ -66,7 +66,6 @@
           shellHook = ''
             echo $0
             export PGDATA="$PWD/nix/pgdata" \
-                   PGPORT="5433" \
                    PGUSER="$USER"
 
             # Having issues with direnv triggering `EXIT` all the time
