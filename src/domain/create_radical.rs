@@ -21,7 +21,7 @@ mod tests {
         let mut conn = pool.acquire().await?;
 
         let radical = InsertRadical::builder()
-            .name("Barb")
+            .name("barb")
             .symbol("亅")
             .meaning_mnemonic(
                 r#"This radical is shaped like a barb. Like the kind you'd see on barb wire. Imagine one of these getting stuck to your arm or your clothes. Think about how much it would hurt with that little hook on the end sticking into you. Say out loud, "Oh dang, I got a barb stuck in me!""#
@@ -46,7 +46,7 @@ mod tests {
         let mut conn = pool.acquire().await?;
 
         let radical = InsertRadical::builder()
-            .name("Barb")
+            .name("barb")
             .symbol("亅")
             .meaning_mnemonic(
                 r#"This radical is shaped like a barb. Like the kind you'd see on barb wire. Imagine one of these getting stuck to your arm or your clothes. Think about how much it would hurt with .to_owned()that little hook on the end sticking into you. Say out loud, "Oh dang, I got a barb stuck in me!""#
