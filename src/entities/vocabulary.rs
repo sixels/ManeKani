@@ -48,4 +48,5 @@ pub struct InsertVocabulary {
     pub meaning_mnemonic: String,
     #[builder(setter(into))]
     pub reading_mnemonic: String,
+    pub kanji_composition: Vec<String>,
 }

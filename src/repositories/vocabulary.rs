@@ -1,4 +1,4 @@
-use sqlx::{pool::PoolConnection, Postgres};
+use sqlx::{pool::PoolConnection, postgres::PgArguments, Acquire, Arguments, Postgres};
 
 use crate::entities::vocabulary::{InsertVocabulary, Vocabulary};
 
@@ -20,9 +20,12 @@ impl VocabularyRepository for PoolConnection<Postgres> {
             reading,
             meaning_mnemonic,
             reading_mnemonic,
+            kanji_composition,
         } = vocab;
 
-        let result = sqlx::query_as!(
+        let mut transaction = self.begin().await?;
+
+        let insert_vocabulary = sqlx::query_as!(
             Vocabulary,
             "INSERT INTO vocabularies
                 (name, alt_names, word, word_type, reading, meaning_mnemonic, reading_mnemonic)
@@ -35,9 +38,25 @@ impl VocabularyRepository for PoolConnection<Postgres> {
             meaning_mnemonic,
             reading_mnemonic
         )
-        .fetch_one(self)
+        .fetch_one(&mut transaction)
         .await?;
 
-        Ok(result)
+        let mut args = PgArguments::default();
+        let mut sql = String::from("INSERT INTO vocabularies_kanjis (vocabulary_id, kanji_name) SELECT v.id, k.name FROM vocabularies v INNER JOIN kanjis k ON v.id = $1 AND (k.name = $2");
+        args.add(insert_vocabulary.id);
+        args.add(&kanji_composition[0]);
+        for (n, kanji) in kanji_composition.iter().enumerate().skip(1) {
+            sql.push_str(&format!(" OR k.name = ${}", n + 2));
+            args.add(kanji);
+        }
+        sql.push(')');
+
+        sqlx::query_with(&sql, args)
+            .execute(&mut transaction)
+            .await?;
+
+        transaction.commit().await?;
+
+        Ok(insert_vocabulary)
     }
 }
