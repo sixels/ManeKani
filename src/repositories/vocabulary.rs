@@ -42,11 +42,11 @@ impl VocabularyRepository for PoolConnection<Postgres> {
         .await?;
 
         let mut args = PgArguments::default();
-        let mut sql = String::from("INSERT INTO vocabularies_kanjis (vocabulary_id, kanji_name) SELECT v.id, k.name FROM vocabularies v INNER JOIN kanjis k ON v.id = $1 AND (k.name = $2");
+        let mut sql = String::from("INSERT INTO vocabularies_kanjis (vocabulary_id, kanji_symbol) SELECT v.id, k.symbol FROM vocabularies v INNER JOIN kanjis k ON v.id = $1 AND (k.symbol = $2");
         args.add(insert_vocabulary.id);
         args.add(&kanji_composition[0]);
         for (n, kanji) in kanji_composition.iter().enumerate().skip(1) {
-            sql.push_str(&format!(" OR k.name = ${}", n + 2));
+            sql.push_str(&format!(" OR k.symbol = ${}", n + 2));
             args.add(kanji);
         }
         sql.push(')');

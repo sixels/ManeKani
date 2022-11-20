@@ -48,7 +48,7 @@ mod tests {
             .reading_mnemonic(
                 r#"This is a jukugo word, which usually means on'yomi readings from the kanji. If you know the readings of your kanji you'll know how to read this as well."#
             )
-            .kanji_composition(vec![kanji_middle.name, kanji_stop.name])
+            .kanji_composition(vec![kanji_middle.symbol, kanji_stop.symbol])
             .build();
 
         let created_radical = execute(&mut conn, &radical).await?;
@@ -93,7 +93,7 @@ mod tests {
             .reading_mnemonic(
                 r#"This is a jukugo word, which usually means on'yomi readings from the kanji. If you know the readings of your kanji you'll know how to read this as well."#
             )
-            .kanji_composition(vec![kanji_middle.name, kanji_stop.name])
+            .kanji_composition(vec![kanji_middle.symbol, kanji_stop.symbol])
             .build();
 
         let _ = execute(&mut conn, &radical).await?;

@@ -3,10 +3,10 @@ CREATE TABLE kanjis (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    name TEXT UNIQUE,
+    name TEXT NOT NULL,
     alt_names TEXT [] NOT NULL,
     user_synonyms TEXT [],
-    symbol VARCHAR(5) NOT NULL UNIQUE,
+    symbol VARCHAR(1) UNIQUE NOT NULL,
     reading TEXT NOT NULL,
     onyomi TEXT [] NOT NULL,
     kunyomi TEXT [] NOT NULL,
@@ -16,15 +16,15 @@ CREATE TABLE kanjis (
     user_meaning_note TEXT,
     user_reading_note TEXT,
 
-    PRIMARY KEY (id, name)
+    PRIMARY KEY (id, symbol)
 );
 
 CREATE TABLE kanjis_radicals (
     kanji_id uuid,
-    radical_name TEXT,
-    PRIMARY KEY (kanji_id, radical_name),
+    radical_symbol VARCHAR(1),
+    PRIMARY KEY (kanji_id, radical_symbol),
     CONSTRAINT fk_kanji FOREIGN KEY(kanji_id) REFERENCES kanjis(id),
-    CONSTRAINT fk_radical FOREIGN KEY(radical_name) REFERENCES radicals(name)
+    CONSTRAINT fk_radical FOREIGN KEY(radical_symbol) REFERENCES radicals(symbol)
 );
 
 -- update `updated_at` automatically

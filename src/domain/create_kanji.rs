@@ -39,7 +39,7 @@ mod tests {
             .reading_mnemonic(
                 r#"How does the fish lure maker test his newly finished lure out? The one he just finished? He gets in a row (りょう) boat and rows out into the sea."#
             )
-            .radical_composition(vec![barb.name])
+            .radical_composition(vec![barb.symbol])
             .build();
 
         let created_kanji = execute(&mut conn, &kanji).await?;
@@ -78,7 +78,7 @@ mod tests {
             .reading_mnemonic(
                 r#"How does the fish lure maker test his newly finished lure out? The one he just finished? He gets in a row (りょう) boat and rows out into the sea."#
             )
-            .radical_composition(vec![barb.name])
+            .radical_composition(vec![barb.symbol])
             .build();
 
         let _ = execute(&mut conn, &kanji).await?;
