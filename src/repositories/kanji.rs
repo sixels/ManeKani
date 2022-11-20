@@ -1,4 +1,4 @@
-use sqlx::{pool::PoolConnection, Postgres};
+use sqlx::{pool::PoolConnection, postgres::PgArguments, Arguments, Connection, Postgres};
 
 use crate::entities::kanji::{InsertKanji, Kanji};
 
@@ -22,9 +22,12 @@ impl KanjiRepository for PoolConnection<Postgres> {
             nanori,
             meaning_mnemonic,
             reading_mnemonic,
+            radical_composition,
         } = kanji;
 
-        let result = sqlx::query_as!(
+        let mut transaction = self.begin().await?;
+
+        let insert_kanji = sqlx::query_as!(
             Kanji,
             "INSERT INTO kanjis
                 (name, alt_names, symbol, reading, onyomi, kunyomi, nanori, meaning_mnemonic, reading_mnemonic)
@@ -39,9 +42,25 @@ impl KanjiRepository for PoolConnection<Postgres> {
             meaning_mnemonic,
             reading_mnemonic
         )
-        .fetch_one(self)
+        .fetch_one(&mut transaction)
         .await?;
 
-        Ok(result)
+        let mut args = PgArguments::default();
+        let mut sql = String::from("INSERT INTO kanjis_radicals (kanji_id, radical_name) SELECT k.id, r.name FROM kanjis k INNER JOIN radicals r ON k.id = $1 AND (r.name = $2");
+        args.add(insert_kanji.id);
+        args.add(&radical_composition[0]);
+        for (n, radical) in radical_composition.iter().enumerate().skip(1) {
+            sql.push_str(&format!(" OR r.name = ${}", n + 2));
+            args.add(radical);
+        }
+        sql.push(')');
+
+        sqlx::query_with(&sql, args)
+            .execute(&mut transaction)
+            .await?;
+
+        transaction.commit().await?;
+
+        Ok(insert_kanji)
     }
 }

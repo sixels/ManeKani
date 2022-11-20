@@ -57,4 +57,5 @@ pub struct InsertKanji {
     pub meaning_mnemonic: String,
     #[builder(setter(into))]
     pub reading_mnemonic: String,
+    pub radical_composition: Vec<String>,
 }

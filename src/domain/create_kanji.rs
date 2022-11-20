@@ -20,6 +20,19 @@ mod tests {
     async fn it_should_create_a_new_kanji(pool: PgPool) -> Result<(), RepositoryError> {
         let mut conn = pool.acquire().await?;
 
+        let barb = {
+            use crate::{domain::create_radical, entities::radical::InsertRadical};
+            let radical = InsertRadical::builder()
+            .name("barb")
+            .symbol("亅")
+            .meaning_mnemonic(
+                r#"This radical is shaped like a barb. Like the kind you'd see on barb wire. Imagine one of these getting stuck to your arm or your clothes. Think about how much it would hurt with that little hook on the end sticking into you. Say out loud, "Oh dang, I got a barb stuck in me!""#
+            )
+            .build();
+
+            create_radical::execute(&mut conn, &radical).await?
+        };
+
         let kanji = InsertKanji::builder()
             .name("Finish")
             .alt_names(vec!["Complete".to_owned(), "End".to_owned()])
@@ -32,6 +45,7 @@ mod tests {
             .reading_mnemonic(
                 r#"How does the fish lure maker test his newly finished lure out? The one he just finished? He gets in a row (りょう) boat and rows out into the sea."#
             )
+            .radical_composition(vec![barb.name])
             .build();
 
         let created_kanji = execute(&mut conn, &kanji).await?;
@@ -53,8 +67,21 @@ mod tests {
     async fn it_should_collide_with_an_existing_kanji(pool: PgPool) -> Result<(), RepositoryError> {
         let mut conn = pool.acquire().await?;
 
+        let barb = {
+            use crate::{domain::create_radical, entities::radical::InsertRadical};
+            let radical = InsertRadical::builder()
+            .name("barb")
+            .symbol("亅")
+            .meaning_mnemonic(
+                r#"This radical is shaped like a barb. Like the kind you'd see on barb wire. Imagine one of these getting stuck to your arm or your clothes. Think about how much it would hurt with that little hook on the end sticking into you. Say out loud, "Oh dang, I got a barb stuck in me!""#
+            )
+            .build();
+
+            create_radical::execute(&mut conn, &radical).await?
+        };
+
         let kanji = InsertKanji::builder()
-            .name("Finish")
+            .name("finish")
             .alt_names(vec!["Complete".to_owned(), "End".to_owned()])
             .symbol("了")
             .meaning_mnemonic(
@@ -65,6 +92,7 @@ mod tests {
             .reading_mnemonic(
                 r#"How does the fish lure maker test his newly finished lure out? The one he just finished? He gets in a row (りょう) boat and rows out into the sea."#
             )
+            .radical_composition(vec![barb.name])
             .build();
 
         let _ = execute(&mut conn, &kanji).await?;
