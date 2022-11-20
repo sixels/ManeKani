@@ -55,9 +55,14 @@ impl KanjiRepository for PoolConnection<Postgres> {
         }
         sql.push(')');
 
-        sqlx::query_with(&sql, args)
+        let result = sqlx::query_with(&sql, args)
             .execute(&mut transaction)
             .await?;
+        if result.rows_affected() == 0 {
+            return Err(RepositoryError::BadRequest(
+                "One or more radicals in `radical_composition` does not exist.".to_owned(),
+            ));
+        }
 
         transaction.commit().await?;
 
