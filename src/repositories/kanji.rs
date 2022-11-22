@@ -1,12 +1,13 @@
 use sqlx::{pool::PoolConnection, postgres::PgArguments, Arguments, Connection, Postgres};
 
-use crate::entities::kanji::{InsertKanji, Kanji};
+use crate::entities::kanji::{GetKanji, InsertKanji, Kanji};
 
 use super::RepositoryError;
 
 #[async_trait::async_trait]
 pub trait KanjiRepository {
     async fn insert(&mut self, kanji: &InsertKanji) -> Result<Kanji, RepositoryError>;
+    async fn get(&mut self, req: &GetKanji) -> Result<Kanji, RepositoryError>;
 }
 
 #[async_trait::async_trait]
@@ -67,5 +68,15 @@ impl KanjiRepository for PoolConnection<Postgres> {
         transaction.commit().await?;
 
         Ok(insert_kanji)
+    }
+
+    async fn get(&mut self, req: &GetKanji) -> Result<Kanji, RepositoryError> {
+        let GetKanji { symbol } = req;
+
+        let result = sqlx::query_as!(Kanji, "SELECT * FROM kanjis WHERE symbol = $1", symbol)
+            .fetch_one(self)
+            .await?;
+
+        Ok(result)
     }
 }

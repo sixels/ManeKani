@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
 /// Represents a Kanji.
-#[derive(sqlx::FromRow, Debug, Clone)]
+#[derive(sqlx::FromRow, Debug, Clone, Serialize)]
 pub struct Kanji {
     pub id: Uuid,
     pub created_at: OffsetDateTime,
@@ -37,7 +38,7 @@ pub struct Kanji {
     pub user_reading_note: Option<String>,
 }
 
-#[derive(Debug, Clone, TypedBuilder)]
+#[derive(Debug, Clone, TypedBuilder, Deserialize)]
 pub struct InsertKanji {
     #[builder(setter(into))]
     pub name: String,
@@ -58,6 +59,11 @@ pub struct InsertKanji {
     #[builder(setter(into))]
     pub reading_mnemonic: String,
     pub radical_composition: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetKanji {
+    pub symbol: String,
 }
 
 // #[cfg(test)]

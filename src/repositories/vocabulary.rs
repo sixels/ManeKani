@@ -1,12 +1,13 @@
 use sqlx::{pool::PoolConnection, postgres::PgArguments, Acquire, Arguments, Postgres};
 
-use crate::entities::vocabulary::{InsertVocabulary, Vocabulary};
+use crate::entities::vocabulary::{GetVocabulary, InsertVocabulary, Vocabulary};
 
 use super::RepositoryError;
 
 #[async_trait::async_trait]
 pub trait VocabularyRepository {
     async fn insert(&mut self, vocab: &InsertVocabulary) -> Result<Vocabulary, RepositoryError>;
+    async fn get(&mut self, req: &GetVocabulary) -> Result<Vocabulary, RepositoryError>;
 }
 
 #[async_trait::async_trait]
@@ -63,5 +64,18 @@ impl VocabularyRepository for PoolConnection<Postgres> {
         transaction.commit().await?;
 
         Ok(insert_vocabulary)
+    }
+    async fn get(&mut self, req: &GetVocabulary) -> Result<Vocabulary, RepositoryError> {
+        let GetVocabulary { word } = req;
+
+        let result = sqlx::query_as!(
+            Vocabulary,
+            "SELECT * FROM vocabularies WHERE word = $1",
+            word
+        )
+        .fetch_one(self)
+        .await?;
+
+        Ok(result)
     }
 }

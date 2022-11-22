@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
 /// Represents a Kanji radical.
-#[derive(sqlx::FromRow, Debug, Clone)]
+#[derive(sqlx::FromRow, Debug, Clone, Serialize)]
 pub struct Radical {
     pub id: Uuid,
     pub created_at: OffsetDateTime,
@@ -23,7 +24,7 @@ pub struct Radical {
 }
 
 /// A subset of `Radical` used for database insertion.
-#[derive(Debug, Clone, Default, TypedBuilder)]
+#[derive(Debug, Clone, Default, TypedBuilder, Deserialize)]
 pub struct InsertRadical {
     #[builder(setter(into))]
     pub name: String,
@@ -41,6 +42,12 @@ impl InsertRadical {
             meaning_mnemonic,
         }
     }
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+
+pub struct GetRadical {
+    pub symbol: String,
 }
 
 // #[cfg(test)]

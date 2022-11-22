@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use typed_builder::TypedBuilder;
 use uuid::Uuid;
 
 /// Represents a vocabulary word.
-#[derive(sqlx::FromRow, Debug, Clone)]
+#[derive(sqlx::FromRow, Debug, Clone, Serialize)]
 pub struct Vocabulary {
     pub id: Uuid,
     pub created_at: OffsetDateTime,
@@ -33,7 +34,7 @@ pub struct Vocabulary {
     pub user_reading_note: Option<String>,
 }
 
-#[derive(Debug, Clone, TypedBuilder)]
+#[derive(Debug, Clone, TypedBuilder, Deserialize)]
 pub struct InsertVocabulary {
     #[builder(setter(into))]
     pub name: String,
@@ -49,4 +50,9 @@ pub struct InsertVocabulary {
     #[builder(setter(into))]
     pub reading_mnemonic: String,
     pub kanji_composition: Vec<String>,
+}
+
+#[derive(Debug, Clone, TypedBuilder, Deserialize)]
+pub struct GetVocabulary {
+    pub word: String,
 }
