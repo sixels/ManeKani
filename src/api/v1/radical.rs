@@ -11,8 +11,8 @@ use crate::{
 
 #[get("{radical}")]
 pub async fn get(radical: web::Path<String>, state: web::Data<Arc<State>>) -> impl Responder {
-    let symbol = radical.into_inner();
-    info!("Getting radical '{symbol}'");
+    let name = radical.into_inner();
+    info!("Getting radical '{name}'");
 
     let mut conn = state
         .db
@@ -20,7 +20,7 @@ pub async fn get(radical: web::Path<String>, state: web::Data<Arc<State>>) -> im
         .await
         .expect("Could not get a database connection");
 
-    let radical = get_radical::execute(&mut conn, &GetRadical { symbol })
+    let radical = get_radical::execute(&mut conn, &GetRadical { name })
         .await
         .unwrap();
 

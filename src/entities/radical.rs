@@ -12,8 +12,8 @@ pub struct Radical {
 
     /// The radical name.
     pub name: String,
-    /// The radical symbol.
-    pub symbol: String,
+    /// The radical symbol. A utf-8 string or an image
+    pub symbol: Vec<u8>,
     /// Mnemonics to help you remember the radical meaning.
     /// They are stored in a string using markdown syntax.
     pub meaning_mnemonic: String,
@@ -47,7 +47,7 @@ impl InsertRadical {
 #[derive(Debug, Clone, Default, Deserialize)]
 
 pub struct GetRadical {
-    pub symbol: String,
+    pub name: String,
 }
 
 // #[cfg(test)]

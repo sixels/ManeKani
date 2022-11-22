@@ -19,6 +19,12 @@ impl RadicalRepository for PoolConnection<Postgres> {
             meaning_mnemonic,
         } = radical;
 
+        let symbol = if let Some('=') = symbol.chars().last() {
+            base64::decode(symbol).unwrap()
+        } else {
+            symbol.clone().into_bytes()
+        };
+
         let result = sqlx::query_as!(
             Radical,
             "INSERT INTO radicals (name, symbol, meaning_mnemonic) VALUES ($1, $2, $3) RETURNING *",
@@ -32,9 +38,9 @@ impl RadicalRepository for PoolConnection<Postgres> {
         Ok(result)
     }
     async fn get(&mut self, req: &GetRadical) -> Result<Radical, RepositoryError> {
-        let GetRadical { symbol } = req;
+        let GetRadical { name } = req;
 
-        let result = sqlx::query_as!(Radical, "SELECT * FROM radicals WHERE symbol = $1", symbol)
+        let result = sqlx::query_as!(Radical, "SELECT * FROM radicals WHERE name = $1", name)
             .fetch_one(self)
             .await?;
 

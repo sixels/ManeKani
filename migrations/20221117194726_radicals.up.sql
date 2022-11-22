@@ -5,11 +5,11 @@ CREATE TABLE radicals (
 
     name TEXT UNIQUE NOT NULL,
     user_synonyms TEXT [],
-    symbol VARCHAR(1) UNIQUE NOT NULL,
+    symbol BYTEA NOT NULL,
     meaning_mnemonic TEXT NOT NULL,
     user_meaning_note TEXT,
 
-    PRIMARY KEY (id, symbol)
+    PRIMARY KEY (id, name)
 );
 
 -- update `updated_at` automatically

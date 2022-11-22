@@ -7,6 +7,7 @@ description = "WaniKani clone"
 [dependencies]
 actix-web = "4.2.1"
 async-trait = "0.1.58"
+base64 = "0.13.1"
 dotenvy = "0.15"
 serde = { version = "1.0.147", features = ["derive"] }
 sqlx = { version = "0.6.2", features = [

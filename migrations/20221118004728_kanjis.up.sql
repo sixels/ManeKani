@@ -21,10 +21,10 @@ CREATE TABLE kanjis (
 
 CREATE TABLE kanjis_radicals (
     kanji_id uuid,
-    radical_symbol VARCHAR(1),
-    PRIMARY KEY (kanji_id, radical_symbol),
+    radical_name TEXT,
+    PRIMARY KEY (kanji_id, radical_name),
     CONSTRAINT fk_kanji FOREIGN KEY(kanji_id) REFERENCES kanjis(id),
-    CONSTRAINT fk_radical FOREIGN KEY(radical_symbol) REFERENCES radicals(symbol)
+    CONSTRAINT fk_radical FOREIGN KEY(radical_name) REFERENCES radicals(name)
 );
 
 -- update `updated_at` automatically

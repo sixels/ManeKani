@@ -47,11 +47,11 @@ impl KanjiRepository for PoolConnection<Postgres> {
         .await?;
 
         let mut args = PgArguments::default();
-        let mut sql = String::from("INSERT INTO kanjis_radicals (kanji_id, radical_symbol) SELECT k.id, r.symbol FROM kanjis k INNER JOIN radicals r ON k.id = $1 AND (r.symbol = $2");
+        let mut sql = String::from("INSERT INTO kanjis_radicals (kanji_id, radical_name) SELECT k.id, r.name FROM kanjis k INNER JOIN radicals r ON k.id = $1 AND (r.name = $2");
         args.add(insert_kanji.id);
         args.add(&radical_composition[0]);
         for (n, radical) in radical_composition.iter().enumerate().skip(1) {
-            sql.push_str(&format!(" OR r.symbol = ${}", n + 2));
+            sql.push_str(&format!(" OR r.name = ${}", n + 2));
             args.add(radical);
         }
         sql.push(')');
