@@ -1,8 +1,8 @@
 [package]
-name = "waniklone"
+name = "manekani"
 version = "0.1.0"
 edition = "2021"
-description = "WaniKani clone"
+description = "A WaniKani clone"
 
 [dependencies]
 actix-web = "4.2.1"

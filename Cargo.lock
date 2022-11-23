@@ -800,6 +800,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "manekani"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "async-trait",
+ "base64",
+ "dotenvy",
+ "serde",
+ "sqlx",
+ "thiserror",
+ "time",
+ "tracing",
+ "tracing-actix-web",
+ "tracing-subscriber",
+ "typed-builder",
+ "uuid",
+]
+
+[[package]]
 name = "md-5"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1686,25 +1705,6 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
-
-[[package]]
-name = "waniklone"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "async-trait",
- "base64",
- "dotenvy",
- "serde",
- "sqlx",
- "thiserror",
- "time",
- "tracing",
- "tracing-actix-web",
- "tracing-subscriber",
- "typed-builder",
- "uuid",
-]
 
 [[package]]
 name = "wasi"
