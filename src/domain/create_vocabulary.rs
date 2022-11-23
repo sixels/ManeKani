@@ -38,6 +38,7 @@ mod tests {
 
         let radical = InsertVocabulary::builder()
             .name("Suspension")
+            .level(3)
             .alt_names(vec!["Cancellation".to_owned(), "Discontinuation".to_owned()])
             .word("中止")
             .word_type(vec!["noun".to_owned(), "する verb".to_owned()])
@@ -83,6 +84,7 @@ mod tests {
         };
         let radical = InsertVocabulary::builder()
             .name("Suspension")
+            .level(3)
             .alt_names(vec!["Cancellation".to_owned(), "Discontinuation".to_owned()])
             .word("中止")
             .word_type(vec!["noun".to_owned(), "する verb".to_owned()])

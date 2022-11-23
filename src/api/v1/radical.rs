@@ -20,9 +20,11 @@ pub async fn get(radical: web::Path<String>, state: web::Data<Arc<State>>) -> im
         .await
         .expect("Could not get a database connection");
 
-    let radical = get_radical::execute(&mut conn, &GetRadical { name })
+    let Ok(radical) = get_radical::execute(&mut conn, &GetRadical { name })
         .await
-        .unwrap();
+        else {
+            return HttpResponse::InternalServerError().json("sorry");
+        };
 
     HttpResponse::Ok().json(radical)
 }
@@ -37,7 +39,9 @@ pub async fn create(req: web::Json<InsertRadical>, state: web::Data<Arc<State>>)
         .await
         .expect("Could not get a database connection");
 
-    let created = create_radical::execute(&mut conn, &req.0).await.unwrap();
+    let Ok(created) = create_radical::execute(&mut conn, &req.0).await else {
+        return HttpResponse::InternalServerError().json("sorry");
+    };
     debug!(
         event = "Created radical",
         radical_id = created.id.to_string()

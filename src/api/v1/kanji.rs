@@ -21,10 +21,12 @@ pub async fn get(kanji: web::Path<String>, state: web::Data<Arc<State>>) -> impl
         .expect("Could not get a database connection");
 
     // temporary
-    let kanji = sqlx::query_as!(Kanji, "SELECT * FROM kanjis WHERE symbol = $1", kanji)
+    let Ok(kanji) = sqlx::query_as!(Kanji, "SELECT * FROM kanjis WHERE symbol = $1", kanji)
         .fetch_one(&mut conn)
         .await
-        .unwrap();
+        else {
+            return HttpResponse::InternalServerError().json("sorry");
+        };
 
     HttpResponse::Ok().json(kanji)
 }
@@ -39,7 +41,9 @@ pub async fn create(req: web::Json<InsertKanji>, state: web::Data<Arc<State>>) -
         .await
         .expect("Could not get a database connection");
 
-    let created = create_kanji::execute(&mut conn, &req.0).await.unwrap();
+    let Ok(created) = create_kanji::execute(&mut conn, &req.0).await else {
+        return HttpResponse::InternalServerError().json("sorry");
+    };
     debug!(event = "Created kanji", kanji_id = created.id.to_string());
     HttpResponse::Ok().json(created)
 }

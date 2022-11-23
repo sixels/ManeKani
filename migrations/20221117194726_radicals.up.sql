@@ -4,6 +4,7 @@ CREATE TABLE radicals (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     name TEXT UNIQUE NOT NULL,
+    level INT NOT NULL,
     user_synonyms TEXT [],
     symbol BYTEA NOT NULL,
     meaning_mnemonic TEXT NOT NULL,

@@ -4,6 +4,7 @@ CREATE TABLE vocabularies (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     name TEXT NOT NULL,
+    level INT NOT NULL,
     alt_names TEXT [] NOT NULL,
     user_synonyms TEXT [],
     word TEXT NOT NULL UNIQUE,

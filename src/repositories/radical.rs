@@ -15,6 +15,7 @@ impl RadicalRepository for PoolConnection<Postgres> {
     async fn insert(&mut self, radical: &InsertRadical) -> Result<Radical, RepositoryError> {
         let InsertRadical {
             name,
+            level,
             symbol,
             meaning_mnemonic,
         } = radical;
@@ -27,8 +28,9 @@ impl RadicalRepository for PoolConnection<Postgres> {
 
         let result = sqlx::query_as!(
             Radical,
-            "INSERT INTO radicals (name, symbol, meaning_mnemonic) VALUES ($1, $2, $3) RETURNING *",
+            "INSERT INTO radicals (name, level, symbol, meaning_mnemonic) VALUES ($1, $2, $3, $4) RETURNING *",
             name,
+            level,
             symbol,
             meaning_mnemonic
         )

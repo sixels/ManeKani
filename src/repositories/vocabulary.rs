@@ -15,6 +15,7 @@ impl VocabularyRepository for PoolConnection<Postgres> {
     async fn insert(&mut self, vocab: &InsertVocabulary) -> Result<Vocabulary, RepositoryError> {
         let InsertVocabulary {
             name,
+            level,
             alt_names,
             word,
             word_type,
@@ -29,9 +30,10 @@ impl VocabularyRepository for PoolConnection<Postgres> {
         let insert_vocabulary = sqlx::query_as!(
             Vocabulary,
             "INSERT INTO vocabularies
-                (name, alt_names, word, word_type, reading, meaning_mnemonic, reading_mnemonic)
-            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+                (name, level, alt_names, word, word_type, reading, meaning_mnemonic, reading_mnemonic)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
             name,
+            level,
             alt_names,
             word,
             word_type,

@@ -12,6 +12,8 @@ pub struct Vocabulary {
 
     /// The vocabulary name/meaning.
     pub name: String,
+    /// The vocabulary level.
+    pub level: i32,
     /// Alternative names for the vocabulary.
     pub alt_names: Vec<String>,
     /// The vocabulary writing.
@@ -38,6 +40,7 @@ pub struct Vocabulary {
 pub struct InsertVocabulary {
     #[builder(setter(into))]
     pub name: String,
+    pub level: i32,
     #[builder(default)]
     pub alt_names: Vec<String>,
     #[builder(setter(into))]

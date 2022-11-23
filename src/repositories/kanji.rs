@@ -15,6 +15,7 @@ impl KanjiRepository for PoolConnection<Postgres> {
     async fn insert(&mut self, kanji: &InsertKanji) -> Result<Kanji, RepositoryError> {
         let InsertKanji {
             name,
+            level,
             alt_names,
             symbol,
             reading,
@@ -31,9 +32,10 @@ impl KanjiRepository for PoolConnection<Postgres> {
         let insert_kanji = sqlx::query_as!(
             Kanji,
             "INSERT INTO kanjis
-                (name, alt_names, symbol, reading, onyomi, kunyomi, nanori, meaning_mnemonic, reading_mnemonic)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+                (name, level, alt_names, symbol, reading, onyomi, kunyomi, nanori, meaning_mnemonic, reading_mnemonic)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
             name,
+            level,
             alt_names,
             symbol,
             reading,

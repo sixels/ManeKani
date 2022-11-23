@@ -12,6 +12,8 @@ pub struct Kanji {
 
     /// The kanji name.
     pub name: String,
+    /// The kanji level.
+    pub level: i32,
     /// Alternative names for the kanji.
     pub alt_names: Vec<String>,
     /// The kanji symbol.
@@ -42,6 +44,7 @@ pub struct Kanji {
 pub struct InsertKanji {
     #[builder(setter(into))]
     pub name: String,
+    pub level: i32,
     #[builder(default)]
     pub alt_names: Vec<String>,
     #[builder(setter(into))]
@@ -70,6 +73,7 @@ pub struct GetKanji {
 // pub(crate) fn kanji_genius() -> InsertKanji {
 //     InsertKanji::builder()
 //         .name("genius")
+//         .level(1)
 //         .symbol("才")
 //         .reading("さい")
 //         .onyomi(vec!["さい".to_owned()])
@@ -83,6 +87,7 @@ pub struct GetKanji {
 pub(crate) fn kanji_middle() -> InsertKanji {
     InsertKanji::builder()
         .name("middle")
+        .level(1)
         .symbol("中")
         .reading("ちゅう")
         .onyomi(vec!["ちゅう".to_owned()])
@@ -97,6 +102,7 @@ pub(crate) fn kanji_middle() -> InsertKanji {
 pub(crate) fn kanji_stop() -> InsertKanji {
     InsertKanji::builder()
         .name("stop")
+        .level(1)
         .symbol("止")
         .reading("し")
         .onyomi(vec!["し".to_owned()])

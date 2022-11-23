@@ -36,6 +36,11 @@ where
                         web::scope("radical")
                             .service(v1::radical::get)
                             .service(v1::radical::create),
+                    )
+                    .service(
+                        web::scope("/vocabulary")
+                            .service(v1::vocabulary::get)
+                            .service(v1::vocabulary::create),
                     ),
             )
     })

@@ -31,6 +31,7 @@ mod tests {
             .name("Finish")
             .alt_names(vec!["Complete".to_owned(), "End".to_owned()])
             .symbol("了")
+            .level(2)
             .meaning_mnemonic(
                 r#"Think about it this way. There is a famous fishing lure inventor, working on his best work ever. He’s old, and he’s been trying to make the best fishing lure for the last 50 years, and knows this will be his last invention. Then he figures it out. He takes one barb, and connects the end of it to the top of another barb. When he does this, he knows his work is finally finished."#
             )
@@ -70,6 +71,7 @@ mod tests {
             .name("finish")
             .alt_names(vec!["Complete".to_owned(), "End".to_owned()])
             .symbol("了")
+            .level(2)
             .meaning_mnemonic(
                 r#"Think about it this way. There is a famous fishing lure inventor, working on his best work ever. He’s old, and he’s been trying to make the best fishing lure for the last 50 years, and knows this will be his last invention. Then he figures it out. He takes one barb, and connects the end of it to the top of another barb. When he does this, he knows his work is finally finished."#
             )
