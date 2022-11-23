@@ -59,7 +59,6 @@
             nixpkgs-fmt
             pkg-config
             clippy
-            diesel-cli
           ];
           buildInputs = with pkgs; [ openssl postgresql ];
 
