@@ -1,49 +1,55 @@
 use std::sync::Arc;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse};
+use manekani_pg::{
+    domain::kanji::{insert, query, query_by_radical},
+    entity::{GetKanji, GetRadical, InsertKanji},
+};
 use tracing::{debug, info};
 
-use crate::{
-    api::state::State,
-    domain::create_kanji,
-    entities::kanji::{InsertKanji, Kanji},
-};
+use crate::api::{error::Error as ApiError, state::State};
 
 #[get("{kanji}")]
-pub async fn get(kanji: web::Path<String>, state: web::Data<Arc<State>>) -> impl Responder {
-    let kanji = kanji.into_inner();
-    info!(event = "getting kanji", kanji = kanji);
+pub async fn get(
+    kanji_symbol: web::Path<String>,
+    state: web::Data<Arc<State>>,
+) -> Result<HttpResponse, ApiError> {
+    let symbol = kanji_symbol.into_inner();
+    let kanji = GetKanji { symbol };
 
-    let mut conn = state
-        .db
-        .acquire()
-        .await
-        .expect("Could not get a database connection");
+    info!("Querying kanji: {}", kanji.symbol);
+    let kanji = query(&state.manekani, kanji).await?;
 
-    // temporary
-    let Ok(kanji) = sqlx::query_as!(Kanji, "SELECT * FROM kanjis WHERE symbol = $1", kanji)
-        .fetch_one(&mut conn)
-        .await
-        else {
-            return HttpResponse::InternalServerError().json("sorry");
-        };
-
-    HttpResponse::Ok().json(kanji)
+    Ok(HttpResponse::Ok().json(kanji))
 }
 
 #[post("")]
-pub async fn create(req: web::Json<InsertKanji>, state: web::Data<Arc<State>>) -> impl Responder {
-    info!(event = "Creating kanji", kanji_name = &req.name);
+pub async fn create(
+    req: web::Json<InsertKanji>,
+    state: web::Data<Arc<State>>,
+) -> Result<HttpResponse, ApiError> {
+    let kanji = req.into_inner();
 
-    let mut conn = state
-        .db
-        .acquire()
-        .await
-        .expect("Could not get a database connection");
+    let created = insert(&state.manekani, kanji).await?;
 
-    let Ok(created) = create_kanji::execute(&mut conn, &req.0).await else {
-        return HttpResponse::InternalServerError().json("sorry");
-    };
-    debug!(event = "Created kanji", kanji_id = created.id.to_string());
-    HttpResponse::Ok().json(created)
+    debug!(
+        "Created kanji '{}': {}",
+        created.symbol,
+        created.id.to_string()
+    );
+    Ok(HttpResponse::Ok().json(created))
+}
+
+#[get("from-radical/{radical}")]
+pub async fn from_radical(
+    radical_name: web::Path<String>,
+    state: web::Data<Arc<State>>,
+) -> Result<HttpResponse, ApiError> {
+    let name = radical_name.into_inner();
+    let radical = GetRadical { name };
+
+    info!("Searching kanjis from radical: {}", radical.name);
+    let kanjis = query_by_radical(&state.manekani, radical).await?;
+
+    Ok(HttpResponse::Ok().json(kanjis))
 }

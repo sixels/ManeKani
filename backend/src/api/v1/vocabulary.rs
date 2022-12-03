@@ -1,53 +1,55 @@
 use std::sync::Arc;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse};
+use manekani_pg::{
+    domain::vocabulary::{insert, query, query_by_kanji},
+    entity::{GetKanji, GetVocabulary, InsertVocabulary},
+};
 use tracing::{debug, info};
 
-use crate::{
-    api::state::State,
-    domain::{create_vocabulary, get_vocabulary},
-    entities::vocabulary::{GetVocabulary, InsertVocabulary},
-};
+use crate::api::{error::Error as ApiError, state::State};
 
 #[get("{vocabulary}")]
-pub async fn get(vocabulary: web::Path<String>, state: web::Data<Arc<State>>) -> impl Responder {
-    let word = vocabulary.into_inner();
-    info!("Getting vocabulary '{word}'");
+pub async fn get(
+    vocabulary_word: web::Path<String>,
+    state: web::Data<Arc<State>>,
+) -> Result<HttpResponse, ApiError> {
+    let word = vocabulary_word.into_inner();
+    let vocab = GetVocabulary { word };
 
-    let mut conn = state
-        .db
-        .acquire()
-        .await
-        .expect("Could not get a database connection");
+    info!("Getting vocabulary '{}'", vocab.word);
+    let vocabulary = query(&state.manekani, vocab).await?;
 
-    let Ok(vocabulary) = get_vocabulary::execute(&mut conn, &GetVocabulary { word })
-        .await
-        else {
-            return HttpResponse::InternalServerError().json("sorry");
-        };
-
-    HttpResponse::Ok().json(vocabulary)
+    Ok(HttpResponse::Ok().json(vocabulary))
 }
 
 #[post("")]
 pub async fn create(
     req: web::Json<InsertVocabulary>,
     state: web::Data<Arc<State>>,
-) -> impl Responder {
-    info!(event = "Creating vocabulary", vocabulary_name = &req.name);
+) -> Result<HttpResponse, ApiError> {
+    let vocabulary = req.into_inner();
 
-    let mut conn = state
-        .db
-        .acquire()
-        .await
-        .expect("Could not get a database connection");
+    let created = insert(&state.manekani, vocabulary).await?;
 
-    let Ok(created) = create_vocabulary::execute(&mut conn, &req.0).await else {
-        return HttpResponse::InternalServerError().json("sorry");
-    };
     debug!(
-        event = "Created vocabulary",
-        vocabulary_id = created.id.to_string()
+        "Created vocabulary '{}': '{}'",
+        created.name,
+        created.id.to_string()
     );
-    HttpResponse::Ok().json(created)
+    Ok(HttpResponse::Ok().json(created))
+}
+
+#[get("from-kanji/{kanji}")]
+pub async fn from_kanji(
+    kanji_symbol: web::Path<String>,
+    state: web::Data<Arc<State>>,
+) -> Result<HttpResponse, ApiError> {
+    let symbol = kanji_symbol.into_inner();
+    let kanji = GetKanji { symbol };
+
+    info!("Searching vocabularies from kanji: {}", kanji.symbol);
+    let vocabularies = query_by_kanji(&state.manekani, kanji).await?;
+
+    Ok(HttpResponse::Ok().json(vocabularies))
 }

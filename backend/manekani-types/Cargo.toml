@@ -1,0 +1,10 @@
+[package]
+name = "manekani-types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.58"
+thiserror = "1.0.37"
+
+sqlx = "0.6.2"

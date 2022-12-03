@@ -2,7 +2,6 @@ CREATE TABLE kanjis (
     id uuid UNIQUE DEFAULT uuid_generate_v4 (),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
     name TEXT NOT NULL,
     level INT NOT NULL,
     alt_names TEXT [] NOT NULL,
@@ -16,21 +15,15 @@ CREATE TABLE kanjis (
     reading_mnemonic TEXT NOT NULL,
     user_meaning_note TEXT,
     user_reading_note TEXT,
-
     PRIMARY KEY (id, symbol)
 );
-
 CREATE TABLE kanjis_radicals (
-    kanji_id uuid,
+    kanji_symbol VARCHAR(1),
     radical_name TEXT,
-    PRIMARY KEY (kanji_id, radical_name),
-    CONSTRAINT fk_kanji FOREIGN KEY(kanji_id) REFERENCES kanjis(id),
+    PRIMARY KEY (kanji_symbol, radical_name),
+    CONSTRAINT fk_kanji FOREIGN KEY(kanji_symbol) REFERENCES kanjis(symbol),
     CONSTRAINT fk_radical FOREIGN KEY(radical_name) REFERENCES radicals(name)
 );
-
 -- update `updated_at` automatically
-
-CREATE TRIGGER update_timestamp_trigger
-BEFORE UPDATE ON kanjis
-FOR EACH ROW
-EXECUTE PROCEDURE update_timestamp();
+CREATE TRIGGER update_timestamp_trigger BEFORE
+UPDATE ON kanjis FOR EACH ROW EXECUTE PROCEDURE update_timestamp();

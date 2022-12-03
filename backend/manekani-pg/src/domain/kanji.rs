@@ -1,30 +1,49 @@
-use crate::{
-    entities::kanji::{InsertKanji, Kanji},
-    repositories::{kanji::KanjiRepository, RepositoryError},
+use manekani_types::repository::{RepoInsertable, RepoQueryable};
+
+use crate::entity::{
+    kanji::{GetKanji, InsertKanji, Kanji, KanjiPartial},
+    radical::GetRadical,
 };
 
-pub async fn execute<K>(db: &mut K, kanji: &InsertKanji) -> Result<Kanji, RepositoryError>
+use super::Error;
+
+pub async fn query<R>(repo: &R, kanji: GetKanji) -> Result<Kanji, Error>
 where
-    K: KanjiRepository,
+    R: RepoQueryable<GetKanji, Kanji>,
 {
-    db.insert(kanji).await
+    Ok(repo.query(kanji).await?)
+}
+
+pub async fn query_by_radical<R>(repo: &R, radical: GetRadical) -> Result<Vec<KanjiPartial>, Error>
+where
+    R: RepoQueryable<GetRadical, Vec<KanjiPartial>>,
+{
+    Ok(repo.query(radical).await?)
+}
+
+pub async fn insert<R>(repo: &R, kanji: InsertKanji) -> Result<Kanji, Error>
+where
+    R: RepoInsertable<InsertKanji, Kanji>,
+{
+    Ok(repo.insert(kanji).await?)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::entities::radical::radical_barb;
+
+    use crate::{entity::radical::radical_barb, repository::Repository};
 
     use super::*;
 
     use sqlx::PgPool;
 
     #[sqlx::test]
-    async fn it_should_create_a_new_kanji(pool: PgPool) -> Result<(), RepositoryError> {
-        let mut conn = pool.acquire().await?;
+    async fn it_should_create_a_new_kanji(pool: PgPool) -> Result<(), Error> {
+        let repo = Repository::new(pool);
 
         let barb = {
-            use crate::domain::create_radical;
-            create_radical::execute(&mut conn, &radical_barb()).await?
+            use crate::domain::radical;
+            radical::insert(&repo, radical_barb()).await?
         };
 
         let kanji = InsertKanji::builder()
@@ -43,7 +62,7 @@ mod tests {
             .radical_composition(vec![barb.name])
             .build();
 
-        let created_kanji = execute(&mut conn, &kanji).await?;
+        let created_kanji = insert(&repo, kanji.clone()).await?;
 
         assert_eq!(created_kanji.name, kanji.name);
         assert_eq!(created_kanji.alt_names, kanji.alt_names);
@@ -59,12 +78,12 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn it_should_collide_with_an_existing_kanji(pool: PgPool) -> Result<(), RepositoryError> {
-        let mut conn = pool.acquire().await?;
+    async fn it_should_collide_with_an_existing_kanji(pool: PgPool) -> Result<(), Error> {
+        let repo = Repository::new(pool);
 
         let barb = {
-            use crate::domain::create_radical;
-            create_radical::execute(&mut conn, &radical_barb()).await?
+            use crate::domain::radical;
+            radical::insert(&repo, radical_barb()).await?
         };
 
         let kanji = InsertKanji::builder()
@@ -83,10 +102,10 @@ mod tests {
             .radical_composition(vec![barb.name])
             .build();
 
-        let _ = execute(&mut conn, &kanji).await?;
-        let collision = execute(&mut conn, &kanji).await;
+        let _ = insert(&repo, kanji.clone()).await?;
+        let collision = insert(&repo, kanji).await;
 
-        assert!(matches!(collision, Err(RepositoryError::Conflict)));
+        assert!(matches!(collision, Err(Error::Conflict)));
 
         Ok(())
     }

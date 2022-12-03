@@ -1,0 +1,26 @@
+[package]
+name = "manekani-pg"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+manekani-types = { path = "../manekani-types" }
+
+tracing = "0.1.37"
+typed-builder = "0.11.0"
+thiserror = "1.0.37"
+async-trait = "0.1.58"
+
+
+serde = { version = "1.0.147", features = ["derive"] }
+sqlx = { version = "0.6.2", features = [
+    "runtime-actix-rustls",
+    "time",
+    "postgres",
+    "migrate",
+    "uuid",
+] }
+time = { version = "0.3.17", features = ["serde"] }
+uuid = { version = "1.2.2", features = ["serde"] }

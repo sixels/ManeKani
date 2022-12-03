@@ -1,24 +1,44 @@
-use crate::{
-    entities::radical::{InsertRadical, Radical},
-    repositories::{radical::RadicalRepository, RepositoryError},
+use manekani_types::repository::{RepoInsertable, RepoQueryable};
+
+use crate::entity::{
+    kanji::GetKanji,
+    radical::{GetRadical, InsertRadical, Radical, RadicalPartial},
 };
 
-pub async fn execute<R>(db: &mut R, radical: &InsertRadical) -> Result<Radical, RepositoryError>
+use super::Error;
+
+pub async fn query<R>(repo: &R, radical: GetRadical) -> Result<Radical, Error>
 where
-    R: RadicalRepository,
+    R: RepoQueryable<GetRadical, Radical>,
 {
-    db.insert(radical).await
+    Ok(repo.query(radical).await?)
+}
+
+pub async fn query_by_kanji<R>(repo: &R, kanji: GetKanji) -> Result<Vec<RadicalPartial>, Error>
+where
+    R: RepoQueryable<GetKanji, Vec<RadicalPartial>>,
+{
+    Ok(repo.query(kanji).await?)
+}
+
+pub async fn insert<R>(repo: &R, radical: InsertRadical) -> Result<Radical, Error>
+where
+    R: RepoInsertable<InsertRadical, Radical>,
+{
+    Ok(repo.insert(radical).await?)
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::repository::Repository;
+
     use super::*;
 
     use sqlx::PgPool;
 
     #[sqlx::test]
-    async fn it_should_create_a_new_radical(pool: PgPool) -> Result<(), RepositoryError> {
-        let mut conn = pool.acquire().await?;
+    async fn it_should_create_a_new_radical(pool: PgPool) -> Result<(), Error> {
+        let repo = Repository::new(pool);
 
         let radical = InsertRadical::builder()
             .name("barb")
@@ -29,7 +49,7 @@ mod tests {
             )
             .build();
 
-        let created_radical = execute(&mut conn, &radical).await?;
+        let created_radical = insert(&repo, radical.clone()).await?;
 
         assert_eq!(created_radical.name, radical.name);
         assert_eq!(&created_radical.symbol, radical.symbol.as_bytes());
@@ -41,10 +61,8 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn it_should_collide_with_an_existing_radical(
-        pool: PgPool,
-    ) -> Result<(), RepositoryError> {
-        let mut conn = pool.acquire().await?;
+    async fn it_should_collide_with_an_existing_radical(pool: PgPool) -> Result<(), Error> {
+        let repo = Repository::new(pool);
 
         let radical = InsertRadical::builder()
             .name("barb")
@@ -55,10 +73,10 @@ mod tests {
             )
             .build();
 
-        let _ = execute(&mut conn, &radical).await?;
-        let radical = execute(&mut conn, &radical).await;
+        let _ = insert(&repo, radical.clone()).await?;
+        let radical = insert(&repo, radical).await;
 
-        assert!(matches!(radical, Err(RepositoryError::Conflict)));
+        assert!(matches!(radical, Err(Error::Conflict)));
 
         Ok(())
     }

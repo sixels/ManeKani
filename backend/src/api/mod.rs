@@ -1,3 +1,4 @@
+mod error;
 mod ping;
 mod state;
 mod v1;
@@ -30,17 +31,20 @@ where
                     .service(
                         web::scope("/kanji")
                             .service(v1::kanji::get)
-                            .service(v1::kanji::create),
+                            .service(v1::kanji::create)
+                            .service(v1::kanji::from_radical),
                     )
                     .service(
                         web::scope("radical")
                             .service(v1::radical::get)
-                            .service(v1::radical::create),
+                            .service(v1::radical::create)
+                            .service(v1::radical::from_kanji),
                     )
                     .service(
                         web::scope("/vocabulary")
                             .service(v1::vocabulary::get)
-                            .service(v1::vocabulary::create),
+                            .service(v1::vocabulary::create)
+                            .service(v1::vocabulary::from_kanji),
                     ),
             )
     })

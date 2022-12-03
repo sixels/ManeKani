@@ -59,3 +59,12 @@ pub struct InsertVocabulary {
 pub struct GetVocabulary {
     pub word: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VocabularyPartial {
+    pub id: Uuid,
+    pub name: String,
+    pub reading: String,
+    pub word: String,
+    pub level: i32,
+}

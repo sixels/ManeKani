@@ -42,8 +42,16 @@ pub struct GetRadical {
     pub name: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RadicalPartial {
+    pub id: Uuid,
+    pub name: String,
+    pub symbol: Vec<u8>,
+    pub level: i32,
+}
+
 // #[cfg(test)]
-// pub(crate) fn radical_ground() -> InsertRadical {
+// pub fn radical_ground() -> InsertRadical {
 //     InsertRadical::builder()
 //         .level(1)
 //         .name("ground")
@@ -53,7 +61,7 @@ pub struct GetRadical {
 // }
 
 #[cfg(test)]
-pub(crate) fn radical_barb() -> InsertRadical {
+pub fn radical_barb() -> InsertRadical {
     InsertRadical::builder()
         .name("barb")
         .level(1)
@@ -63,7 +71,7 @@ pub(crate) fn radical_barb() -> InsertRadical {
 }
 
 // #[cfg(test)]
-// pub(crate) fn radical_slide() -> InsertRadical {
+// pub fn radical_slide() -> InsertRadical {
 //     InsertRadical::builder()
 //         .name("slide")
 //         .symbol("丿")
@@ -72,7 +80,7 @@ pub(crate) fn radical_barb() -> InsertRadical {
 // }
 
 #[cfg(test)]
-pub(crate) fn radical_middle() -> InsertRadical {
+pub fn radical_middle() -> InsertRadical {
     InsertRadical::builder()
         .name("middle")
         .level(1)
@@ -82,7 +90,7 @@ pub(crate) fn radical_middle() -> InsertRadical {
 }
 
 #[cfg(test)]
-pub(crate) fn radical_stop() -> InsertRadical {
+pub fn radical_stop() -> InsertRadical {
     InsertRadical::builder()
         .name("stop")
         .level(1)

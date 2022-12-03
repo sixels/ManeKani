@@ -69,8 +69,17 @@ pub struct GetKanji {
     pub symbol: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KanjiPartial {
+    pub id: Uuid,
+    pub name: String,
+    pub reading: String,
+    pub symbol: String,
+    pub level: i32,
+}
+
 // #[cfg(test)]
-// pub(crate) fn kanji_genius() -> InsertKanji {
+// pub fn kanji_genius() -> InsertKanji {
 //     InsertKanji::builder()
 //         .name("genius")
 //         .level(1)
@@ -84,7 +93,7 @@ pub struct GetKanji {
 // }
 
 #[cfg(test)]
-pub(crate) fn kanji_middle() -> InsertKanji {
+pub fn kanji_middle() -> InsertKanji {
     InsertKanji::builder()
         .name("middle")
         .level(1)
@@ -99,7 +108,7 @@ pub(crate) fn kanji_middle() -> InsertKanji {
 }
 
 #[cfg(test)]
-pub(crate) fn kanji_stop() -> InsertKanji {
+pub fn kanji_stop() -> InsertKanji {
     InsertKanji::builder()
         .name("stop")
         .level(1)

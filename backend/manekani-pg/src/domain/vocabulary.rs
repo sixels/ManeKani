@@ -1,20 +1,42 @@
-use crate::{
-    entities::vocabulary::{InsertVocabulary, Vocabulary},
-    repositories::{vocabulary::VocabularyRepository, RepositoryError},
+use manekani_types::repository::{RepoInsertable, RepoQueryable};
+
+use crate::entity::{
+    kanji::GetKanji,
+    vocabulary::{GetVocabulary, InsertVocabulary, Vocabulary, VocabularyPartial},
 };
 
-pub async fn execute<R>(db: &mut R, vocab: &InsertVocabulary) -> Result<Vocabulary, RepositoryError>
+use super::Error;
+
+pub async fn query<R>(repo: &R, vocab: GetVocabulary) -> Result<Vocabulary, Error>
 where
-    R: VocabularyRepository,
+    R: RepoQueryable<GetVocabulary, Vocabulary>,
 {
-    db.insert(vocab).await
+    Ok(repo.query(vocab).await?)
+}
+
+pub async fn query_by_kanji<R>(repo: &R, kanji: GetKanji) -> Result<Vec<VocabularyPartial>, Error>
+where
+    R: RepoQueryable<GetKanji, Vec<VocabularyPartial>>,
+{
+    Ok(repo.query(kanji).await?)
+}
+
+pub async fn insert<R>(repo: &R, vocabulary: InsertVocabulary) -> Result<Vocabulary, Error>
+where
+    R: RepoInsertable<InsertVocabulary, Vocabulary>,
+{
+    Ok(repo.insert(vocabulary).await?)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::entities::{
-        kanji::{kanji_middle, kanji_stop},
-        radical::{radical_middle, radical_stop},
+
+    use crate::{
+        entity::{
+            kanji::{kanji_middle, kanji_stop},
+            radical::{radical_middle, radical_stop},
+        },
+        repository::Repository,
     };
 
     use super::*;
@@ -22,18 +44,18 @@ mod tests {
     use sqlx::PgPool;
 
     #[sqlx::test]
-    async fn it_should_create_a_new_vocabulary(pool: PgPool) -> Result<(), RepositoryError> {
-        let mut conn = pool.acquire().await?;
+    async fn it_should_create_a_new_vocabulary(pool: PgPool) -> Result<(), Error> {
+        let repo = Repository::new(pool);
 
         let kanji_middle = {
-            use crate::domain::{create_kanji, create_radical};
-            let _ = create_radical::execute(&mut conn, &radical_middle()).await?;
-            create_kanji::execute(&mut conn, &kanji_middle()).await?
+            use crate::domain::{kanji, radical};
+            let _ = radical::insert(&repo, radical_middle()).await?;
+            kanji::insert(&repo, kanji_middle()).await?
         };
         let kanji_stop = {
-            use crate::domain::{create_kanji, create_radical};
-            let _ = create_radical::execute(&mut conn, &radical_stop()).await?;
-            create_kanji::execute(&mut conn, &kanji_stop()).await?
+            use crate::domain::{kanji, radical};
+            let _ = radical::insert(&repo, radical_stop()).await?;
+            kanji::insert(&repo, kanji_stop()).await?
         };
 
         let radical = InsertVocabulary::builder()
@@ -52,7 +74,7 @@ mod tests {
             .kanji_composition(vec![kanji_middle.symbol, kanji_stop.symbol])
             .build();
 
-        let created_radical = execute(&mut conn, &radical).await?;
+        let created_radical = insert(&repo, radical.clone()).await?;
 
         assert_eq!(created_radical.name, radical.name);
         assert_eq!(created_radical.word, radical.word);
@@ -67,20 +89,18 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn it_should_collide_with_an_existing_vocabulary(
-        pool: PgPool,
-    ) -> Result<(), RepositoryError> {
-        let mut conn = pool.acquire().await?;
+    async fn it_should_collide_with_an_existing_vocabulary(pool: PgPool) -> Result<(), Error> {
+        let repo = Repository::new(pool);
 
         let kanji_middle = {
-            use crate::domain::{create_kanji, create_radical};
-            let _ = create_radical::execute(&mut conn, &radical_middle()).await?;
-            create_kanji::execute(&mut conn, &kanji_middle()).await?
+            use crate::domain::{kanji, radical};
+            let _ = radical::insert(&repo, radical_middle()).await?;
+            kanji::insert(&repo, kanji_middle()).await?
         };
         let kanji_stop = {
-            use crate::domain::{create_kanji, create_radical};
-            let _ = create_radical::execute(&mut conn, &radical_stop()).await?;
-            create_kanji::execute(&mut conn, &kanji_stop()).await?
+            use crate::domain::{kanji, radical};
+            let _ = radical::insert(&repo, radical_stop()).await?;
+            kanji::insert(&repo, kanji_stop()).await?
         };
         let radical = InsertVocabulary::builder()
             .name("Suspension")
@@ -98,10 +118,10 @@ mod tests {
             .kanji_composition(vec![kanji_middle.symbol, kanji_stop.symbol])
             .build();
 
-        let _ = execute(&mut conn, &radical).await?;
-        let collision = execute(&mut conn, &radical).await;
+        let _ = insert(&repo, radical.clone()).await?;
+        let collision = insert(&repo, radical.clone()).await;
 
-        assert!(matches!(collision, Err(RepositoryError::Conflict)));
+        assert!(matches!(collision, Err(Error::Conflict)));
 
         Ok(())
     }
