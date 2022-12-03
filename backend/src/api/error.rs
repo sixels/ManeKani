@@ -7,40 +7,77 @@ use actix_web::{
 use manekani_pg::domain::Error as ManekaniDomainError;
 use serde::Serialize;
 
+#[derive(Serialize, Debug)]
+pub struct Error {
+    #[serde(skip_serializing)]
+    kind: ErrorKind,
+    pub message: String,
+}
+
+impl Error {
+    pub fn kind(&self) -> &ErrorKind {
+        &self.kind
+    }
+
+    pub fn conflict() -> Self {
+        Self {
+            kind: ErrorKind::Conflict,
+            message: String::from("Request conflicts with an already existing item"),
+        }
+    }
+
+    pub fn not_found() -> Self {
+        Self {
+            kind: ErrorKind::NotFound,
+            message: String::from("Request item not found"),
+        }
+    }
+
+    pub fn bad_request() -> Self {
+        Self {
+            kind: ErrorKind::BadRequest,
+            message: String::from("Request item is invalid"),
+        }
+    }
+
+    pub fn internal<M: Into<String>>(message: M) -> Self {
+        Self {
+            kind: ErrorKind::Internal,
+            message: message.into(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
-pub enum Error {
+pub enum ErrorKind {
     NotFound,
     Conflict,
     BadRequest,
     #[allow(unused)]
     Forbidden,
-    Internal {
-        message: String,
-    },
+    Internal,
 }
 
 impl From<ManekaniDomainError> for Error {
     fn from(error: ManekaniDomainError) -> Self {
         match error {
-            ManekaniDomainError::Conflict => Self::Conflict,
-            ManekaniDomainError::NotFound => Self::NotFound,
-            ManekaniDomainError::BadRequest => Self::BadRequest,
+            ManekaniDomainError::Conflict => Self::conflict(),
+            ManekaniDomainError::NotFound => Self::not_found(),
+            ManekaniDomainError::BadRequest => Self::bad_request(),
             // TODO: use a message for domain internal error too
-            ManekaniDomainError::Internal => Self::Internal {
-                message: String::from("Something went wrong"),
-            },
+            ManekaniDomainError::Internal => Self::internal("Something went wrong"),
         }
     }
 }
 
 impl ResponseError for Error {
     fn status_code(&self) -> StatusCode {
-        match self {
-            Self::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-            Self::BadRequest => StatusCode::BAD_REQUEST,
-            Self::Conflict => StatusCode::CONFLICT,
-            Self::NotFound => StatusCode::NOT_FOUND,
-            Self::Forbidden => StatusCode::FORBIDDEN,
+        match self.kind() {
+            ErrorKind::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+            ErrorKind::BadRequest => StatusCode::BAD_REQUEST,
+            ErrorKind::Conflict => StatusCode::CONFLICT,
+            ErrorKind::NotFound => StatusCode::NOT_FOUND,
+            ErrorKind::Forbidden => StatusCode::FORBIDDEN,
         }
     }
 
