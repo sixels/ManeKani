@@ -59,8 +59,9 @@ impl RepoInsertable<CreateFile, String> for S3Repo {
         let key = file.as_s3_key();
         let tmp = file.file;
 
-        let Ok(contents) = tmp.read_all().await else {
-            return Err(InsertError::Unknown)
+        let contents = match tmp.read_all().await {
+            Ok(contents) => contents,
+            Err(e) => return Err(InsertError::Unknown(Box::new(e))),
         };
 
         // TODO: handle errors

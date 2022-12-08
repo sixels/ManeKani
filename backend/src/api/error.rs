@@ -66,7 +66,9 @@ impl From<ManekaniDomainError> for Error {
             ManekaniDomainError::NotFound => Self::not_found(),
             ManekaniDomainError::BadRequest => Self::bad_request(),
             // TODO: use a message for domain internal error too
-            ManekaniDomainError::Internal => Self::internal("Something went wrong"),
+            ManekaniDomainError::Internal(e) => {
+                Self::internal(format!("Something went wrong: {e:?}"))
+            }
         }
     }
 }

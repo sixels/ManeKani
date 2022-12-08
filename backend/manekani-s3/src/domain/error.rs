@@ -12,7 +12,7 @@ impl From<QueryError> for Error {
     fn from(error: QueryError) -> Self {
         match error {
             QueryError::NotFound => Self::NotFound,
-            QueryError::Unknown => Self::Internal,
+            QueryError::Unknown(_) => Self::Internal,
         }
     }
 }
@@ -22,7 +22,7 @@ impl From<InsertError> for Error {
         match error {
             InsertError::Conflict => Self::Conflict,
             InsertError::BadRequest => Self::BadRequest,
-            InsertError::Unknown => Self::Internal,
+            InsertError::Unknown(_) => Self::Internal,
         }
     }
 }

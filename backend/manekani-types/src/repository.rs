@@ -2,6 +2,8 @@ pub mod error;
 
 pub use error::{DeleteError, InsertError, QueryAllError, QueryError};
 
+use self::error::UpdateError;
+
 #[async_trait::async_trait]
 pub trait RepoQueryable<Entity, Output>: Send + Sync {
     async fn query(&self, item: Entity) -> Result<Output, QueryError>;
@@ -20,4 +22,9 @@ pub trait RepoInsertable<Entity, Output>: Send + Sync {
 #[async_trait::async_trait]
 pub trait RepoDeletable<Entity, Output>: Send + Sync {
     async fn delete(&self, item: Entity) -> Result<Output, DeleteError>;
+}
+
+#[async_trait::async_trait]
+pub trait RepoUpdateable<Entity, Output>: Send + Sync {
+    async fn update(&self, item: Entity) -> Result<Output, UpdateError>;
 }
