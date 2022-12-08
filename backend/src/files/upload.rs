@@ -31,15 +31,15 @@ pub enum UploadStatus {
 }
 #[derive(Serialize)]
 pub struct UploadCreated {
-    code: u16,
-    name: String,
-    key: String,
+    pub code: u16,
+    pub name: String,
+    pub key: String,
 }
 #[derive(Serialize)]
 pub struct UploadError {
-    code: u16,
-    name: String,
-    error: Error,
+    pub code: u16,
+    pub name: String,
+    pub error: Error,
 }
 
 impl From<Result<UploadCreated, UploadError>> for UploadStatus {
