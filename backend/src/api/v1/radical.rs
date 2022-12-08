@@ -4,14 +4,17 @@ use actix_multipart::Multipart;
 use actix_web::{get, post, web, HttpResponse};
 use futures_util::StreamExt;
 use manekani_pg::{
-    domain::radical::{insert, query, query_by_kanji},
-    entity::{GetKanji, GetRadical, InsertRadical},
+    domain::radical::{insert, query, query_by_kanji, update},
+    entity::{radical::UpdateRadical, GetKanji, GetRadical, InsertRadical},
 };
 use tracing::{debug, info};
 
 use crate::{
-    api::{error::Error as ApiError, state::State},
-    files::{upload::upload_file, utils::extract_payload_files},
+    api::{self, error::Error as ApiError, state::State},
+    files::{
+        upload::{upload_file, UploadStatus},
+        utils::extract_payload_files,
+    },
 };
 
 #[get("{radical}")]
@@ -67,9 +70,29 @@ pub async fn upload_radical_symbol(
     info!("Uploading radicals symbol");
 
     let s3 = &state.s3;
+    let manekani = &state.manekani;
+
     let uploads = extract_payload_files(payload, "images/radical")
         .await
-        .map(|file| upload_file(s3, file))
+        .map(|file| async {
+            let status = upload_file(s3, file).await;
+
+            if let UploadStatus::Created(file) = &status {
+                let key = &file.key;
+                let name = &file.name;
+
+                let update_radical = UpdateRadical {
+                    name: name.clone(),
+                    symbol: Some(key.clone()),
+                    ..UpdateRadical::default()
+                };
+
+                // UPDATE RADICALS WHERE RADICAL.NAME = NAME
+                update(manekani, update_radical).await?;
+            };
+
+            Result::<UploadStatus, api::error::Error>::Ok(status)
+        })
         .buffer_unordered(5);
 
     let status = uploads.collect::<Vec<_>>().await;
