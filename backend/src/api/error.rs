@@ -5,6 +5,7 @@ use actix_web::{
     HttpResponse, ResponseError,
 };
 use manekani_pg::domain::Error as ManekaniDomainError;
+use manekani_s3::domain::Error as S3DomainError;
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
@@ -70,15 +71,33 @@ impl From<ManekaniDomainError> for Error {
     }
 }
 
-impl ResponseError for Error {
-    fn status_code(&self) -> StatusCode {
-        match self.kind() {
+impl From<S3DomainError> for Error {
+    fn from(error: S3DomainError) -> Self {
+        match error {
+            S3DomainError::Conflict => Self::conflict(),
+            S3DomainError::NotFound => Self::not_found(),
+            S3DomainError::BadRequest => Self::bad_request(),
+            // TODO: use a message for domain internal error too
+            S3DomainError::Internal => Self::internal("Something went wrong"),
+        }
+    }
+}
+
+impl From<&ErrorKind> for StatusCode {
+    fn from(error: &ErrorKind) -> Self {
+        match error {
             ErrorKind::Internal => StatusCode::INTERNAL_SERVER_ERROR,
             ErrorKind::BadRequest => StatusCode::BAD_REQUEST,
             ErrorKind::Conflict => StatusCode::CONFLICT,
             ErrorKind::NotFound => StatusCode::NOT_FOUND,
             ErrorKind::Forbidden => StatusCode::FORBIDDEN,
         }
+    }
+}
+
+impl ResponseError for Error {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::from(self.kind())
     }
 
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {

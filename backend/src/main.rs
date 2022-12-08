@@ -1,3 +1,5 @@
+use manekani::server;
+
 #[warn(clippy::pedantic)]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -5,8 +7,9 @@ async fn main() -> std::io::Result<()> {
 
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
         //
+        .log_internal_errors(true)
         .finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
-    manekani::api::serve("127.0.0.1:8081").await
+    server::serve("127.0.0.1:8081").await
 }

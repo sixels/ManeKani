@@ -1,13 +1,18 @@
 use std::sync::Arc;
 
+use actix_multipart::Multipart;
 use actix_web::{get, post, web, HttpResponse};
+use futures_util::StreamExt;
 use manekani_pg::{
     domain::radical::{insert, query, query_by_kanji},
     entity::{GetKanji, GetRadical, InsertRadical},
 };
 use tracing::{debug, info};
 
-use crate::api::{error::Error as ApiError, state::State};
+use crate::{
+    api::{error::Error as ApiError, state::State},
+    files::{upload::upload_file, utils::extract_payload_files},
+};
 
 #[get("{radical}")]
 pub async fn get(
@@ -52,4 +57,22 @@ pub async fn from_kanji(
     let radicals = query_by_kanji(&state.manekani, kanji).await?;
 
     Ok(HttpResponse::Ok().json(radicals))
+}
+
+#[post("symbol")]
+pub async fn upload_radical_symbol(
+    payload: Multipart,
+    state: web::Data<Arc<State>>,
+) -> Result<HttpResponse, ApiError> {
+    info!("Uploading radicals symbol");
+
+    let s3 = &state.s3;
+    let uploads = extract_payload_files(payload, "images/radical")
+        .await
+        .map(|file| upload_file(s3, file))
+        .buffer_unordered(5);
+
+    let status = uploads.collect::<Vec<_>>().await;
+
+    Ok(HttpResponse::MultiStatus().json(status))
 }
