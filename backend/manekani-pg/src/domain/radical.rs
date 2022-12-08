@@ -1,8 +1,8 @@
-use manekani_types::repository::{RepoInsertable, RepoQueryable};
+use manekani_types::repository::{RepoInsertable, RepoQueryable, RepoUpdateable};
 
 use crate::entity::{
     kanji::GetKanji,
-    radical::{GetRadical, InsertRadical, Radical, RadicalPartial},
+    radical::{GetRadical, InsertRadical, Radical, RadicalPartial, UpdateRadical},
 };
 
 use super::Error;
@@ -26,6 +26,13 @@ where
     R: RepoInsertable<InsertRadical, Radical>,
 {
     Ok(repo.insert(radical).await?)
+}
+
+pub async fn update<R>(repo: &R, radical: UpdateRadical) -> Result<Radical, Error>
+where
+    R: RepoUpdateable<UpdateRadical, Radical>,
+{
+    Ok(repo.update(radical).await?)
 }
 
 #[cfg(test)]

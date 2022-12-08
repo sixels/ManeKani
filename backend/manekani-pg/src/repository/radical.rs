@@ -1,8 +1,10 @@
-use manekani_types::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
+use manekani_types::repository::{
+    error::UpdateError, InsertError, QueryError, RepoInsertable, RepoQueryable, RepoUpdateable,
+};
 
 use crate::entity::{
     kanji::GetKanji,
-    radical::{GetRadical, InsertRadical, Radical, RadicalPartial},
+    radical::{GetRadical, InsertRadical, Radical, RadicalPartial, UpdateRadical},
 };
 
 use super::Repository;
@@ -42,6 +44,47 @@ impl RepoInsertable<InsertRadical, Radical> for Repository {
             level,
             symbol,
             meaning_mnemonic
+        )
+        .fetch_one(&mut conn)
+        .await?;
+
+        Ok(result)
+    }
+}
+
+#[async_trait::async_trait]
+impl RepoUpdateable<UpdateRadical, Radical> for Repository {
+    /// Update a radical information
+    async fn update(&self, radical: UpdateRadical) -> Result<Radical, UpdateError> {
+        let mut conn = self.connection().await;
+
+        let UpdateRadical {
+            name,
+            symbol,
+            level,
+            meaning_mnemonic,
+            user_synonyms,
+            user_meaning_note,
+        } = radical;
+
+        let user_synonyms = user_synonyms.as_deref();
+
+        let result = sqlx::query_as!(
+            Radical,
+            "UPDATE radicals SET 
+                symbol = COALESCE($1, symbol),
+                level = COALESCE($2, level),
+                meaning_mnemonic = COALESCE($3, meaning_mnemonic),
+                user_synonyms = COALESCE($4, user_synonyms),
+                user_meaning_note = COALESCE($5, user_meaning_note)
+            WHERE name = $6
+            RETURNING *",
+            symbol,
+            level,
+            meaning_mnemonic,
+            user_synonyms,
+            user_meaning_note,
+            name
         )
         .fetch_one(&mut conn)
         .await?;

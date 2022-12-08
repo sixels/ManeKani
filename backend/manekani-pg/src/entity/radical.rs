@@ -50,6 +50,16 @@ pub struct RadicalPartial {
     pub level: i32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct UpdateRadical {
+    pub name: String,
+    pub symbol: Option<String>,
+    pub level: Option<i32>,
+    pub meaning_mnemonic: Option<String>,
+    pub user_synonyms: Option<Vec<String>>,
+    pub user_meaning_note: Option<String>,
+}
+
 // #[cfg(test)]
 // pub fn radical_ground() -> InsertRadical {
 //     InsertRadical::builder()
