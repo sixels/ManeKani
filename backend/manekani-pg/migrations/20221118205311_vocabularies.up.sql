@@ -2,7 +2,6 @@ CREATE TABLE vocabularies (
     id uuid UNIQUE DEFAULT uuid_generate_v4 (),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
     name TEXT NOT NULL,
     level INT NOT NULL,
     alt_names TEXT [] NOT NULL,
@@ -14,12 +13,9 @@ CREATE TABLE vocabularies (
     reading_mnemonic TEXT NOT NULL,
     user_meaning_note TEXT,
     user_reading_note TEXT,
-
     -- TODO: Add context patterns and sentenses
-
     PRIMARY KEY (id)
 );
-
 -- TODO: CASCADE on UPDATE/DELETE
 CREATE TABLE vocabularies_kanjis (
     vocabulary_id uuid,
@@ -28,10 +24,6 @@ CREATE TABLE vocabularies_kanjis (
     CONSTRAINT fk_vocabulary FOREIGN KEY(vocabulary_id) REFERENCES vocabularies(id),
     CONSTRAINT fk_kanji FOREIGN KEY(kanji_symbol) REFERENCES kanjis(symbol)
 );
-
 -- update `updated_at` automatically
-
-CREATE TRIGGER update_timestamp_trigger
-BEFORE UPDATE ON vocabularies
-FOR EACH ROW
-EXECUTE PROCEDURE update_timestamp();
+CREATE TRIGGER update_timestamp_trigger BEFORE
+UPDATE ON vocabularies FOR EACH ROW EXECUTE PROCEDURE update_timestamp();
