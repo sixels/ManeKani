@@ -52,7 +52,7 @@ mod tests {
         let created_radical = insert(&repo, radical.clone()).await?;
 
         assert_eq!(created_radical.name, radical.name);
-        assert_eq!(&created_radical.symbol, radical.symbol.as_bytes());
+        assert_eq!(created_radical.symbol, radical.symbol);
         assert_eq!(created_radical.meaning_mnemonic, radical.meaning_mnemonic);
         assert_eq!(created_radical.user_synonyms, None);
         assert_eq!(created_radical.user_meaning_note, None);

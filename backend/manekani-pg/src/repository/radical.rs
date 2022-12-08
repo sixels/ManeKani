@@ -35,13 +35,6 @@ impl RepoInsertable<InsertRadical, Radical> for Repository {
             meaning_mnemonic,
         } = radical;
 
-        let symbol = if let Some('=') = symbol.chars().last() {
-            // base64::decode(symbol).unwrap()
-            todo!("We will no longer store a base64 string for images. A key-value database will be used to handle this")
-        } else {
-            symbol.clone().into_bytes()
-        };
-
         let result = sqlx::query_as!(
             Radical,
             "INSERT INTO radicals (name, level, symbol, meaning_mnemonic) VALUES ($1, $2, $3, $4) RETURNING *",

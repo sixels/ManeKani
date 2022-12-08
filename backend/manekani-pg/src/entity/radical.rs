@@ -15,7 +15,7 @@ pub struct Radical {
     /// The radical level.
     pub level: i32,
     /// The radical symbol. A utf-8 string or an image
-    pub symbol: Vec<u8>,
+    pub symbol: Option<String>,
     /// Mnemonics to help you remember the radical meaning.
     /// They are stored in a string using markdown syntax.
     pub meaning_mnemonic: String,
@@ -31,8 +31,8 @@ pub struct InsertRadical {
     #[builder(setter(into))]
     pub name: String,
     pub level: i32,
-    #[builder(setter(into))]
-    pub symbol: String,
+    #[builder(default, setter(strip_option, into))]
+    pub symbol: Option<String>,
     #[builder(setter(into))]
     pub meaning_mnemonic: String,
 }
@@ -46,7 +46,7 @@ pub struct GetRadical {
 pub struct RadicalPartial {
     pub id: Uuid,
     pub name: String,
-    pub symbol: Vec<u8>,
+    pub symbol: Option<String>,
     pub level: i32,
 }
 
