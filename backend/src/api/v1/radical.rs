@@ -87,7 +87,6 @@ pub async fn upload_radical_symbol(
                     ..UpdateRadical::default()
                 };
 
-                // UPDATE RADICALS WHERE RADICAL.NAME = NAME
                 update(manekani, update_radical).await?;
             };
 
