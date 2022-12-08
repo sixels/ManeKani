@@ -1,14 +1,20 @@
+use std::pin::Pin;
+
 pub mod error;
 
+use bytes::Bytes;
 pub use error::Error;
+use futures_util::Stream;
 use manekani_types::repository::{RepoInsertable, RepoQueryable};
 
 use crate::entity::file::{CreateFile, QueryFile};
 
-pub async fn query_file<R: RepoQueryable<QueryFile, String>>(
+pub type FileStream = Pin<Box<dyn Stream<Item = Result<Bytes, Box<dyn std::error::Error>>>>>;
+
+pub async fn query_file<R: RepoQueryable<QueryFile, (u64, FileStream)>>(
     repo: &R,
     req: QueryFile,
-) -> Result<String, Error> {
+) -> Result<(u64, FileStream), Error> {
     Ok(repo.query(req).await?)
 }
 

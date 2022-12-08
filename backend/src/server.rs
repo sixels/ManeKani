@@ -7,7 +7,10 @@ use actix_web::{
 use tracing::info;
 use tracing_actix_web::TracingLogger;
 
-use crate::api::{self, state::State};
+use crate::{
+    api::{self, state::State},
+    files,
+};
 
 pub async fn serve<A>(addr: A) -> std::io::Result<()>
 where
@@ -19,6 +22,7 @@ where
     HttpServer::new(move || {
         App::new()
             .service(api::ping::ping)
+            .service(web::scope("/files").service(files::host_proxy::images))
             .service(
                 web::scope("/api/v1")
                     .service(

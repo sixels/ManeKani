@@ -1,9 +1,11 @@
 use aws_sdk_s3::{types::ByteStream, Client as S3Client, Endpoint, Region};
-use bytes::Bytes;
-use futures_util::{Stream, TryStreamExt};
+use futures_util::TryStreamExt;
 use manekani_types::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
 
-use crate::entity::file::{CreateFile, QueryFile};
+use crate::{
+    domain::FileStream,
+    entity::file::{CreateFile, QueryFile},
+};
 
 #[derive(Clone)]
 pub struct S3Repo {
@@ -28,7 +30,6 @@ impl S3Repo {
     }
 }
 
-type FileStream = Box<dyn Stream<Item = Result<Bytes, Box<dyn std::error::Error>>>>;
 #[async_trait::async_trait]
 impl RepoQueryable<QueryFile, (u64, FileStream)> for S3Repo {
     async fn query(&self, file: QueryFile) -> Result<(u64, FileStream), QueryError> {
@@ -49,7 +50,7 @@ impl RepoQueryable<QueryFile, (u64, FileStream)> for S3Repo {
             .try_into()
             .expect("Invalid file size");
 
-        Ok((size, Box::new(object.body.map_err(Into::into))))
+        Ok((size, Box::pin(object.body.map_err(Into::into))))
     }
 }
 
