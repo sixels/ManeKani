@@ -5,12 +5,13 @@ edition = "2021"
 description = "A WaniKani clone"
 
 [dependencies]
-manekani-pg = { path = "./services/pg" }
-manekani-s3 = { path = "./services/s3" }
+manekani-service-pg = { path = "./services/pg" }
+manekani-service-s3 = { path = "./services/s3" }
+manekani-service-common = { path = "./services/common" }
 
 actix-web = "4.2.1"
 async-trait = "0.1.58"
-base64 = "0.13.1"
+base64 = "0.20.0"
 dotenvy = "0.15"
 serde = { version = "1.0.147", features = ["derive"] }
 thiserror = "1.0.37"

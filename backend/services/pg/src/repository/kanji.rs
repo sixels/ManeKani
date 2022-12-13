@@ -1,4 +1,4 @@
-use manekani_types::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
+use manekani_service_common::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
 use sqlx::Connection;
 
 use crate::entity::{

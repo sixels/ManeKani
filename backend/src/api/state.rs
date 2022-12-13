@@ -1,5 +1,5 @@
-use manekani_pg::Repository as ManeKaniRepo;
-use manekani_s3::repository::S3Repo;
+use manekani_service_pg::Repository as ManeKaniRepo;
+use manekani_service_s3::repository::S3Repo;
 use std::env;
 
 pub struct State {

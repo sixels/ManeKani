@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::{get, post, web, HttpResponse};
-use manekani_pg::{
+use manekani_service_pg::{
     domain::vocabulary::VocabularyRepository,
     entity::{GetKanji, GetVocabulary, InsertVocabulary},
 };

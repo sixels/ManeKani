@@ -1,4 +1,4 @@
-use manekani_types::repository::{RepoInsertable, RepoQueryable};
+use manekani_service_common::repository::{RepoInsertable, RepoQueryable};
 
 use crate::entity::{
     kanji::GetKanji,
@@ -50,6 +50,7 @@ mod tests {
 
     use super::*;
 
+    use manekani_service_common::repository::InsertError;
     use sqlx::PgPool;
 
     #[sqlx::test]
@@ -132,10 +133,9 @@ mod tests {
             .build();
 
         let _ = repo.insert_vocabulary(vocabulary.clone()).await?;
-        let collision = repo.insert_vocabulary(vocabulary.clone()).await;
+        let vocab = repo.insert_vocabulary(vocabulary.clone()).await;
 
-        assert!(matches!(collision, Err(Error::Conflict)));
-
+        assert!(matches!(vocab, Err(Error::Insert(InsertError::Conflict))));
         Ok(())
     }
 }

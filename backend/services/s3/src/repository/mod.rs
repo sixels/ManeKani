@@ -1,6 +1,6 @@
 use aws_sdk_s3::{types::ByteStream, Client as S3Client, Endpoint, Region};
 use futures_util::TryStreamExt;
-use manekani_types::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
+use manekani_service_common::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
 
 use crate::{
     domain::FileStream,

@@ -4,8 +4,10 @@ use actix_web::{
     http::{header::HeaderValue, StatusCode},
     HttpResponse, ResponseError,
 };
-use manekani_pg::domain::Error as ManekaniDomainError;
-use manekani_s3::domain::Error as S3DomainError;
+use manekani_service_common::repository::{
+    error::{Error as ServiceError, UpdateError},
+    DeleteError, InsertError, QueryAllError, QueryError,
+};
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
@@ -15,41 +17,7 @@ pub struct Error {
     pub message: String,
 }
 
-impl Error {
-    pub fn kind(&self) -> &ErrorKind {
-        &self.kind
-    }
-
-    pub fn conflict() -> Self {
-        Self {
-            kind: ErrorKind::Conflict,
-            message: String::from("Request conflicts with an already existing item"),
-        }
-    }
-
-    pub fn not_found() -> Self {
-        Self {
-            kind: ErrorKind::NotFound,
-            message: String::from("Request item not found"),
-        }
-    }
-
-    pub fn bad_request() -> Self {
-        Self {
-            kind: ErrorKind::BadRequest,
-            message: String::from("Request item is invalid"),
-        }
-    }
-
-    pub fn internal<M: Into<String>>(message: M) -> Self {
-        Self {
-            kind: ErrorKind::Internal,
-            message: message.into(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Copy)]
 pub enum ErrorKind {
     NotFound,
     Conflict,
@@ -59,34 +27,44 @@ pub enum ErrorKind {
     Internal,
 }
 
-impl From<ManekaniDomainError> for Error {
-    fn from(error: ManekaniDomainError) -> Self {
-        match error {
-            ManekaniDomainError::Conflict => Self::conflict(),
-            ManekaniDomainError::NotFound => Self::not_found(),
-            ManekaniDomainError::BadRequest => Self::bad_request(),
-            // TODO: use a message for domain internal error too
-            ManekaniDomainError::Internal(e) => {
-                Self::internal(format!("Something went wrong: {e:?}"))
-            }
+impl Error {
+    pub fn kind(&self) -> ErrorKind {
+        self.kind
+    }
+}
+
+impl From<ServiceError> for Error {
+    fn from(error: ServiceError) -> Self {
+        Self {
+            message: error.to_string(),
+            kind: ErrorKind::from(error),
         }
     }
 }
 
-impl From<S3DomainError> for Error {
-    fn from(error: S3DomainError) -> Self {
+impl From<ServiceError> for ErrorKind {
+    fn from(error: ServiceError) -> Self {
         match error {
-            S3DomainError::Conflict => Self::conflict(),
-            S3DomainError::NotFound => Self::not_found(),
-            S3DomainError::BadRequest => Self::bad_request(),
-            // TODO: use a message for domain internal error too
-            S3DomainError::Internal => Self::internal("Something went wrong"),
+            ServiceError::Insert(InsertError::Conflict) => Self::Conflict,
+
+            ServiceError::Delete(DeleteError::NotFound)
+            | ServiceError::Query(QueryError::NotFound)
+            | ServiceError::Update(UpdateError::NotFound) => Self::NotFound,
+
+            ServiceError::Insert(InsertError::BadRequest)
+            | ServiceError::Update(UpdateError::BadRequest) => Self::BadRequest,
+
+            ServiceError::Delete(DeleteError::Unknown(_))
+            | ServiceError::Insert(InsertError::Unknown(_))
+            | ServiceError::Query(QueryError::Unknown(_))
+            | ServiceError::QueryAll(QueryAllError::Unknown(_))
+            | ServiceError::Update(UpdateError::Unknown(_)) => Self::Internal,
         }
     }
 }
 
-impl From<&ErrorKind> for StatusCode {
-    fn from(error: &ErrorKind) -> Self {
+impl From<ErrorKind> for StatusCode {
+    fn from(error: ErrorKind) -> Self {
         match error {
             ErrorKind::Internal => StatusCode::INTERNAL_SERVER_ERROR,
             ErrorKind::BadRequest => StatusCode::BAD_REQUEST,
@@ -99,7 +77,7 @@ impl From<&ErrorKind> for StatusCode {
 
 impl ResponseError for Error {
     fn status_code(&self) -> StatusCode {
-        StatusCode::from(self.kind())
+        self.kind.into()
     }
 
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {

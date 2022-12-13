@@ -4,7 +4,7 @@ pub mod upload;
 pub mod utils {
     use actix_multipart::{Field, Multipart};
     use futures_util::{Stream, StreamExt};
-    use manekani_s3::entity::file::{FileWrapper, WrittenFile};
+    use manekani_service_s3::entity::file::{FileWrapper, WrittenFile};
     use tokio::io::AsyncWriteExt;
     use tracing::warn;
 

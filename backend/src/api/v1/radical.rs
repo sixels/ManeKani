@@ -3,7 +3,7 @@ use std::sync::Arc;
 use actix_multipart::Multipart;
 use actix_web::{get, post, web, HttpResponse};
 use futures_util::StreamExt;
-use manekani_pg::{
+use manekani_service_pg::{
     domain::radical::RadicalRepository,
     entity::{radical::UpdateRadical, GetKanji, GetRadical, InsertRadical},
 };

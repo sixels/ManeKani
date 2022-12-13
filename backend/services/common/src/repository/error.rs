@@ -1,34 +1,61 @@
-use std::error::Error;
+use std::error::Error as StdError;
 
-#[derive(Debug)]
+use thiserror::Error as ThisError;
+
+#[derive(ThisError, Debug)]
+pub enum Error {
+    #[error("query error: {0}")]
+    Query(#[from] QueryError),
+    #[error("query_all error: {0}")]
+    QueryAll(#[from] QueryAllError),
+    #[error("insert error: {0}")]
+    Insert(#[from] InsertError),
+    #[error("delete error: {0}")]
+    Delete(#[from] DeleteError),
+    #[error("update error: {0}")]
+    Update(#[from] UpdateError),
+}
+
+#[derive(ThisError, Debug)]
 pub enum QueryError {
+    #[error("could not find any item")]
     NotFound,
-    Unknown(Box<dyn Error>),
+    #[error(transparent)]
+    Unknown(#[from] Box<dyn StdError>),
 }
 
-#[derive(Debug)]
+#[derive(ThisError, Debug)]
 pub enum QueryAllError {
-    Unknown(Box<dyn Error>),
+    #[error(transparent)]
+    Unknown(#[from] Box<dyn StdError>),
 }
 
-#[derive(Debug)]
+#[derive(ThisError, Debug)]
 pub enum InsertError {
+    #[error("the item conflicts with an already existing one")]
     Conflict,
+    #[error("the item have an invalid data")]
     BadRequest,
-    Unknown(Box<dyn Error>),
+    #[error(transparent)]
+    Unknown(#[from] Box<dyn StdError>),
 }
 
-#[derive(Debug)]
+#[derive(ThisError, Debug)]
 pub enum DeleteError {
+    #[error("the item could not exist")]
     NotFound,
-    Unknown(Box<dyn Error>),
+    #[error(transparent)]
+    Unknown(#[from] Box<dyn StdError>),
 }
 
-#[derive(Debug)]
+#[derive(ThisError, Debug)]
 pub enum UpdateError {
+    #[error("the item have an invalid data")]
     BadRequest,
+    #[error("the item could not be found")]
     NotFound,
-    Unknown(Box<dyn Error>),
+    #[error(transparent)]
+    Unknown(#[from] Box<dyn StdError>),
 }
 
 impl From<sqlx::Error> for QueryError {

@@ -1,4 +1,4 @@
-use manekani_types::repository::{RepoInsertable, RepoQueryable, RepoUpdateable};
+use manekani_service_common::repository::{RepoInsertable, RepoQueryable, RepoUpdateable};
 
 use crate::entity::{
     kanji::GetKanji,
@@ -45,6 +45,7 @@ mod tests {
 
     use super::*;
 
+    use manekani_service_common::repository::InsertError;
     use sqlx::PgPool;
 
     #[sqlx::test]
@@ -87,7 +88,7 @@ mod tests {
         let _ = repo.insert_radical(radical.clone()).await?;
         let radical = repo.insert_radical(radical).await;
 
-        assert!(matches!(radical, Err(Error::Conflict)));
+        assert!(matches!(radical, Err(Error::Insert(InsertError::Conflict))));
 
         Ok(())
     }

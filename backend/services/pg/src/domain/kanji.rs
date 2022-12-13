@@ -1,4 +1,4 @@
-use manekani_types::repository::{RepoInsertable, RepoQueryable};
+use manekani_service_common::repository::{RepoInsertable, RepoQueryable};
 
 use crate::entity::{
     kanji::{GetKanji, InsertKanji, Kanji, KanjiPartial},
@@ -43,6 +43,7 @@ mod tests {
 
     use super::*;
 
+    use manekani_service_common::repository::InsertError;
     use sqlx::PgPool;
 
     #[sqlx::test]
@@ -110,9 +111,9 @@ mod tests {
             .build();
 
         let _ = repo.insert_kanji(kanji.clone()).await?;
-        let collision = repo.insert_kanji(kanji).await;
+        let kanji = repo.insert_kanji(kanji).await;
 
-        assert!(matches!(collision, Err(Error::Conflict)));
+        assert!(matches!(kanji, Err(Error::Insert(InsertError::Conflict))));
 
         Ok(())
     }

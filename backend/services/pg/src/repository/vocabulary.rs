@@ -1,4 +1,4 @@
-use manekani_types::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
+use manekani_service_common::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
 use sqlx::{postgres::PgArguments, Acquire, Arguments};
 
 use crate::entity::{

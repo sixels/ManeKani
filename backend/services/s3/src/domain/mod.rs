@@ -1,11 +1,10 @@
 use std::pin::Pin;
 
-pub mod error;
-
 use bytes::Bytes;
-pub use error::Error;
 use futures_util::Stream;
-use manekani_types::repository::{RepoInsertable, RepoQueryable};
+use manekani_service_common::repository::{
+    error::Error, InsertError, RepoInsertable, RepoQueryable,
+};
 
 use crate::entity::file::{CreateFile, QueryFile};
 
@@ -24,7 +23,7 @@ pub async fn create_file<R: RepoInsertable<CreateFile, String>>(
 ) -> Result<String, Error> {
     let file_name = req.file.name();
     if file_name.is_empty() || file_name.ends_with('/') {
-        return Err(Error::BadRequest);
+        return Err(InsertError::BadRequest.into());
     }
     Ok(repo.insert(req).await?)
 }
