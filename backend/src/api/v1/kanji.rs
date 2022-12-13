@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use actix_web::{get, post, web, HttpResponse};
 use manekani_pg::{
-    domain::kanji::{insert, query, query_by_radical},
+    domain::kanji::KanjiRepository,
     entity::{GetKanji, GetRadical, InsertKanji},
 };
 use tracing::{debug, info};
@@ -18,7 +18,7 @@ pub async fn get(
     let kanji = GetKanji { symbol };
 
     info!("Querying kanji: {}", kanji.symbol);
-    let kanji = query(&state.manekani, kanji).await?;
+    let kanji = state.manekani.query_kanji(kanji).await?;
 
     Ok(HttpResponse::Ok().json(kanji))
 }
@@ -30,7 +30,7 @@ pub async fn create(
 ) -> Result<HttpResponse, ApiError> {
     let kanji = req.into_inner();
 
-    let created = insert(&state.manekani, kanji).await?;
+    let created = state.manekani.insert_kanji(kanji).await?;
 
     debug!(
         "Created kanji '{}': {}",
@@ -49,7 +49,7 @@ pub async fn from_radical(
     let radical = GetRadical { name };
 
     info!("Searching kanjis from radical: {}", radical.name);
-    let kanjis = query_by_radical(&state.manekani, radical).await?;
+    let kanjis = state.manekani.query_kanji_by_radical(radical).await?;
 
     Ok(HttpResponse::Ok().json(kanjis))
 }

@@ -4,7 +4,7 @@ use actix_multipart::Multipart;
 use actix_web::{get, post, web, HttpResponse};
 use futures_util::StreamExt;
 use manekani_pg::{
-    domain::radical::{insert, query, query_by_kanji, update},
+    domain::radical::RadicalRepository,
     entity::{radical::UpdateRadical, GetKanji, GetRadical, InsertRadical},
 };
 use tracing::{debug, info};
@@ -26,7 +26,7 @@ pub async fn get(
     let radical = GetRadical { name };
 
     info!("Querying radical: {}", radical.name);
-    let radical = query(&state.manekani, radical).await?;
+    let radical = state.manekani.query_radical(radical).await?;
 
     Ok(HttpResponse::Ok().json(radical))
 }
@@ -38,7 +38,7 @@ pub async fn create(
 ) -> Result<HttpResponse, ApiError> {
     let radical = req.into_inner();
 
-    let created = insert(&state.manekani, radical).await?;
+    let created = state.manekani.insert_radical(radical).await?;
 
     debug!(
         "Created radical '{}': {}",
@@ -57,7 +57,7 @@ pub async fn from_kanji(
     let kanji = GetKanji { symbol };
 
     info!("Searching radicals from kanji: {}", kanji.symbol);
-    let radicals = query_by_kanji(&state.manekani, kanji).await?;
+    let radicals = state.manekani.query_radical_by_kanji(kanji).await?;
 
     Ok(HttpResponse::Ok().json(radicals))
 }
@@ -87,7 +87,7 @@ pub async fn upload_radical_symbol(
                     ..UpdateRadical::default()
                 };
 
-                update(manekani, update_radical).await?;
+                manekani.update_radical(update_radical).await?;
             };
 
             Result::<UploadStatus, api::error::Error>::Ok(status)

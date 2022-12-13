@@ -7,32 +7,36 @@ use crate::entity::{
 
 use super::Error;
 
-pub async fn query<R>(repo: &R, radical: GetRadical) -> Result<Radical, Error>
-where
-    R: RepoQueryable<GetRadical, Radical>,
+#[async_trait::async_trait]
+pub trait RadicalRepository:
+    RepoQueryable<GetRadical, Radical>
+    + RepoQueryable<GetKanji, Vec<RadicalPartial>>
+    + RepoInsertable<InsertRadical, Radical>
+    + RepoUpdateable<UpdateRadical, Radical>
 {
-    Ok(repo.query(radical).await?)
+    async fn query_radical(&self, radical: GetRadical) -> Result<Radical, Error> {
+        Ok(self.query(radical).await?)
+    }
+
+    async fn query_radical_by_kanji(&self, kanji: GetKanji) -> Result<Vec<RadicalPartial>, Error> {
+        Ok(self.query(kanji).await?)
+    }
+
+    async fn insert_radical(&self, radical: InsertRadical) -> Result<Radical, Error> {
+        Ok(self.insert(radical).await?)
+    }
+
+    async fn update_radical(&self, radical: UpdateRadical) -> Result<Radical, Error> {
+        Ok(self.update(radical).await?)
+    }
 }
 
-pub async fn query_by_kanji<R>(repo: &R, kanji: GetKanji) -> Result<Vec<RadicalPartial>, Error>
-where
-    R: RepoQueryable<GetKanji, Vec<RadicalPartial>>,
+impl<T> RadicalRepository for T where
+    T: RepoQueryable<GetRadical, Radical>
+        + RepoQueryable<GetKanji, Vec<RadicalPartial>>
+        + RepoInsertable<InsertRadical, Radical>
+        + RepoUpdateable<UpdateRadical, Radical>
 {
-    Ok(repo.query(kanji).await?)
-}
-
-pub async fn insert<R>(repo: &R, radical: InsertRadical) -> Result<Radical, Error>
-where
-    R: RepoInsertable<InsertRadical, Radical>,
-{
-    Ok(repo.insert(radical).await?)
-}
-
-pub async fn update<R>(repo: &R, radical: UpdateRadical) -> Result<Radical, Error>
-where
-    R: RepoUpdateable<UpdateRadical, Radical>,
-{
-    Ok(repo.update(radical).await?)
 }
 
 #[cfg(test)]
@@ -56,7 +60,7 @@ mod tests {
             )
             .build();
 
-        let created_radical = insert(&repo, radical.clone()).await?;
+        let created_radical = repo.insert_radical(radical.clone()).await?;
 
         assert_eq!(created_radical.name, radical.name);
         assert_eq!(created_radical.symbol, radical.symbol);
@@ -80,8 +84,8 @@ mod tests {
             )
             .build();
 
-        let _ = insert(&repo, radical.clone()).await?;
-        let radical = insert(&repo, radical).await;
+        let _ = repo.insert_radical(radical.clone()).await?;
+        let radical = repo.insert_radical(radical).await;
 
         assert!(matches!(radical, Err(Error::Conflict)));
 

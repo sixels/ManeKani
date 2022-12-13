@@ -7,25 +7,33 @@ use crate::entity::{
 
 use super::Error;
 
-pub async fn query<R>(repo: &R, kanji: GetKanji) -> Result<Kanji, Error>
-where
-    R: RepoQueryable<GetKanji, Kanji>,
+#[async_trait::async_trait]
+pub trait KanjiRepository:
+    RepoQueryable<GetKanji, Kanji>
+    + RepoQueryable<GetRadical, Vec<KanjiPartial>>
+    + RepoInsertable<InsertKanji, Kanji>
 {
-    Ok(repo.query(kanji).await?)
+    async fn query_kanji(&self, kanji: GetKanji) -> Result<Kanji, Error> {
+        Ok(self.query(kanji).await?)
+    }
+
+    async fn query_kanji_by_radical(
+        &self,
+        radical: GetRadical,
+    ) -> Result<Vec<KanjiPartial>, Error> {
+        Ok(self.query(radical).await?)
+    }
+
+    async fn insert_kanji(&self, kanji: InsertKanji) -> Result<Kanji, Error> {
+        Ok(self.insert(kanji).await?)
+    }
 }
 
-pub async fn query_by_radical<R>(repo: &R, radical: GetRadical) -> Result<Vec<KanjiPartial>, Error>
-where
-    R: RepoQueryable<GetRadical, Vec<KanjiPartial>>,
+impl<T> KanjiRepository for T where
+    T: RepoQueryable<GetKanji, Kanji>
+        + RepoQueryable<GetRadical, Vec<KanjiPartial>>
+        + RepoInsertable<InsertKanji, Kanji>
 {
-    Ok(repo.query(radical).await?)
-}
-
-pub async fn insert<R>(repo: &R, kanji: InsertKanji) -> Result<Kanji, Error>
-where
-    R: RepoInsertable<InsertKanji, Kanji>,
-{
-    Ok(repo.insert(kanji).await?)
 }
 
 #[cfg(test)]
@@ -42,8 +50,8 @@ mod tests {
         let repo = Repository::new(pool);
 
         let barb = {
-            use crate::domain::radical;
-            radical::insert(&repo, radical_barb()).await?
+            use crate::domain::radical::RadicalRepository;
+            repo.insert_radical(radical_barb()).await?
         };
 
         let kanji = InsertKanji::builder()
@@ -62,7 +70,7 @@ mod tests {
             .radical_composition(vec![barb.name])
             .build();
 
-        let created_kanji = insert(&repo, kanji.clone()).await?;
+        let created_kanji = repo.insert_kanji(kanji.clone()).await?;
 
         assert_eq!(created_kanji.name, kanji.name);
         assert_eq!(created_kanji.alt_names, kanji.alt_names);
@@ -82,10 +90,9 @@ mod tests {
         let repo = Repository::new(pool);
 
         let barb = {
-            use crate::domain::radical;
-            radical::insert(&repo, radical_barb()).await?
+            use crate::domain::radical::RadicalRepository;
+            repo.insert_radical(radical_barb()).await?
         };
-
         let kanji = InsertKanji::builder()
             .name("finish")
             .alt_names(vec!["Complete".to_owned(), "End".to_owned()])
@@ -102,8 +109,8 @@ mod tests {
             .radical_composition(vec![barb.name])
             .build();
 
-        let _ = insert(&repo, kanji.clone()).await?;
-        let collision = insert(&repo, kanji).await;
+        let _ = repo.insert_kanji(kanji.clone()).await?;
+        let collision = repo.insert_kanji(kanji).await;
 
         assert!(matches!(collision, Err(Error::Conflict)));
 

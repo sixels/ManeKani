@@ -5,8 +5,8 @@ edition = "2021"
 description = "A WaniKani clone"
 
 [dependencies]
-manekani-pg = { path = "./manekani-pg" }
-manekani-s3 = { path = "./manekani-s3" }
+manekani-pg = { path = "./services/pg" }
+manekani-s3 = { path = "./services/s3" }
 
 actix-web = "4.2.1"
 async-trait = "0.1.58"
@@ -26,4 +26,4 @@ tokio = "1.23.0"
 futures-util = "0.3.25"
 
 [workspace]
-members = ["manekani-pg", "manekani-types", "manekani-s3"]
+members = ["services/pg", "services/s3", "services/common"]

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use actix_web::{get, post, web, HttpResponse};
 use manekani_pg::{
-    domain::vocabulary::{insert, query, query_by_kanji},
+    domain::vocabulary::VocabularyRepository,
     entity::{GetKanji, GetVocabulary, InsertVocabulary},
 };
 use tracing::{debug, info};
@@ -18,7 +18,7 @@ pub async fn get(
     let vocab = GetVocabulary { word };
 
     info!("Getting vocabulary '{}'", vocab.word);
-    let vocabulary = query(&state.manekani, vocab).await?;
+    let vocabulary = state.manekani.query_vocabulary(vocab).await?;
 
     Ok(HttpResponse::Ok().json(vocabulary))
 }
@@ -30,7 +30,7 @@ pub async fn create(
 ) -> Result<HttpResponse, ApiError> {
     let vocabulary = req.into_inner();
 
-    let created = insert(&state.manekani, vocabulary).await?;
+    let created = state.manekani.insert_vocabulary(vocabulary).await?;
 
     debug!(
         "Created vocabulary '{}': '{}'",
@@ -49,7 +49,7 @@ pub async fn from_kanji(
     let kanji = GetKanji { symbol };
 
     info!("Searching vocabularies from kanji: {}", kanji.symbol);
-    let vocabularies = query_by_kanji(&state.manekani, kanji).await?;
+    let vocabularies = state.manekani.query_vocabulary_by_kanji(kanji).await?;
 
     Ok(HttpResponse::Ok().json(vocabularies))
 }
