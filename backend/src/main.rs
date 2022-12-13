@@ -6,7 +6,6 @@ async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().unwrap();
 
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
-        //
         .log_internal_errors(true)
         .finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();

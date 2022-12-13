@@ -10,7 +10,8 @@ use manekani_service_pg::{
 use tracing::{debug, info};
 
 use crate::{
-    api::{self, error::Error as ApiError, state::State},
+    api::state::State,
+    error::Error as ApiError,
     files::{
         upload::{upload_file, UploadStatus},
         utils::extract_payload_files,
@@ -90,7 +91,7 @@ pub async fn upload_radical_symbol(
                 manekani.update_radical(update_radical).await?;
             };
 
-            Result::<UploadStatus, api::error::Error>::Ok(status)
+            Result::<UploadStatus, ApiError>::Ok(status)
         })
         .buffer_unordered(5);
 

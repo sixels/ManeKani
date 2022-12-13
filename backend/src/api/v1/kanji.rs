@@ -7,7 +7,7 @@ use manekani_service_pg::{
 };
 use tracing::{debug, info};
 
-use crate::api::{error::Error as ApiError, state::State};
+use crate::{api::state::State, error::Error as ApiError};
 
 #[get("{kanji}")]
 pub async fn get(

@@ -2,7 +2,7 @@ use actix_web::http::StatusCode;
 use manekani_service_s3::{domain::create_file, entity::file::WrittenFile, S3Repo};
 use serde::Serialize;
 
-use crate::api::error::Error;
+use crate::error::Error as ApiError;
 
 pub async fn upload_file(s3: &S3Repo, file: WrittenFile) -> UploadStatus {
     let name = file.name().to_owned();
@@ -14,7 +14,7 @@ pub async fn upload_file(s3: &S3Repo, file: WrittenFile) -> UploadStatus {
             key,
         }),
         Err(e) => {
-            let error = Error::from(e);
+            let error = ApiError::from(e);
             UploadStatus::Error(UploadError {
                 code: StatusCode::from(error.kind()).as_u16(),
                 name,
@@ -39,7 +39,7 @@ pub struct UploadCreated {
 pub struct UploadError {
     pub code: u16,
     pub name: String,
-    pub error: Error,
+    pub error: ApiError,
 }
 
 impl From<Result<UploadCreated, UploadError>> for UploadStatus {
