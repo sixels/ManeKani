@@ -10,14 +10,14 @@ pub async fn upload_file(s3: &S3Repo, file: WrittenFile) -> UploadStatus {
     match create_file(s3, file.into()).await {
         Ok(key) => UploadStatus::Created(UploadCreated {
             code: StatusCode::CREATED.as_u16(),
-            name,
+            field: name,
             key,
         }),
         Err(e) => {
             let error = ApiError::from(e);
             UploadStatus::Error(UploadError {
                 code: StatusCode::from(error.kind()).as_u16(),
-                name,
+                field: name,
                 error,
             })
         }
@@ -32,13 +32,13 @@ pub enum UploadStatus {
 #[derive(Serialize)]
 pub struct UploadCreated {
     pub code: u16,
-    pub name: String,
+    pub field: String,
     pub key: String,
 }
 #[derive(Serialize)]
 pub struct UploadError {
     pub code: u16,
-    pub name: String,
+    pub field: String,
     pub error: ApiError,
 }
 
