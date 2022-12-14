@@ -1,6 +1,7 @@
+#![warn(clippy::pedantic)]
+
 use manekani::server;
 
-#[warn(clippy::pedantic)]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().unwrap();
