@@ -1,5 +1,4 @@
 use aws_sdk_s3::{types::ByteStream, Client as S3Client, Endpoint, Region};
-use futures_util::TryStreamExt;
 use manekani_service_common::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
 
 use crate::{
@@ -31,26 +30,22 @@ impl S3Repo {
 }
 
 #[async_trait::async_trait]
-impl RepoQueryable<QueryFile, (u64, FileStream)> for S3Repo {
-    async fn query(&self, file: QueryFile) -> Result<(u64, FileStream), QueryError> {
+impl RepoQueryable<QueryFile, FileStream> for S3Repo {
+    async fn query(&self, file: QueryFile) -> Result<FileStream, QueryError> {
         let key = file.as_s3_key();
 
-        // TODO: handle errors
         let object = self
             .client
             .get_object()
             .bucket(&self.bucket)
             .key(&key)
             .send()
-            .await
-            .unwrap();
+            .await?;
 
-        let size: u64 = object
-            .content_length()
-            .try_into()
-            .expect("Invalid file size");
-
-        Ok((size, Box::pin(object.body.map_err(Into::into))))
+        match object.content_length().try_into() {
+            Ok(size) => Ok(FileStream::new(object.body, size)),
+            Err(e) => Err(QueryError::Unknown(Box::new(e))),
+        }
     }
 }
 
@@ -65,15 +60,13 @@ impl RepoInsertable<CreateFile, String> for S3Repo {
             Err(e) => return Err(InsertError::Unknown(Box::new(e))),
         };
 
-        // TODO: handle errors
         self.client
             .put_object()
             .bucket(&self.bucket)
             .key(&key)
             .body(ByteStream::from(contents))
             .send()
-            .await
-            .expect("Create object");
+            .await?;
 
         Ok(key)
     }

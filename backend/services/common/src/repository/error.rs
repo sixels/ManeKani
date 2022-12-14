@@ -58,44 +58,83 @@ pub enum UpdateError {
     Unknown(#[from] Box<dyn StdError>),
 }
 
-impl From<sqlx::Error> for QueryError {
-    fn from(error: sqlx::Error) -> Self {
-        match error {
-            sqlx::Error::RowNotFound => Self::NotFound,
-            e => Self::Unknown(Box::new(e)),
+#[cfg(feature = "sqlx-errors")]
+mod sqlx_errors {
+    use super::*;
+
+    impl From<sqlx::Error> for QueryError {
+        fn from(error: sqlx::Error) -> Self {
+            match error {
+                sqlx::Error::RowNotFound => Self::NotFound,
+                e => Self::Unknown(Box::new(e)),
+            }
+        }
+    }
+
+    impl From<sqlx::Error> for QueryAllError {
+        fn from(e: sqlx::Error) -> Self {
+            Self::Unknown(Box::new(e))
+        }
+    }
+
+    impl From<sqlx::Error> for InsertError {
+        fn from(error: sqlx::Error) -> Self {
+            match error {
+                sqlx::Error::Database(d) if d.code() == Some("23505".into()) => Self::Conflict,
+                e => Self::Unknown(Box::new(e)),
+            }
+        }
+    }
+
+    impl From<sqlx::Error> for DeleteError {
+        fn from(error: sqlx::Error) -> Self {
+            match error {
+                sqlx::Error::RowNotFound => Self::NotFound,
+                e => Self::Unknown(Box::new(e)),
+            }
+        }
+    }
+
+    impl From<sqlx::Error> for UpdateError {
+        fn from(error: sqlx::Error) -> Self {
+            match error {
+                sqlx::Error::RowNotFound => Self::NotFound,
+                e => Self::Unknown(Box::new(e)),
+            }
         }
     }
 }
 
-impl From<sqlx::Error> for QueryAllError {
-    fn from(e: sqlx::Error) -> Self {
-        Self::Unknown(Box::new(e))
-    }
-}
+#[cfg(feature = "s3-errors")]
+mod s3_errors {
+    use aws_sdk_s3::{
+        error::{GetObjectError, GetObjectErrorKind, PutObjectError},
+        types::SdkError,
+    };
 
-impl From<sqlx::Error> for InsertError {
-    fn from(error: sqlx::Error) -> Self {
-        match error {
-            sqlx::Error::Database(d) if d.code() == Some("23505".into()) => Self::Conflict,
-            e => Self::Unknown(Box::new(e)),
+    use super::*;
+
+    impl From<SdkError<GetObjectError>> for QueryError {
+        fn from(error: SdkError<GetObjectError>) -> Self {
+            if let SdkError::ServiceError { err, .. } = &error {
+                if let GetObjectErrorKind::NoSuchKey(_)
+                | GetObjectErrorKind::InvalidObjectState(_) = err.kind
+                {
+                    return Self::NotFound;
+                }
+            };
+            Self::Unknown(Box::new(error))
         }
     }
-}
 
-impl From<sqlx::Error> for DeleteError {
-    fn from(error: sqlx::Error) -> Self {
-        match error {
-            sqlx::Error::RowNotFound => Self::NotFound,
-            e => Self::Unknown(Box::new(e)),
-        }
-    }
-}
-
-impl From<sqlx::Error> for UpdateError {
-    fn from(error: sqlx::Error) -> Self {
-        match error {
-            sqlx::Error::RowNotFound => Self::NotFound,
-            e => Self::Unknown(Box::new(e)),
+    impl From<SdkError<PutObjectError>> for InsertError {
+        fn from(error: SdkError<PutObjectError>) -> Self {
+            // if let SdkError::ServiceError { err, .. } = &error {
+            //     if let PutObjectErrorKind::Unhandled(e) = err.kind {
+            //         return Self(InsertError::Unknown(e));
+            //     }
+            // };
+            Self::Unknown(Box::new(error))
         }
     }
 }

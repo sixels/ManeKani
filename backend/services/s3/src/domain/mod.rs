@@ -1,19 +1,25 @@
-use std::pin::Pin;
-
-use bytes::Bytes;
-use futures_util::Stream;
+use aws_sdk_s3::types::ByteStream;
 use manekani_service_common::repository::{
     error::Error, InsertError, RepoInsertable, RepoQueryable,
 };
 
 use crate::entity::file::{CreateFile, QueryFile};
 
-pub type FileStream = Pin<Box<dyn Stream<Item = Result<Bytes, Box<dyn std::error::Error>>>>>;
+pub struct FileStream {
+    pub stream: ByteStream,
+    pub size: u64,
+}
 
-pub async fn query_file<R: RepoQueryable<QueryFile, (u64, FileStream)>>(
+impl FileStream {
+    pub fn new(stream: ByteStream, size: u64) -> Self {
+        Self { stream, size }
+    }
+}
+
+pub async fn query_file<R: RepoQueryable<QueryFile, FileStream>>(
     repo: &R,
     req: QueryFile,
-) -> Result<(u64, FileStream), Error> {
+) -> Result<FileStream, Error> {
     Ok(repo.query(req).await?)
 }
 

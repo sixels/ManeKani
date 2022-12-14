@@ -110,10 +110,12 @@ impl WrittenFile {
         Ok(Bytes::from(bytes))
     }
 
+    /// Returns a reference to the name of this [`WrittenFile`].
     pub fn name(&self) -> &str {
         self.name.as_ref()
     }
 
+    /// Returns a reference to the category of this [`WrittenFile`].
     pub fn category(&self) -> &str {
         self.category.as_ref()
     }
