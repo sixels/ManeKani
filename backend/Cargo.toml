@@ -9,22 +9,18 @@ manekani-service-pg = { path = "./services/pg" }
 manekani-service-s3 = { path = "./services/s3" }
 manekani-service-common = { path = "./services/common" }
 
-actix-web = "4.2.1"
-async-trait = "0.1.58"
-base64 = "0.20.0"
-dotenvy = "0.15"
-serde = { version = "1.0.147", features = ["derive"] }
-thiserror = "1.0.37"
-time = { version = "0.3.17", features = ["serde"] }
 tracing = "0.1.37"
 tracing-actix-web = "0.6.2"
 tracing-subscriber = "0.3.16"
-typed-builder = "0.11.0"
-uuid = { version = "1.2.2", features = ["serde", "v4"] }
+
+actix-web = "4.2.1"
+dotenvy = "0.15"
+serde = { version = "1.0.147", features = ["derive"] }
+thiserror = "1.0.37"
 serde_json = "1.0.89"
 actix-multipart = "0.4.0"
 tokio = "1.23.0"
 futures-util = "0.3.25"
 
 [workspace]
-members = ["services/pg", "services/s3", "services/common"]
+members = ["services/*"]
