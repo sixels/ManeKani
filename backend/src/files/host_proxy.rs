@@ -3,7 +3,7 @@ use std::sync::Arc;
 use actix_web::{body::SizedStream, get, web, HttpResponse};
 use manekani_service_s3::{domain::query_file, entity::file::QueryFile};
 
-use crate::{error::Error as ApiError, api::state::State};
+use crate::{api::state::State, error::Error as ApiError};
 
 #[get("images/{category}/{name}")]
 pub async fn images(
@@ -18,7 +18,7 @@ pub async fn images(
         category: format!("images/{}", slug.0),
         name: slug.1,
     };
-    let (size, stream) = query_file(s3, query).await?;
+    let fstream = query_file(s3, query).await?;
 
-    Ok(HttpResponse::Ok().body(SizedStream::new(size, stream)))
+    Ok(HttpResponse::Ok().body(SizedStream::new(fstream.size, fstream.stream)))
 }

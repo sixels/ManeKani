@@ -14,7 +14,7 @@ use crate::{
     error::Error as ApiError,
     files::{
         upload::{upload_file, UploadStatus},
-        utils::extract_payload_files,
+        util::extract_payload_files,
     },
 };
 
@@ -80,7 +80,7 @@ pub async fn upload_radical_symbol(
 
             if let UploadStatus::Created(file) = &status {
                 let key = &file.key;
-                let name = &file.name;
+                let name = &file.field;
 
                 let update_radical = UpdateRadical {
                     name: name.clone(),
