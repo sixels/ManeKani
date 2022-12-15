@@ -1,7 +1,7 @@
-use manekani_service_common::repository::{RepoInsertable, RepoQueryable};
+use manekani_service_common::repository::{RepoInsertable, RepoQueryable, RepoUpdateable};
 
 use crate::model::{
-    kanji::Partial, Kanji, KanjiPartial, ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery,
+    kanji::ReqKanjiUpdate, Kanji, KanjiPartial, ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery,
 };
 
 use super::Error;
@@ -11,6 +11,7 @@ pub trait Repository:
     RepoQueryable<ReqKanjiQuery, Kanji>
     + RepoQueryable<ReqRadicalQuery, Vec<KanjiPartial>>
     + RepoInsertable<ReqKanjiInsert, Kanji>
+    + RepoUpdateable<ReqKanjiUpdate, Kanji>
 {
     async fn query_kanji(&self, kanji: ReqKanjiQuery) -> Result<Kanji, Error> {
         Ok(self.query(kanji).await?)
@@ -26,12 +27,17 @@ pub trait Repository:
     async fn insert_kanji(&self, kanji: ReqKanjiInsert) -> Result<Kanji, Error> {
         Ok(self.insert(kanji).await?)
     }
+
+    async fn update_kanji(&self, kanji: ReqKanjiUpdate) -> Result<Kanji, Error> {
+        Ok(self.update(kanji).await?)
+    }
 }
 
 impl<T> Repository for T where
     T: RepoQueryable<ReqKanjiQuery, Kanji>
-        + RepoQueryable<ReqRadicalQuery, Vec<Partial>>
+        + RepoQueryable<ReqRadicalQuery, Vec<KanjiPartial>>
         + RepoInsertable<ReqKanjiInsert, Kanji>
+        + RepoUpdateable<ReqKanjiUpdate, Kanji>
 {
 }
 

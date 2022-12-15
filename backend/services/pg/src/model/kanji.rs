@@ -40,6 +40,15 @@ pub struct Kanji {
     pub user_reading_note: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Partial {
+    pub id: Uuid,
+    pub name: String,
+    pub reading: String,
+    pub symbol: String,
+    pub level: i32,
+}
+
 #[derive(Debug, Clone, TypedBuilder, Deserialize)]
 pub struct ReqKanjiInsert {
     #[builder(setter(into))]
@@ -61,7 +70,8 @@ pub struct ReqKanjiInsert {
     pub meaning_mnemonic: String,
     #[builder(setter(into))]
     pub reading_mnemonic: String,
-    pub radical_composition: Vec<String>,
+    #[builder(default, setter(strip_option, into))]
+    pub radical_composition: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,28 +79,28 @@ pub struct ReqKanjiQuery {
     pub symbol: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Partial {
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ReqKanjiUpdate {
     pub id: Uuid,
-    pub name: String,
-    pub reading: String,
-    pub symbol: String,
-    pub level: i32,
-}
 
-// #[cfg(test)]
-// pub fn kanji_genius() -> InsertKanji {
-//     InsertKanji::builder()
-//         .name("genius")
-//         .level(1)
-//         .symbol("才")
-//         .reading("さい")
-//         .onyomi(vec!["さい".to_owned()])
-//         .meaning_mnemonic(r#"On the ground you put barbs at the bottom of a slide because you're a genius trying to catch another genius."#)
-//         .reading_mnemonic(r#"You check your genius trap, and there's a genius stuck in the barbs! You know it's a genius because they're actually a cyborg (さい)."#)
-//         .radical_composition(vec!["ground".into(),"barb".into(), "slide".into()])
-//         .build()
-// }
+    pub symbol: Option<String>,
+    pub level: Option<i32>,
+    pub name: Option<String>,
+    pub alt_names: Option<Vec<String>>,
+    pub meaning_mnemonic: Option<String>,
+
+    pub reading: Option<String>,
+    pub reading_mnemonic: Option<String>,
+    pub onyomi: Option<Vec<String>>,
+    pub kunyomi: Option<Vec<String>>,
+    pub nanori: Option<Vec<String>>,
+
+    pub user_synonyms: Option<Vec<String>>,
+    pub user_meaning_note: Option<String>,
+    pub user_reading_note: Option<String>,
+
+    pub radical_composition: Option<Vec<String>>,
+}
 
 #[cfg(test)]
 #[must_use]
@@ -104,7 +114,7 @@ pub fn middle() -> ReqKanjiInsert {
         .kunyomi(vec!["なか".to_owned()])
         .meaning_mnemonic(r#"The radical Middle and the kanji Middle are both the same. So if you know one, you know the other."#)
         .reading_mnemonic(r#"To remember the reading for this kanji, we use the word Chewbacca to pull up ちゅう in our memory. If you remember back to the radical 中, the middle of your mouth was stabbed with a stick. You look up to see who did it. There stands Chewbacca, doing his Chewbacca yell. And it isn't a stick in your mouth, it's an arrow from his crossbow (a bowcaster, actually). It just so happens Chewbacca's bowcaster looks just like this kanji too. Go figure."#)
-        .radical_composition(vec!["middle".into()])
+        // .radical_composition(vec!["middle".into()])
         .build()
 }
 
@@ -120,6 +130,6 @@ pub fn stop() -> ReqKanjiInsert {
         .kunyomi(vec!["と".to_owned(), "や".to_owned()])
         .meaning_mnemonic(r#"The stop radical is the same as the stop kanji."#)
         .reading_mnemonic(r#"You have to stop because there is a sheep (し) in front of you. You try to walk around the sheep, but it moves to stop in front of you again. Every time the sheep stops you stop too."#)
-        .radical_composition(vec!["stop".into()])
+        // .radical_composition(vec!["stop".into()])
         .build()
 }
