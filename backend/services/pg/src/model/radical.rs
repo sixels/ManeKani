@@ -52,10 +52,13 @@ pub struct Partial {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ReqRadicalUpdate {
-    pub name: String,
+    pub id: Uuid,
+
+    pub name: Option<String>,
     pub symbol: Option<String>,
     pub level: Option<i32>,
     pub meaning_mnemonic: Option<String>,
+
     pub user_synonyms: Option<Vec<String>>,
     pub user_meaning_note: Option<String>,
 }

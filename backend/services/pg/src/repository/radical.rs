@@ -58,6 +58,7 @@ impl RepoUpdateable<ReqRadicalUpdate, Radical> for Repository {
         let mut conn = self.connection().await;
 
         let ReqRadicalUpdate {
+            id,
             name,
             symbol,
             level,
@@ -66,24 +67,24 @@ impl RepoUpdateable<ReqRadicalUpdate, Radical> for Repository {
             user_meaning_note,
         } = radical;
 
-        let user_synonyms = user_synonyms.as_deref();
-
         let result = sqlx::query_as!(
             Radical,
-            "UPDATE radicals SET 
-                symbol = COALESCE($1, symbol),
-                level = COALESCE($2, level),
-                meaning_mnemonic = COALESCE($3, meaning_mnemonic),
-                user_synonyms = COALESCE($4, user_synonyms),
-                user_meaning_note = COALESCE($5, user_meaning_note)
-            WHERE name = $6
-            RETURNING *",
+            "UPDATE radicals SET
+                    name = COALESCE($1, name),
+                    symbol = COALESCE($2, symbol),
+                    level = COALESCE($3, level),
+                    meaning_mnemonic = COALESCE($4, meaning_mnemonic),
+                    user_synonyms = COALESCE($5, user_synonyms),
+                    user_meaning_note = COALESCE($6, user_meaning_note)
+                WHERE id = $7
+                RETURNING *",
+            name,
             symbol,
             level,
             meaning_mnemonic,
-            user_synonyms,
+            user_synonyms.as_deref(),
             user_meaning_note,
-            name
+            id
         )
         .fetch_one(&mut conn)
         .await?;

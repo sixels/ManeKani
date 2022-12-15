@@ -80,15 +80,16 @@ pub async fn upload_radical_symbol(
 
             if let Status::Created(file) = &status {
                 let key = &file.key;
-                let name = &file.field;
+                let name = file.field.clone();
 
-                let update_radical = ReqRadicalUpdate {
-                    name: name.clone(),
-                    symbol: Some(key.clone()),
-                    ..ReqRadicalUpdate::default()
-                };
-
-                manekani.update_radical(update_radical).await?;
+                let radical = manekani.query_radical(ReqRadicalQuery { name }).await?;
+                manekani
+                    .update_radical(ReqRadicalUpdate {
+                        id: radical.id,
+                        symbol: Some(key.clone()),
+                        ..ReqRadicalUpdate::default()
+                    })
+                    .await?;
             };
 
             Result::<Status, ApiError>::Ok(status)
