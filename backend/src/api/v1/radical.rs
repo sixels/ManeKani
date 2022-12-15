@@ -5,7 +5,7 @@ use actix_web::{get, post, web, HttpResponse};
 use futures_util::StreamExt;
 use manekani_service_pg::{
     domain::radical::Repository,
-    entity::{ReqKanjiQuery, ReqRadicalInsert, ReqRadicalQuery, ReqRadicalUpdate},
+    model::{ReqKanjiQuery, ReqRadicalInsert, ReqRadicalQuery, ReqRadicalUpdate},
 };
 use tracing::{debug, info};
 

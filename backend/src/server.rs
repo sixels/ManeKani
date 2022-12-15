@@ -22,8 +22,6 @@ pub async fn serve<A>(addr: A) -> std::io::Result<()>
 where
     A: std::net::ToSocketAddrs + Debug,
 {
-    // let db = PgPool::connect(url)
-
     let state = Arc::new(State::new().await);
     HttpServer::new(move || {
         App::new()

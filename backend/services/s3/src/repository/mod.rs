@@ -3,7 +3,7 @@ use manekani_service_common::repository::{InsertError, QueryError, RepoInsertabl
 
 use crate::{
     domain::FileStream,
-    entity::file::{RequestCreate, RequestQuery},
+    model::file::{RequestCreate, RequestQuery},
 };
 
 #[derive(Clone)]

@@ -1,7 +1,7 @@
 use manekani_service_common::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
 use sqlx::{postgres::PgArguments, Acquire, Arguments};
 
-use crate::entity::{
+use crate::model::{
     ReqKanjiQuery, ReqVocabularyInsert, ReqVocabularyQuery, Vocabulary, VocabularyPartial,
 };
 

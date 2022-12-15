@@ -1,7 +1,7 @@
 #![warn(clippy::pedantic)]
 
 pub mod domain;
-pub mod entity;
+pub mod model;
 pub mod repository;
 
 pub use repository::Repository;

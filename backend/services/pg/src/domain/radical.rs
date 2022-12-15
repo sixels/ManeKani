@@ -1,6 +1,6 @@
 use manekani_service_common::repository::{RepoInsertable, RepoQueryable, RepoUpdateable};
 
-use crate::entity::{
+use crate::model::{
     Radical, RadicalPartial, ReqKanjiQuery, ReqRadicalInsert, ReqRadicalQuery, ReqRadicalUpdate,
 };
 
@@ -43,7 +43,7 @@ impl<T> Repository for T where
 
 #[cfg(test)]
 mod tests {
-    use crate::{domain::RadicalRepository, entity::ReqRadicalInsert, repository::Repository};
+    use crate::{domain::RadicalRepository, model::ReqRadicalInsert, repository::Repository};
 
     // use super::*;
 

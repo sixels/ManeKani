@@ -1,6 +1,6 @@
 use actix_multipart::{Field, Multipart};
 use futures_util::{Stream, StreamExt};
-use manekani_service_s3::entity::file::{Wrapper, Written};
+use manekani_service_s3::model::file::{Wrapper, Written};
 use tokio::io::AsyncWriteExt;
 use tracing::warn;
 

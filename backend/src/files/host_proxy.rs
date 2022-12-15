@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::{body::SizedStream, get, web, HttpResponse};
-use manekani_service_s3::{domain::query_file, entity::file::RequestQuery};
+use manekani_service_s3::{domain::query_file, model::file::RequestQuery};
 
 use crate::{api::state::State, error::Error as ApiError};
 

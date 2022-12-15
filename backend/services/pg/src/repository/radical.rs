@@ -2,7 +2,7 @@ use manekani_service_common::repository::{
     error::UpdateError, InsertError, QueryError, RepoInsertable, RepoQueryable, RepoUpdateable,
 };
 
-use crate::entity::{
+use crate::model::{
     Radical, RadicalPartial, ReqKanjiQuery, ReqRadicalInsert, ReqRadicalQuery, ReqRadicalUpdate,
 };
 

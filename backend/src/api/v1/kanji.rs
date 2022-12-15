@@ -3,7 +3,7 @@ use std::sync::Arc;
 use actix_web::{get, post, web, HttpResponse};
 use manekani_service_pg::{
     domain::kanji::Repository,
-    entity::{ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery},
+    model::{ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery},
 };
 use tracing::{debug, info};
 

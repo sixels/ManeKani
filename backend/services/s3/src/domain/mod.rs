@@ -3,7 +3,7 @@ use manekani_service_common::repository::{
     error::Error, InsertError, RepoInsertable, RepoQueryable,
 };
 
-use crate::entity::file::{RequestCreate, RequestQuery};
+use crate::model::file::{RequestCreate, RequestQuery};
 
 pub struct FileStream {
     pub stream: ByteStream,

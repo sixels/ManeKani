@@ -1,5 +1,5 @@
 use actix_web::http::StatusCode;
-use manekani_service_s3::{domain::create_file, entity::file::Written, S3Repo};
+use manekani_service_s3::{domain::create_file, model::file::Written, S3Repo};
 use serde::Serialize;
 
 use crate::error::Error as ApiError;

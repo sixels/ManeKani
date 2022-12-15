@@ -3,7 +3,7 @@ use std::sync::Arc;
 use actix_web::{get, post, web, HttpResponse};
 use manekani_service_pg::{
     domain::vocabulary::Repository,
-    entity::{ReqKanjiQuery, ReqVocabularyInsert, ReqVocabularyQuery},
+    model::{ReqKanjiQuery, ReqVocabularyInsert, ReqVocabularyQuery},
 };
 use tracing::{debug, info};
 

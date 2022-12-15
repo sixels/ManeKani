@@ -1,6 +1,6 @@
 use manekani_service_common::repository::{RepoInsertable, RepoQueryable};
 
-use crate::entity::{
+use crate::model::{
     ReqKanjiQuery, ReqVocabularyInsert, ReqVocabularyQuery, Vocabulary, VocabularyPartial,
 };
 
@@ -42,7 +42,7 @@ impl<T> Repository for T where
 mod tests {
 
     use crate::domain::{KanjiRepository, RadicalRepository, VocabularyRepository};
-    use crate::entity::{kanji, radical, ReqVocabularyInsert};
+    use crate::model::{kanji, radical, ReqVocabularyInsert};
     use crate::Repository;
 
     use manekani_service_common::repository::{error::Error, InsertError};

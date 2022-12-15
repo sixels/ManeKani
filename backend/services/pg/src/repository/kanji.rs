@@ -1,7 +1,7 @@
 use manekani_service_common::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
 use sqlx::Connection;
 
-use crate::entity::{Kanji, KanjiPartial, ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery};
+use crate::model::{Kanji, KanjiPartial, ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery};
 
 use super::Repository;
 

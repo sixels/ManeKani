@@ -1,6 +1,6 @@
 use manekani_service_common::repository::{RepoInsertable, RepoQueryable};
 
-use crate::entity::{
+use crate::model::{
     kanji::Partial, Kanji, KanjiPartial, ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery,
 };
 
@@ -40,7 +40,7 @@ mod tests {
 
     use crate::{
         domain::{KanjiRepository, RadicalRepository},
-        entity::{radical::barb, ReqKanjiInsert},
+        model::{radical::barb, ReqKanjiInsert},
         repository::Repository,
     };
 
