@@ -17,12 +17,12 @@ CREATE TABLE vocabularies (
     PRIMARY KEY (id)
 );
 -- TODO: CASCADE on UPDATE/DELETE
-CREATE TABLE vocabularies_kanjis (
+CREATE TABLE vocabularies_kanji (
     vocabulary_id uuid,
     kanji_symbol TEXT,
     PRIMARY KEY (vocabulary_id, kanji_symbol),
     CONSTRAINT fk_vocabulary FOREIGN KEY(vocabulary_id) REFERENCES vocabularies(id),
-    CONSTRAINT fk_kanji FOREIGN KEY(kanji_symbol) REFERENCES kanjis(symbol)
+    CONSTRAINT fk_kanji FOREIGN KEY(kanji_symbol) REFERENCES kanji(symbol)
 );
 -- update `updated_at` automatically
 CREATE TRIGGER update_timestamp_trigger BEFORE

@@ -48,8 +48,8 @@ pub async fn from_radical(
     let name = radical_name.into_inner();
     let radical = ReqRadicalQuery { name };
 
-    info!("Searching kanjis from radical: {}", radical.name);
-    let kanjis = state.manekani.query_kanji_by_radical(radical).await?;
+    info!("Searching kanji from radical: {}", radical.name);
+    let kanji = state.manekani.query_kanji_by_radical(radical).await?;
 
-    Ok(HttpResponse::Ok().json(kanjis))
+    Ok(HttpResponse::Ok().json(kanji))
 }

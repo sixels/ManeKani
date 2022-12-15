@@ -9,6 +9,7 @@ pub struct Repository {
 }
 
 impl Repository {
+    /// Creates a new [`Repository`].
     #[must_use]
     pub fn new(database: PgPool) -> Self {
         Self { database }

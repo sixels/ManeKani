@@ -65,7 +65,7 @@ impl RepoInsertable<ReqVocabularyInsert, Vocabulary> for Repository {
         .await?;
 
         let mut args = PgArguments::default();
-        let mut sql = String::from("INSERT INTO vocabularies_kanjis (vocabulary_id, kanji_symbol) SELECT v.id, k.symbol FROM vocabularies v INNER JOIN kanjis k ON v.id = $1 AND (k.symbol = $2");
+        let mut sql = String::from("INSERT INTO vocabularies_kanji (vocabulary_id, kanji_symbol) SELECT v.id, k.symbol FROM vocabularies v INNER JOIN kanji k ON v.id = $1 AND (k.symbol = $2");
         args.add(insert_vocabulary.id);
         args.add(&kanji_composition[0]);
         for (n, kanji) in kanji_composition.iter().enumerate().skip(1) {
@@ -75,7 +75,7 @@ impl RepoInsertable<ReqVocabularyInsert, Vocabulary> for Repository {
         sql.push(')');
 
         let result = sqlx::query!(
-            "INSERT INTO vocabularies_kanjis (vocabulary_id, kanji_symbol) SELECT v.id, k.symbol FROM vocabularies v INNER JOIN kanjis k ON v.id = $1 AND k.symbol = ANY($2)",
+            "INSERT INTO vocabularies_kanji (vocabulary_id, kanji_symbol) SELECT v.id, k.symbol FROM vocabularies v INNER JOIN kanji k ON v.id = $1 AND k.symbol = ANY($2)",
             insert_vocabulary.id,
             &kanji_composition
         ).execute(&mut transaction)
@@ -100,7 +100,7 @@ impl RepoQueryable<ReqKanjiQuery, Vec<VocabularyPartial>> for Repository {
         let result = sqlx::query_as!(
             VocabularyPartial,
             "SELECT id,name,word,reading,level FROM vocabularies v
-                INNER JOIN vocabularies_kanjis vk ON v.id = vk.vocabulary_id
+                INNER JOIN vocabularies_kanji vk ON v.id = vk.vocabulary_id
                 AND vk.kanji_symbol = $1",
             kanji.symbol
         )

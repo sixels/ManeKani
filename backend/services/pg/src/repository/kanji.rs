@@ -11,13 +11,9 @@ impl RepoQueryable<ReqKanjiQuery, Kanji> for Repository {
     async fn query(&self, kanji: ReqKanjiQuery) -> Result<Kanji, QueryError> {
         let mut conn = self.connection().await;
 
-        let result = sqlx::query_as!(
-            Kanji,
-            "SELECT * FROM kanjis WHERE symbol = $1",
-            kanji.symbol
-        )
-        .fetch_one(&mut conn)
-        .await?;
+        let result = sqlx::query_as!(Kanji, "SELECT * FROM kanji WHERE symbol = $1", kanji.symbol)
+            .fetch_one(&mut conn)
+            .await?;
 
         Ok(result)
     }
@@ -47,7 +43,7 @@ impl RepoInsertable<ReqKanjiInsert, Kanji> for Repository {
 
         let insert_kanji = sqlx::query_as!(
             Kanji,
-            "INSERT INTO kanjis
+            "INSERT INTO kanji
                 (name, level, alt_names, symbol, reading, onyomi, kunyomi, nanori, meaning_mnemonic, reading_mnemonic)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
             name,
@@ -65,10 +61,15 @@ impl RepoInsertable<ReqKanjiInsert, Kanji> for Repository {
         .await?;
 
         let result = sqlx::query!(
-            "INSERT INTO kanjis_radicals (kanji_symbol, radical_name) SELECT k.symbol, r.name FROM kanjis k INNER JOIN radicals r ON k.id = $1 AND r.name = ANY($2)",
+            "INSERT INTO kanji_radicals (kanji_symbol, radical_name)
+                SELECT k.symbol, r.name FROM kanji k
+                    INNER JOIN radicals r ON
+                        k.id = $1 AND r.name = ANY($2)",
             insert_kanji.id,
             &radical_composition
-        ).execute(&mut transaction).await?;
+        )
+        .execute(&mut transaction)
+        .await?;
 
         if result.rows_affected() == 0 {
             return Err(InsertError::BadRequest);
@@ -88,9 +89,9 @@ impl RepoQueryable<ReqRadicalQuery, Vec<KanjiPartial>> for Repository {
 
         let result = sqlx::query_as!(
             KanjiPartial,
-            "SELECT k.id,k.symbol,k.name,k.reading,k.level FROM kanjis k
-                INNER JOIN kanjis_radicals kr ON k.symbol = kr.kanji_symbol
-                    AND kr.radical_name = $1",
+            "SELECT k.id,k.symbol,k.name,k.reading,k.level FROM kanji k
+                INNER JOIN kanji_radicals kr ON
+                    k.symbol = kr.kanji_symbol AND kr.radical_name = $1",
             radical.name
         )
         .fetch_all(&mut conn)

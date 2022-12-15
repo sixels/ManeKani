@@ -101,7 +101,7 @@ impl RepoQueryable<ReqKanjiQuery, Vec<RadicalPartial>> for Repository {
         let result = sqlx::query_as!(
             RadicalPartial,
             "SELECT r.id,r.name,r.symbol,r.level FROM radicals r
-                INNER JOIN kanjis_radicals kr ON r.name = kr.radical_name
+                INNER JOIN kanji_radicals kr ON r.name = kr.radical_name
                     AND kr.kanji_symbol = $1",
             kanji.symbol
         )
