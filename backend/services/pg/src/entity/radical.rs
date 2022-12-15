@@ -27,7 +27,7 @@ pub struct Radical {
 
 /// A subset of `Radical` used for database insertion.
 #[derive(Debug, Clone, Default, TypedBuilder, Deserialize)]
-pub struct InsertRadical {
+pub struct ReqRadicalInsert {
     #[builder(setter(into))]
     pub name: String,
     pub level: i32,
@@ -38,12 +38,12 @@ pub struct InsertRadical {
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
-pub struct GetRadical {
+pub struct ReqRadicalQuery {
     pub name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RadicalPartial {
+pub struct Partial {
     pub id: Uuid,
     pub name: String,
     pub symbol: Option<String>,
@@ -51,7 +51,7 @@ pub struct RadicalPartial {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct UpdateRadical {
+pub struct ReqRadicalUpdate {
     pub name: String,
     pub symbol: Option<String>,
     pub level: Option<i32>,
@@ -71,8 +71,9 @@ pub struct UpdateRadical {
 // }
 
 #[cfg(test)]
-pub fn radical_barb() -> InsertRadical {
-    InsertRadical::builder()
+#[must_use]
+pub fn barb() -> ReqRadicalInsert {
+    ReqRadicalInsert::builder()
         .name("barb")
         .level(1)
         .symbol("亅")
@@ -90,8 +91,9 @@ pub fn radical_barb() -> InsertRadical {
 // }
 
 #[cfg(test)]
-pub fn radical_middle() -> InsertRadical {
-    InsertRadical::builder()
+#[must_use]
+pub fn middle() -> ReqRadicalInsert {
+    ReqRadicalInsert::builder()
         .name("middle")
         .level(1)
         .symbol("中")
@@ -100,8 +102,9 @@ pub fn radical_middle() -> InsertRadical {
 }
 
 #[cfg(test)]
-pub fn radical_stop() -> InsertRadical {
-    InsertRadical::builder()
+#[must_use]
+pub fn stop() -> ReqRadicalInsert {
+    ReqRadicalInsert::builder()
         .name("stop")
         .level(1)
         .symbol("止")

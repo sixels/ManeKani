@@ -4,8 +4,8 @@ use actix_multipart::Multipart;
 use actix_web::{get, post, web, HttpResponse};
 use futures_util::StreamExt;
 use manekani_service_pg::{
-    domain::radical::RadicalRepository,
-    entity::{radical::UpdateRadical, GetKanji, GetRadical, InsertRadical},
+    domain::radical::Repository,
+    entity::{ReqKanjiQuery, ReqRadicalInsert, ReqRadicalQuery, ReqRadicalUpdate},
 };
 use tracing::{debug, info};
 
@@ -13,7 +13,7 @@ use crate::{
     api::state::State,
     error::Error as ApiError,
     files::{
-        upload::{upload_file, UploadStatus},
+        upload::{self, Status},
         util::extract_payload_files,
     },
 };
@@ -24,7 +24,7 @@ pub async fn get(
     state: web::Data<Arc<State>>,
 ) -> Result<HttpResponse, ApiError> {
     let name = radical_name.into_inner();
-    let radical = GetRadical { name };
+    let radical = ReqRadicalQuery { name };
 
     info!("Querying radical: {}", radical.name);
     let radical = state.manekani.query_radical(radical).await?;
@@ -34,7 +34,7 @@ pub async fn get(
 
 #[post("")]
 pub async fn create(
-    req: web::Json<InsertRadical>,
+    req: web::Json<ReqRadicalInsert>,
     state: web::Data<Arc<State>>,
 ) -> Result<HttpResponse, ApiError> {
     let radical = req.into_inner();
@@ -55,7 +55,7 @@ pub async fn from_kanji(
     state: web::Data<Arc<State>>,
 ) -> Result<HttpResponse, ApiError> {
     let symbol = kanji_symbol.into_inner();
-    let kanji = GetKanji { symbol };
+    let kanji = ReqKanjiQuery { symbol };
 
     info!("Searching radicals from kanji: {}", kanji.symbol);
     let radicals = state.manekani.query_radical_by_kanji(kanji).await?;
@@ -76,22 +76,22 @@ pub async fn upload_radical_symbol(
     let uploads = extract_payload_files(payload, "images/radical")
         .await
         .map(|file| async {
-            let status = upload_file(s3, file).await;
+            let status = upload::file(s3, file).await;
 
-            if let UploadStatus::Created(file) = &status {
+            if let Status::Created(file) = &status {
                 let key = &file.key;
                 let name = &file.field;
 
-                let update_radical = UpdateRadical {
+                let update_radical = ReqRadicalUpdate {
                     name: name.clone(),
                     symbol: Some(key.clone()),
-                    ..UpdateRadical::default()
+                    ..ReqRadicalUpdate::default()
                 };
 
                 manekani.update_radical(update_radical).await?;
             };
 
-            Result::<UploadStatus, ApiError>::Ok(status)
+            Result::<Status, ApiError>::Ok(status)
         })
         .buffer_unordered(5);
 

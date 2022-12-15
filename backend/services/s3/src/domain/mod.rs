@@ -3,7 +3,7 @@ use manekani_service_common::repository::{
     error::Error, InsertError, RepoInsertable, RepoQueryable,
 };
 
-use crate::entity::file::{CreateFile, QueryFile};
+use crate::entity::file::{RequestCreate, RequestQuery};
 
 pub struct FileStream {
     pub stream: ByteStream,
@@ -16,16 +16,26 @@ impl FileStream {
     }
 }
 
-pub async fn query_file<R: RepoQueryable<QueryFile, FileStream>>(
+/// Query a file in the given repository
+///
+/// # Errors
+///
+/// This function will return an error if the query was not successful
+pub async fn query_file<R: RepoQueryable<RequestQuery, FileStream>>(
     repo: &R,
-    req: QueryFile,
+    req: RequestQuery,
 ) -> Result<FileStream, Error> {
     Ok(repo.query(req).await?)
 }
 
-pub async fn create_file<R: RepoInsertable<CreateFile, String>>(
+/// Create a file in the given repository
+///
+/// # Errors
+///
+/// This function will return an error if the insertion was not successful
+pub async fn create_file<R: RepoInsertable<RequestCreate, String>>(
     repo: &R,
-    req: CreateFile,
+    req: RequestCreate,
 ) -> Result<String, Error> {
     let file_name = req.file.name();
     if file_name.is_empty() || file_name.ends_with('/') {

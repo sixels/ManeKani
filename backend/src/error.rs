@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 
 use actix_web::{
     http::{header::HeaderValue, StatusCode},
@@ -13,12 +13,12 @@ use serde::Serialize;
 #[derive(Serialize, Debug)]
 pub struct Error {
     #[serde(skip_serializing)]
-    kind: ErrorKind,
+    pub kind: Kind,
     pub message: String,
 }
 
 #[derive(Debug, Serialize, Clone, Copy)]
-pub enum ErrorKind {
+pub enum Kind {
     NotFound,
     Conflict,
     BadRequest,
@@ -27,22 +27,16 @@ pub enum ErrorKind {
     Internal,
 }
 
-impl Error {
-    pub fn kind(&self) -> ErrorKind {
-        self.kind
-    }
-}
-
 impl From<ServiceError> for Error {
     fn from(error: ServiceError) -> Self {
         Self {
             message: error.to_string(),
-            kind: ErrorKind::from(error),
+            kind: Kind::from(error),
         }
     }
 }
 
-impl From<ServiceError> for ErrorKind {
+impl From<ServiceError> for Kind {
     fn from(error: ServiceError) -> Self {
         match error {
             ServiceError::Insert(InsertError::Conflict) => Self::Conflict,
@@ -63,14 +57,14 @@ impl From<ServiceError> for ErrorKind {
     }
 }
 
-impl From<ErrorKind> for StatusCode {
-    fn from(error: ErrorKind) -> Self {
+impl From<Kind> for StatusCode {
+    fn from(error: Kind) -> Self {
         match error {
-            ErrorKind::Internal => StatusCode::INTERNAL_SERVER_ERROR,
-            ErrorKind::BadRequest => StatusCode::BAD_REQUEST,
-            ErrorKind::Conflict => StatusCode::CONFLICT,
-            ErrorKind::NotFound => StatusCode::NOT_FOUND,
-            ErrorKind::Forbidden => StatusCode::FORBIDDEN,
+            Kind::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+            Kind::BadRequest => StatusCode::BAD_REQUEST,
+            Kind::Conflict => StatusCode::CONFLICT,
+            Kind::NotFound => StatusCode::NOT_FOUND,
+            Kind::Forbidden => StatusCode::FORBIDDEN,
         }
     }
 }
@@ -84,7 +78,6 @@ impl ResponseError for Error {
         let mut res = HttpResponse::new(self.status_code());
 
         let mut buf = actix_web::web::BytesMut::new();
-        use std::fmt::Write;
         let _ = write!(&mut buf, "{}", self);
 
         let mime = HeaderValue::from_static("application/json");

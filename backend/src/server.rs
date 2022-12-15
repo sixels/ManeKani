@@ -12,6 +12,12 @@ use crate::{
     files,
 };
 
+/// Start the server listening at the given address
+///
+/// # Errors
+///
+/// This function will return an error if the address is already being used or
+/// an IO error occurred
 pub async fn serve<A>(addr: A) -> std::io::Result<()>
 where
     A: std::net::ToSocketAddrs + Debug,

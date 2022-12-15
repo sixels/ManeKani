@@ -1,17 +1,14 @@
 use manekani_service_common::repository::{InsertError, QueryError, RepoInsertable, RepoQueryable};
 use sqlx::Connection;
 
-use crate::entity::{
-    kanji::{GetKanji, InsertKanji, Kanji, KanjiPartial},
-    radical::GetRadical,
-};
+use crate::entity::{Kanji, KanjiPartial, ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery};
 
 use super::Repository;
 
 #[async_trait::async_trait]
-impl RepoQueryable<GetKanji, Kanji> for Repository {
+impl RepoQueryable<ReqKanjiQuery, Kanji> for Repository {
     /// Query a kanji
-    async fn query(&self, kanji: GetKanji) -> Result<Kanji, QueryError> {
+    async fn query(&self, kanji: ReqKanjiQuery) -> Result<Kanji, QueryError> {
         let mut conn = self.connection().await;
 
         let result = sqlx::query_as!(
@@ -27,12 +24,12 @@ impl RepoQueryable<GetKanji, Kanji> for Repository {
 }
 
 #[async_trait::async_trait]
-impl RepoInsertable<InsertKanji, Kanji> for Repository {
+impl RepoInsertable<ReqKanjiInsert, Kanji> for Repository {
     /// Insert a kanji
-    async fn insert(&self, kanji: InsertKanji) -> Result<Kanji, InsertError> {
+    async fn insert(&self, kanji: ReqKanjiInsert) -> Result<Kanji, InsertError> {
         let mut conn = self.connection().await;
 
-        let InsertKanji {
+        let ReqKanjiInsert {
             name,
             level,
             alt_names,
@@ -84,9 +81,9 @@ impl RepoInsertable<InsertKanji, Kanji> for Repository {
 }
 
 #[async_trait::async_trait]
-impl RepoQueryable<GetRadical, Vec<KanjiPartial>> for Repository {
+impl RepoQueryable<ReqRadicalQuery, Vec<KanjiPartial>> for Repository {
     /// Query a kanji by radical
-    async fn query(&self, radical: GetRadical) -> Result<Vec<KanjiPartial>, QueryError> {
+    async fn query(&self, radical: ReqRadicalQuery) -> Result<Vec<KanjiPartial>, QueryError> {
         let mut conn = self.connection().await;
 
         let result = sqlx::query_as!(

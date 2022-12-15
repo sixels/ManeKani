@@ -1,20 +1,24 @@
 use actix_multipart::{Field, Multipart};
 use futures_util::{Stream, StreamExt};
-use manekani_service_s3::entity::file::{FileWrapper, WrittenFile};
+use manekani_service_s3::entity::file::{Wrapper, Written};
 use tokio::io::AsyncWriteExt;
 use tracing::warn;
 
+/// Extract all files from the given payload
+#[allow(clippy::unused_async)]
 pub async fn extract_payload_files(
     payload: Multipart,
     category: &'static str,
-) -> impl Stream<Item = WrittenFile> {
-    payload.filter_map(|item| {
-        let field = item.expect("split_payload err");
-        payload_file(field, category)
+) -> impl Stream<Item = Written> {
+    payload.filter_map(|item| async {
+        let Ok(field) = item else {
+            return None
+        };
+        payload_file(field, category).await
     })
 }
 
-async fn payload_file(mut field: Field, category: &'static str) -> Option<WrittenFile> {
+async fn payload_file(mut field: Field, category: &'static str) -> Option<Written> {
     let cd = field.content_disposition();
 
     let Some(field_name) = cd.get_name() else {
@@ -29,7 +33,7 @@ async fn payload_file(mut field: Field, category: &'static str) -> Option<Writte
         return None;
     };
 
-    let mut file = FileWrapper::create().await.unwrap();
+    let mut file = Wrapper::create().await.unwrap();
 
     // stream field contents to file
     while let Some(chunk) = field.next().await {

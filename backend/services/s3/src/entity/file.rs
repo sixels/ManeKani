@@ -1,34 +1,34 @@
 use std::{
     io,
     path::{Path, PathBuf},
-    str::FromStr,
 };
 
 use bytes::Bytes;
 use tokio::{fs::File, io::AsyncReadExt};
 use uuid::Uuid;
 
-pub struct QueryFile {
+pub struct RequestQuery {
     pub category: String,
     pub name: String,
 }
 
-pub struct CreateFile {
-    pub file: WrittenFile,
+pub struct RequestCreate {
+    pub file: Written,
 }
 
-pub struct DeleteFile {
+pub struct RequestDelete {
     pub name: String,
 }
 
-impl QueryFile {
+impl RequestQuery {
     pub(crate) fn as_s3_key(&self) -> String {
         s3_key(&self.category, &self.name)
     }
 }
 
-impl CreateFile {
-    pub fn new(file: WrittenFile) -> Self {
+impl RequestCreate {
+    #[must_use]
+    pub fn new(file: Written) -> Self {
         Self { file }
     }
 
@@ -47,21 +47,29 @@ fn s3_key(category: &str, name: &str) -> String {
     format!("{}/{}", category, name)
 }
 
-pub struct FileWrapper {
+pub struct Wrapper {
     path: PathBuf,
     handle: File,
 }
 
-pub struct WrittenFile {
+pub struct Written {
     path: PathBuf,
     name: String,
     category: String,
     size: u64,
 }
 
-impl FileWrapper {
+impl Wrapper {
+    /// Create a new `File` wrapper, used to create temporary files
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if:
+    /// - It could not create a temporary directory under /tmp
+    /// - The file could not be created in the temporary directory
+    /// - An IO error occurred
     pub async fn create() -> io::Result<Self> {
-        let base = PathBuf::from_str("/tmp/manekani/").unwrap();
+        let base = PathBuf::from("/tmp/manekani/");
 
         tokio::fs::create_dir_all(&base).await?;
 
@@ -76,11 +84,8 @@ impl FileWrapper {
         self.path.as_path()
     }
 
-    pub async fn finish<C: Into<String>, N: Into<String>>(
-        self,
-        category: C,
-        name: N,
-    ) -> WrittenFile {
+    /// Finish writing the file, returning a [`WrittenFile`]
+    pub async fn finish<C: Into<String>, N: Into<String>>(self, category: C, name: N) -> Written {
         let path = self.path;
         let size = self
             .handle
@@ -91,7 +96,7 @@ impl FileWrapper {
 
         drop(self.handle);
 
-        WrittenFile {
+        Written {
             size,
             category: category.into(),
             name: name.into(),
@@ -100,7 +105,14 @@ impl FileWrapper {
     }
 }
 
-impl WrittenFile {
+impl Written {
+    /// Read the file and return its contents.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the file was not found (or the
+    /// user is not allowed to read the file) or another IO error occured
+    #[allow(clippy::cast_possible_truncation)]
     pub async fn read_all(&self) -> io::Result<Bytes> {
         let mut file = tokio::fs::File::open(&self.path).await?;
 
@@ -111,23 +123,25 @@ impl WrittenFile {
     }
 
     /// Returns a reference to the name of this [`WrittenFile`].
+    #[must_use]
     pub fn name(&self) -> &str {
         self.name.as_ref()
     }
 
     /// Returns a reference to the category of this [`WrittenFile`].
+    #[must_use]
     pub fn category(&self) -> &str {
         self.category.as_ref()
     }
 }
 
-impl From<WrittenFile> for CreateFile {
-    fn from(val: WrittenFile) -> Self {
-        CreateFile { file: val }
+impl From<Written> for RequestCreate {
+    fn from(val: Written) -> Self {
+        RequestCreate { file: val }
     }
 }
 
-impl std::ops::Deref for FileWrapper {
+impl std::ops::Deref for Wrapper {
     type Target = File;
 
     fn deref(&self) -> &Self::Target {
@@ -135,13 +149,13 @@ impl std::ops::Deref for FileWrapper {
     }
 }
 
-impl std::ops::DerefMut for FileWrapper {
+impl std::ops::DerefMut for Wrapper {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.handle
     }
 }
 
-impl Drop for WrittenFile {
+impl Drop for Written {
     fn drop(&mut self) {
         std::fs::remove_file(&self.path).ok();
     }

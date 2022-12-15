@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use actix_web::{get, post, web, HttpResponse};
 use manekani_service_pg::{
-    domain::vocabulary::VocabularyRepository,
-    entity::{GetKanji, GetVocabulary, InsertVocabulary},
+    domain::vocabulary::Repository,
+    entity::{ReqKanjiQuery, ReqVocabularyInsert, ReqVocabularyQuery},
 };
 use tracing::{debug, info};
 
@@ -15,7 +15,7 @@ pub async fn get(
     state: web::Data<Arc<State>>,
 ) -> Result<HttpResponse, ApiError> {
     let word = vocabulary_word.into_inner();
-    let vocab = GetVocabulary { word };
+    let vocab = ReqVocabularyQuery { word };
 
     info!("Getting vocabulary '{}'", vocab.word);
     let vocabulary = state.manekani.query_vocabulary(vocab).await?;
@@ -25,7 +25,7 @@ pub async fn get(
 
 #[post("")]
 pub async fn create(
-    req: web::Json<InsertVocabulary>,
+    req: web::Json<ReqVocabularyInsert>,
     state: web::Data<Arc<State>>,
 ) -> Result<HttpResponse, ApiError> {
     let vocabulary = req.into_inner();
@@ -46,7 +46,7 @@ pub async fn from_kanji(
     state: web::Data<Arc<State>>,
 ) -> Result<HttpResponse, ApiError> {
     let symbol = kanji_symbol.into_inner();
-    let kanji = GetKanji { symbol };
+    let kanji = ReqKanjiQuery { symbol };
 
     info!("Searching vocabularies from kanji: {}", kanji.symbol);
     let vocabularies = state.manekani.query_vocabulary_by_kanji(kanji).await?;

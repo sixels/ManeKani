@@ -1,58 +1,60 @@
 use manekani_service_common::repository::{RepoInsertable, RepoQueryable, RepoUpdateable};
 
 use crate::entity::{
-    kanji::GetKanji,
-    radical::{GetRadical, InsertRadical, Radical, RadicalPartial, UpdateRadical},
+    Radical, RadicalPartial, ReqKanjiQuery, ReqRadicalInsert, ReqRadicalQuery, ReqRadicalUpdate,
 };
 
 use super::Error;
 
 #[async_trait::async_trait]
-pub trait RadicalRepository:
-    RepoQueryable<GetRadical, Radical>
-    + RepoQueryable<GetKanji, Vec<RadicalPartial>>
-    + RepoInsertable<InsertRadical, Radical>
-    + RepoUpdateable<UpdateRadical, Radical>
+pub trait Repository:
+    RepoQueryable<ReqRadicalQuery, Radical>
+    + RepoQueryable<ReqKanjiQuery, Vec<RadicalPartial>>
+    + RepoInsertable<ReqRadicalInsert, Radical>
+    + RepoUpdateable<ReqRadicalUpdate, Radical>
 {
-    async fn query_radical(&self, radical: GetRadical) -> Result<Radical, Error> {
+    async fn query_radical(&self, radical: ReqRadicalQuery) -> Result<Radical, Error> {
         Ok(self.query(radical).await?)
     }
 
-    async fn query_radical_by_kanji(&self, kanji: GetKanji) -> Result<Vec<RadicalPartial>, Error> {
+    async fn query_radical_by_kanji(
+        &self,
+        kanji: ReqKanjiQuery,
+    ) -> Result<Vec<RadicalPartial>, Error> {
         Ok(self.query(kanji).await?)
     }
 
-    async fn insert_radical(&self, radical: InsertRadical) -> Result<Radical, Error> {
+    async fn insert_radical(&self, radical: ReqRadicalInsert) -> Result<Radical, Error> {
         Ok(self.insert(radical).await?)
     }
 
-    async fn update_radical(&self, radical: UpdateRadical) -> Result<Radical, Error> {
+    async fn update_radical(&self, radical: ReqRadicalUpdate) -> Result<Radical, Error> {
         Ok(self.update(radical).await?)
     }
 }
 
-impl<T> RadicalRepository for T where
-    T: RepoQueryable<GetRadical, Radical>
-        + RepoQueryable<GetKanji, Vec<RadicalPartial>>
-        + RepoInsertable<InsertRadical, Radical>
-        + RepoUpdateable<UpdateRadical, Radical>
+impl<T> Repository for T where
+    T: RepoQueryable<ReqRadicalQuery, Radical>
+        + RepoQueryable<ReqKanjiQuery, Vec<RadicalPartial>>
+        + RepoInsertable<ReqRadicalInsert, Radical>
+        + RepoUpdateable<ReqRadicalUpdate, Radical>
 {
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::repository::Repository;
+    use crate::{domain::RadicalRepository, entity::ReqRadicalInsert, repository::Repository};
 
-    use super::*;
+    // use super::*;
 
-    use manekani_service_common::repository::InsertError;
+    use manekani_service_common::repository::{error::Error, InsertError};
     use sqlx::PgPool;
 
     #[sqlx::test]
     async fn it_should_create_a_new_radical(pool: PgPool) -> Result<(), Error> {
         let repo = Repository::new(pool);
 
-        let radical = InsertRadical::builder()
+        let radical = ReqRadicalInsert::builder()
             .name("barb")
             .level(1)
             .symbol("亅")
@@ -76,7 +78,7 @@ mod tests {
     async fn it_should_collide_with_an_existing_radical(pool: PgPool) -> Result<(), Error> {
         let repo = Repository::new(pool);
 
-        let radical = InsertRadical::builder()
+        let radical = ReqRadicalInsert::builder()
             .name("barb")
             .level(1)
             .symbol("亅")
@@ -85,7 +87,7 @@ mod tests {
             )
             .build();
 
-        let _ = repo.insert_radical(radical.clone()).await?;
+        repo.insert_radical(radical.clone()).await?;
         let radical = repo.insert_radical(radical).await;
 
         assert!(matches!(radical, Err(Error::Insert(InsertError::Conflict))));

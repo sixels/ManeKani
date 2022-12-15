@@ -41,7 +41,7 @@ pub struct Kanji {
 }
 
 #[derive(Debug, Clone, TypedBuilder, Deserialize)]
-pub struct InsertKanji {
+pub struct ReqKanjiInsert {
     #[builder(setter(into))]
     pub name: String,
     pub level: i32,
@@ -65,12 +65,12 @@ pub struct InsertKanji {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GetKanji {
+pub struct ReqKanjiQuery {
     pub symbol: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KanjiPartial {
+pub struct Partial {
     pub id: Uuid,
     pub name: String,
     pub reading: String,
@@ -93,8 +93,9 @@ pub struct KanjiPartial {
 // }
 
 #[cfg(test)]
-pub fn kanji_middle() -> InsertKanji {
-    InsertKanji::builder()
+#[must_use]
+pub fn middle() -> ReqKanjiInsert {
+    ReqKanjiInsert::builder()
         .name("middle")
         .level(1)
         .symbol("中")
@@ -108,8 +109,9 @@ pub fn kanji_middle() -> InsertKanji {
 }
 
 #[cfg(test)]
-pub fn kanji_stop() -> InsertKanji {
-    InsertKanji::builder()
+#[must_use]
+pub fn stop() -> ReqKanjiInsert {
+    ReqKanjiInsert::builder()
         .name("stop")
         .level(1)
         .symbol("止")

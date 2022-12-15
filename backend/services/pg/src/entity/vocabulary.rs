@@ -37,7 +37,7 @@ pub struct Vocabulary {
 }
 
 #[derive(Debug, Clone, TypedBuilder, Deserialize)]
-pub struct InsertVocabulary {
+pub struct ReqVocabularyInsert {
     #[builder(setter(into))]
     pub name: String,
     pub level: i32,
@@ -56,12 +56,12 @@ pub struct InsertVocabulary {
 }
 
 #[derive(Debug, Clone, TypedBuilder, Deserialize)]
-pub struct GetVocabulary {
+pub struct ReqVocabularyQuery {
     pub word: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VocabularyPartial {
+pub struct Partial {
     pub id: Uuid,
     pub name: String,
     pub reading: String,

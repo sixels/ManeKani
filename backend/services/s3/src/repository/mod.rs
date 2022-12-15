@@ -3,7 +3,7 @@ use manekani_service_common::repository::{InsertError, QueryError, RepoInsertabl
 
 use crate::{
     domain::FileStream,
-    entity::file::{CreateFile, QueryFile},
+    entity::file::{RequestCreate, RequestQuery},
 };
 
 #[derive(Clone)]
@@ -13,6 +13,11 @@ pub struct S3Repo {
 }
 
 impl S3Repo {
+    /// Creates a new S3 repository
+    ///
+    /// # Panics
+    ///
+    /// Panics if the s3 configuration is not valid
     pub async fn new(bucket_name: String) -> Self {
         let region = Region::from_static("sa-east-1");
         let endpoint = Endpoint::immutable("http://127.0.0.1:9000".try_into().unwrap());
@@ -30,8 +35,8 @@ impl S3Repo {
 }
 
 #[async_trait::async_trait]
-impl RepoQueryable<QueryFile, FileStream> for S3Repo {
-    async fn query(&self, file: QueryFile) -> Result<FileStream, QueryError> {
+impl RepoQueryable<RequestQuery, FileStream> for S3Repo {
+    async fn query(&self, file: RequestQuery) -> Result<FileStream, QueryError> {
         let key = file.as_s3_key();
 
         let object = self
@@ -50,8 +55,8 @@ impl RepoQueryable<QueryFile, FileStream> for S3Repo {
 }
 
 #[async_trait::async_trait]
-impl RepoInsertable<CreateFile, String> for S3Repo {
-    async fn insert(&self, file: CreateFile) -> Result<String, InsertError> {
+impl RepoInsertable<RequestCreate, String> for S3Repo {
+    async fn insert(&self, file: RequestCreate) -> Result<String, InsertError> {
         let key = file.as_s3_key();
         let tmp = file.file;
 

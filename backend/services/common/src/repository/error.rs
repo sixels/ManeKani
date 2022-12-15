@@ -60,7 +60,7 @@ pub enum UpdateError {
 
 #[cfg(feature = "sqlx-errors")]
 mod sqlx_errors {
-    use super::*;
+    use super::{DeleteError, InsertError, QueryAllError, QueryError, UpdateError};
 
     impl From<sqlx::Error> for QueryError {
         fn from(error: sqlx::Error) -> Self {
@@ -107,12 +107,12 @@ mod sqlx_errors {
 
 #[cfg(feature = "s3-errors")]
 mod s3_errors {
+    use super::{InsertError, QueryError};
+
     use aws_sdk_s3::{
         error::{GetObjectError, GetObjectErrorKind, PutObjectError},
         types::SdkError,
     };
-
-    use super::*;
 
     impl From<SdkError<GetObjectError>> for QueryError {
         fn from(error: SdkError<GetObjectError>) -> Self {

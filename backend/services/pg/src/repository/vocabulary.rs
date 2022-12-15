@@ -2,19 +2,18 @@ use manekani_service_common::repository::{InsertError, QueryError, RepoInsertabl
 use sqlx::{postgres::PgArguments, Acquire, Arguments};
 
 use crate::entity::{
-    vocabulary::{GetVocabulary, InsertVocabulary, Vocabulary},
-    GetKanji, VocabularyPartial,
+    ReqKanjiQuery, ReqVocabularyInsert, ReqVocabularyQuery, Vocabulary, VocabularyPartial,
 };
 
 use super::Repository;
 
 #[async_trait::async_trait]
-impl RepoQueryable<GetVocabulary, Vocabulary> for Repository {
+impl RepoQueryable<ReqVocabularyQuery, Vocabulary> for Repository {
     /// Query a vocabulary
-    async fn query(&self, vocab: GetVocabulary) -> Result<Vocabulary, QueryError> {
+    async fn query(&self, vocab: ReqVocabularyQuery) -> Result<Vocabulary, QueryError> {
         let mut conn = self.connection().await;
 
-        let GetVocabulary { word } = vocab;
+        let ReqVocabularyQuery { word } = vocab;
 
         let result = sqlx::query_as!(
             Vocabulary,
@@ -29,12 +28,12 @@ impl RepoQueryable<GetVocabulary, Vocabulary> for Repository {
 }
 
 #[async_trait::async_trait]
-impl RepoInsertable<InsertVocabulary, Vocabulary> for Repository {
+impl RepoInsertable<ReqVocabularyInsert, Vocabulary> for Repository {
     /// Query a vocabulary
-    async fn insert(&self, vocab: InsertVocabulary) -> Result<Vocabulary, InsertError> {
+    async fn insert(&self, vocab: ReqVocabularyInsert) -> Result<Vocabulary, InsertError> {
         let mut conn = self.connection().await;
 
-        let InsertVocabulary {
+        let ReqVocabularyInsert {
             name,
             level,
             alt_names,
@@ -93,9 +92,9 @@ impl RepoInsertable<InsertVocabulary, Vocabulary> for Repository {
 }
 
 #[async_trait::async_trait]
-impl RepoQueryable<GetKanji, Vec<VocabularyPartial>> for Repository {
+impl RepoQueryable<ReqKanjiQuery, Vec<VocabularyPartial>> for Repository {
     /// Query a vocabulary by kanji
-    async fn query(&self, kanji: GetKanji) -> Result<Vec<VocabularyPartial>, QueryError> {
+    async fn query(&self, kanji: ReqKanjiQuery) -> Result<Vec<VocabularyPartial>, QueryError> {
         let mut conn = self.connection().await;
 
         let result = sqlx::query_as!(

@@ -1,61 +1,58 @@
 use manekani_service_common::repository::{RepoInsertable, RepoQueryable};
 
 use crate::entity::{
-    kanji::{GetKanji, InsertKanji, Kanji, KanjiPartial},
-    radical::GetRadical,
+    kanji::Partial, Kanji, KanjiPartial, ReqKanjiInsert, ReqKanjiQuery, ReqRadicalQuery,
 };
 
 use super::Error;
 
 #[async_trait::async_trait]
-pub trait KanjiRepository:
-    RepoQueryable<GetKanji, Kanji>
-    + RepoQueryable<GetRadical, Vec<KanjiPartial>>
-    + RepoInsertable<InsertKanji, Kanji>
+pub trait Repository:
+    RepoQueryable<ReqKanjiQuery, Kanji>
+    + RepoQueryable<ReqRadicalQuery, Vec<KanjiPartial>>
+    + RepoInsertable<ReqKanjiInsert, Kanji>
 {
-    async fn query_kanji(&self, kanji: GetKanji) -> Result<Kanji, Error> {
+    async fn query_kanji(&self, kanji: ReqKanjiQuery) -> Result<Kanji, Error> {
         Ok(self.query(kanji).await?)
     }
 
     async fn query_kanji_by_radical(
         &self,
-        radical: GetRadical,
+        radical: ReqRadicalQuery,
     ) -> Result<Vec<KanjiPartial>, Error> {
         Ok(self.query(radical).await?)
     }
 
-    async fn insert_kanji(&self, kanji: InsertKanji) -> Result<Kanji, Error> {
+    async fn insert_kanji(&self, kanji: ReqKanjiInsert) -> Result<Kanji, Error> {
         Ok(self.insert(kanji).await?)
     }
 }
 
-impl<T> KanjiRepository for T where
-    T: RepoQueryable<GetKanji, Kanji>
-        + RepoQueryable<GetRadical, Vec<KanjiPartial>>
-        + RepoInsertable<InsertKanji, Kanji>
+impl<T> Repository for T where
+    T: RepoQueryable<ReqKanjiQuery, Kanji>
+        + RepoQueryable<ReqRadicalQuery, Vec<Partial>>
+        + RepoInsertable<ReqKanjiInsert, Kanji>
 {
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::{entity::radical::radical_barb, repository::Repository};
+    use crate::{
+        domain::{KanjiRepository, RadicalRepository},
+        entity::{radical::barb, ReqKanjiInsert},
+        repository::Repository,
+    };
 
-    use super::*;
-
-    use manekani_service_common::repository::InsertError;
+    use manekani_service_common::repository::{error::Error, InsertError};
     use sqlx::PgPool;
 
     #[sqlx::test]
     async fn it_should_create_a_new_kanji(pool: PgPool) -> Result<(), Error> {
         let repo = Repository::new(pool);
 
-        let barb = {
-            use crate::domain::radical::RadicalRepository;
-            repo.insert_radical(radical_barb()).await?
-        };
-
-        let kanji = InsertKanji::builder()
+        let barb = repo.insert_radical(barb()).await?;
+        let kanji = ReqKanjiInsert::builder()
             .name("Finish")
             .alt_names(vec!["Complete".to_owned(), "End".to_owned()])
             .symbol("了")
@@ -90,11 +87,8 @@ mod tests {
     async fn it_should_collide_with_an_existing_kanji(pool: PgPool) -> Result<(), Error> {
         let repo = Repository::new(pool);
 
-        let barb = {
-            use crate::domain::radical::RadicalRepository;
-            repo.insert_radical(radical_barb()).await?
-        };
-        let kanji = InsertKanji::builder()
+        let barb = repo.insert_radical(barb()).await?;
+        let kanji = ReqKanjiInsert::builder()
             .name("finish")
             .alt_names(vec!["Complete".to_owned(), "End".to_owned()])
             .symbol("了")
@@ -110,7 +104,7 @@ mod tests {
             .radical_composition(vec![barb.name])
             .build();
 
-        let _ = repo.insert_kanji(kanji.clone()).await?;
+        repo.insert_kanji(kanji.clone()).await?;
         let kanji = repo.insert_kanji(kanji).await;
 
         assert!(matches!(kanji, Err(Error::Insert(InsertError::Conflict))));

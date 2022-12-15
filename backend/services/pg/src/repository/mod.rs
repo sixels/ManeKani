@@ -9,10 +9,16 @@ pub struct Repository {
 }
 
 impl Repository {
+    #[must_use]
     pub fn new(database: PgPool) -> Self {
         Self { database }
     }
 
+    /// Returns the connection of this [`Repository`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if it is not connected with the database
     pub async fn connection(&self) -> PoolConnection<Postgres> {
         self.database
             .acquire()
@@ -20,8 +26,13 @@ impl Repository {
             .expect("Could not get a database connection")
     }
 
+    /// Starts the connection with the postgres database
+    ///
+    /// # Panics
+    ///
+    /// Panics if it could not connect with the database
     pub async fn connect(db_url: String) -> Self {
         let pool = PgPool::connect(&db_url).await.unwrap();
-        Self { database: pool }
+        Self::new(pool)
     }
 }

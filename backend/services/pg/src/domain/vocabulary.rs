@@ -1,74 +1,67 @@
 use manekani_service_common::repository::{RepoInsertable, RepoQueryable};
 
 use crate::entity::{
-    kanji::GetKanji,
-    vocabulary::{GetVocabulary, InsertVocabulary, Vocabulary, VocabularyPartial},
+    ReqKanjiQuery, ReqVocabularyInsert, ReqVocabularyQuery, Vocabulary, VocabularyPartial,
 };
 
 use super::Error;
 
 #[async_trait::async_trait]
-pub trait VocabularyRepository:
-    RepoQueryable<GetVocabulary, Vocabulary>
-    + RepoQueryable<GetKanji, Vec<VocabularyPartial>>
-    + RepoInsertable<InsertVocabulary, Vocabulary>
+pub trait Repository:
+    RepoQueryable<ReqVocabularyQuery, Vocabulary>
+    + RepoQueryable<ReqKanjiQuery, Vec<VocabularyPartial>>
+    + RepoInsertable<ReqVocabularyInsert, Vocabulary>
 {
-    async fn query_vocabulary(&self, vocab: GetVocabulary) -> Result<Vocabulary, Error> {
+    async fn query_vocabulary(&self, vocab: ReqVocabularyQuery) -> Result<Vocabulary, Error> {
         Ok(self.query(vocab).await?)
     }
 
     async fn query_vocabulary_by_kanji(
         &self,
-        kanji: GetKanji,
+        kanji: ReqKanjiQuery,
     ) -> Result<Vec<VocabularyPartial>, Error> {
         Ok(self.query(kanji).await?)
     }
 
-    async fn insert_vocabulary(&self, vocabulary: InsertVocabulary) -> Result<Vocabulary, Error> {
+    async fn insert_vocabulary(
+        &self,
+        vocabulary: ReqVocabularyInsert,
+    ) -> Result<Vocabulary, Error> {
         Ok(self.insert(vocabulary).await?)
     }
 }
 
-impl<T> VocabularyRepository for T where
-    T: RepoQueryable<GetVocabulary, Vocabulary>
-        + RepoQueryable<GetKanji, Vec<VocabularyPartial>>
-        + RepoInsertable<InsertVocabulary, Vocabulary>
+impl<T> Repository for T where
+    T: RepoQueryable<ReqVocabularyQuery, Vocabulary>
+        + RepoQueryable<ReqKanjiQuery, Vec<VocabularyPartial>>
+        + RepoInsertable<ReqVocabularyInsert, Vocabulary>
 {
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        domain::{kanji::KanjiRepository, radical::RadicalRepository},
-        entity::{
-            kanji::{kanji_middle, kanji_stop},
-            radical::{radical_middle, radical_stop},
-        },
-        repository::Repository,
-    };
+    use crate::domain::{KanjiRepository, RadicalRepository, VocabularyRepository};
+    use crate::entity::{kanji, radical, ReqVocabularyInsert};
+    use crate::Repository;
 
-    use super::*;
-
-    use manekani_service_common::repository::InsertError;
+    use manekani_service_common::repository::{error::Error, InsertError};
     use sqlx::PgPool;
 
     #[sqlx::test]
     async fn it_should_create_a_new_vocabulary(pool: PgPool) -> Result<(), Error> {
-        use crate::domain::{kanji::KanjiRepository, radical::RadicalRepository};
-
         let repo = Repository::new(pool);
 
         let kanji_middle = {
-            let _ = repo.insert_radical(radical_middle()).await?;
-            repo.insert_kanji(kanji_middle()).await?
+            repo.insert_radical(radical::middle()).await?;
+            repo.insert_kanji(kanji::middle()).await?
         };
         let kanji_stop = {
-            let _ = repo.insert_radical(radical_stop()).await?;
-            repo.insert_kanji(kanji_stop()).await?
+            repo.insert_radical(radical::stop()).await?;
+            repo.insert_kanji(kanji::stop()).await?
         };
 
-        let vocabulary = InsertVocabulary::builder()
+        let vocabulary = ReqVocabularyInsert::builder()
             .name("Suspension")
             .level(3)
             .alt_names(vec!["Cancellation".to_owned(), "Discontinuation".to_owned()])
@@ -109,14 +102,14 @@ mod tests {
         let repo = Repository::new(pool);
 
         let kanji_middle = {
-            let _ = repo.insert_radical(radical_middle()).await?;
-            repo.insert_kanji(kanji_middle()).await?
+            repo.insert_radical(radical::middle()).await?;
+            repo.insert_kanji(kanji::middle()).await?
         };
         let kanji_stop = {
-            let _ = repo.insert_radical(radical_stop()).await?;
-            repo.insert_kanji(kanji_stop()).await?
+            repo.insert_radical(radical::stop()).await?;
+            repo.insert_kanji(kanji::stop()).await?
         };
-        let vocabulary = InsertVocabulary::builder()
+        let vocabulary = ReqVocabularyInsert::builder()
             .name("Suspension")
             .level(3)
             .alt_names(vec!["Cancellation".to_owned(), "Discontinuation".to_owned()])
@@ -132,7 +125,7 @@ mod tests {
             .kanji_composition(vec![kanji_middle.symbol, kanji_stop.symbol])
             .build();
 
-        let _ = repo.insert_vocabulary(vocabulary.clone()).await?;
+        repo.insert_vocabulary(vocabulary.clone()).await?;
         let vocab = repo.insert_vocabulary(vocabulary.clone()).await;
 
         assert!(matches!(vocab, Err(Error::Insert(InsertError::Conflict))));

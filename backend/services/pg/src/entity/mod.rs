@@ -1,7 +1,11 @@
-pub mod kanji;
-pub mod radical;
-pub mod vocabulary;
+pub(crate) mod kanji;
+pub(crate) mod radical;
+pub(crate) mod vocabulary;
 
-pub use kanji::{GetKanji, InsertKanji, Kanji, KanjiPartial};
-pub use radical::{GetRadical, InsertRadical, Radical, RadicalPartial};
-pub use vocabulary::{GetVocabulary, InsertVocabulary, Vocabulary, VocabularyPartial};
+pub use kanji::{Kanji, ReqKanjiInsert, ReqKanjiQuery};
+pub use radical::{Radical, ReqRadicalInsert, ReqRadicalQuery, ReqRadicalUpdate};
+pub use vocabulary::{ReqVocabularyInsert, ReqVocabularyQuery, Vocabulary};
+
+pub type KanjiPartial = kanji::Partial;
+pub type RadicalPartial = radical::Partial;
+pub type VocabularyPartial = vocabulary::Partial;

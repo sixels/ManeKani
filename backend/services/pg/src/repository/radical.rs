@@ -3,18 +3,17 @@ use manekani_service_common::repository::{
 };
 
 use crate::entity::{
-    kanji::GetKanji,
-    radical::{GetRadical, InsertRadical, Radical, RadicalPartial, UpdateRadical},
+    Radical, RadicalPartial, ReqKanjiQuery, ReqRadicalInsert, ReqRadicalQuery, ReqRadicalUpdate,
 };
 
 use super::Repository;
 
 #[async_trait::async_trait]
-impl RepoQueryable<GetRadical, Radical> for Repository {
+impl RepoQueryable<ReqRadicalQuery, Radical> for Repository {
     /// Query a radical
-    async fn query(&self, radical: GetRadical) -> Result<Radical, QueryError> {
+    async fn query(&self, radical: ReqRadicalQuery) -> Result<Radical, QueryError> {
         let mut conn = self.connection().await;
-        let GetRadical { name } = radical;
+        let ReqRadicalQuery { name } = radical;
 
         let result = sqlx::query_as!(Radical, "SELECT * FROM radicals WHERE name = $1", name)
             .fetch_one(&mut conn)
@@ -25,12 +24,12 @@ impl RepoQueryable<GetRadical, Radical> for Repository {
 }
 
 #[async_trait::async_trait]
-impl RepoInsertable<InsertRadical, Radical> for Repository {
+impl RepoInsertable<ReqRadicalInsert, Radical> for Repository {
     /// Insert a radical
-    async fn insert(&self, radical: InsertRadical) -> Result<Radical, InsertError> {
+    async fn insert(&self, radical: ReqRadicalInsert) -> Result<Radical, InsertError> {
         let mut conn = self.connection().await;
 
-        let InsertRadical {
+        let ReqRadicalInsert {
             name,
             level,
             symbol,
@@ -53,12 +52,12 @@ impl RepoInsertable<InsertRadical, Radical> for Repository {
 }
 
 #[async_trait::async_trait]
-impl RepoUpdateable<UpdateRadical, Radical> for Repository {
+impl RepoUpdateable<ReqRadicalUpdate, Radical> for Repository {
     /// Update a radical information
-    async fn update(&self, radical: UpdateRadical) -> Result<Radical, UpdateError> {
+    async fn update(&self, radical: ReqRadicalUpdate) -> Result<Radical, UpdateError> {
         let mut conn = self.connection().await;
 
-        let UpdateRadical {
+        let ReqRadicalUpdate {
             name,
             symbol,
             level,
@@ -94,9 +93,9 @@ impl RepoUpdateable<UpdateRadical, Radical> for Repository {
 }
 
 #[async_trait::async_trait]
-impl RepoQueryable<GetKanji, Vec<RadicalPartial>> for Repository {
+impl RepoQueryable<ReqKanjiQuery, Vec<RadicalPartial>> for Repository {
     /// Query a radical by kanji
-    async fn query(&self, kanji: GetKanji) -> Result<Vec<RadicalPartial>, QueryError> {
+    async fn query(&self, kanji: ReqKanjiQuery) -> Result<Vec<RadicalPartial>, QueryError> {
         let mut conn = self.connection().await;
 
         let result = sqlx::query_as!(
