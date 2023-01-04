@@ -1,0 +1,811 @@
+basePath: /
+definitions:
+  cards.CreateKanjiRequest:
+    properties:
+      alt_names:
+        items:
+          type: string
+        type: array
+      kunyomi:
+        items:
+          type: string
+        type: array
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      name:
+        type: string
+      nanori:
+        items:
+          type: string
+        type: array
+      onyomi:
+        items:
+          type: string
+        type: array
+      radical_composition:
+        items:
+          type: string
+        type: array
+      reading:
+        type: string
+      reading_mnemonic:
+        type: string
+      symbol:
+        type: string
+    type: object
+  cards.CreateRadicalRequest:
+    properties:
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      name:
+        type: string
+      symbol:
+        type: string
+      symbol_image:
+        items:
+          type: integer
+        type: array
+    type: object
+  cards.CreateVocabularyRequest:
+    properties:
+      alt_names:
+        items:
+          type: string
+        type: array
+      alt_readings:
+        items:
+          type: string
+        type: array
+      kanji_composition:
+        items:
+          type: string
+        type: array
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      name:
+        type: string
+      patterns:
+        items:
+          $ref: '#/definitions/schema.Pattern'
+        type: array
+      reading:
+        type: string
+      reading_mnemonic:
+        type: string
+      sentences:
+        items:
+          $ref: '#/definitions/schema.Sentence'
+        type: array
+      word:
+        type: string
+      word_type:
+        items:
+          type: string
+        type: array
+    type: object
+  cards.Kanji:
+    properties:
+      alt_names:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      id:
+        type: string
+      kunyomi:
+        items:
+          type: string
+        type: array
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      name:
+        type: string
+      nanori:
+        items:
+          type: string
+        type: array
+      onyomi:
+        items:
+          type: string
+        type: array
+      reading:
+        type: string
+      reading_mnemonic:
+        type: string
+      symbol:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  cards.PartialKanjiResponse:
+    properties:
+      alt_names:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      level:
+        type: integer
+      name:
+        type: string
+      reading:
+        type: string
+      symbol:
+        type: string
+    type: object
+  cards.PartialRadicalResponse:
+    properties:
+      id:
+        type: string
+      level:
+        type: integer
+      name:
+        type: string
+      symbol:
+        type: string
+    type: object
+  cards.PartialVocabularyResponse:
+    properties:
+      alt_names:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      level:
+        type: integer
+      name:
+        type: string
+      reading:
+        type: string
+      word:
+        type: string
+    type: object
+  cards.Radical:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      name:
+        type: string
+      symbol:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  cards.UpdateKanjiRequest:
+    properties:
+      alt_names:
+        items:
+          type: string
+        type: array
+      kunyomi:
+        items:
+          type: string
+        type: array
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      name:
+        type: string
+      nanori:
+        items:
+          type: string
+        type: array
+      onyomi:
+        items:
+          type: string
+        type: array
+      radical_composition:
+        items:
+          type: string
+        type: array
+      reading:
+        type: string
+      reading_mnemonic:
+        type: string
+    type: object
+  cards.UpdateRadicalRequest:
+    properties:
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      symbol:
+        type: string
+    type: object
+  cards.UpdateVocabularyRequest:
+    properties:
+      alt_names:
+        items:
+          type: string
+        type: array
+      alt_readings:
+        items:
+          type: string
+        type: array
+      kanji_composition:
+        items:
+          type: string
+        type: array
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      name:
+        type: string
+      patterns:
+        items:
+          $ref: '#/definitions/schema.Pattern'
+        type: array
+      reading:
+        type: string
+      reading_mnemonic:
+        type: string
+      sentences:
+        items:
+          $ref: '#/definitions/schema.Sentence'
+        type: array
+      word_type:
+        items:
+          type: string
+        type: array
+    type: object
+  cards.Vocabulary:
+    properties:
+      alt_names:
+        items:
+          type: string
+        type: array
+      alt_readings:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      id:
+        type: string
+      level:
+        type: integer
+      meaning_mnemonic:
+        type: string
+      name:
+        type: string
+      patterns:
+        items:
+          $ref: '#/definitions/schema.Pattern'
+        type: array
+      reading:
+        type: string
+      reading_mnemonic:
+        type: string
+      sentences:
+        items:
+          $ref: '#/definitions/schema.Sentence'
+        type: array
+      updated_at:
+        type: string
+      word:
+        type: string
+      word_type:
+        items:
+          type: string
+        type: array
+    type: object
+  schema.Pattern:
+    properties:
+      name:
+        type: string
+      sentences:
+        items:
+          $ref: '#/definitions/schema.Sentence'
+        type: array
+    type: object
+  schema.Sentence:
+    properties:
+      meaning:
+        type: string
+      sentence:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact:
+    email: sixels@protonmail.com
+    name: API Support
+    url: http://www.swagger.io/support
+  description: ManeKani API.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: ManeKani API
+  version: "1.0"
+paths:
+  /api/v1/kanji:
+    get:
+      consumes:
+      - '*/*'
+      description: Return a list of all kanji
+      operationId: get-kanji-all
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cards.PartialKanjiResponse'
+            type: array
+      summary: Query all kanji
+      tags:
+      - cards
+      - kanji
+    post:
+      consumes:
+      - application/json
+      description: Creates a kanji with the given values
+      operationId: post-kanji-create
+      parameters:
+      - description: The kanji to be created
+        in: body
+        name: kanji
+        required: true
+        schema:
+          $ref: '#/definitions/cards.CreateKanjiRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/cards.Kanji'
+      summary: Create a new kanji
+      tags:
+      - cards
+      - kanji
+  /api/v1/kanji/{:symbol}/radicals:
+    get:
+      consumes:
+      - '*/*'
+      description: Return a list of all radicals that composes the given kanji
+      operationId: get-kanji-radicals
+      parameters:
+      - description: Kanji symbol
+        in: path
+        name: symbol
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cards.PartialRadicalResponse'
+            type: array
+      summary: Query a kanji's radicals
+      tags:
+      - cards
+      - kanji
+  /api/v1/kanji/{:symbol}/vocabularies:
+    get:
+      consumes:
+      - '*/*'
+      description: Return a list of all vocabularies that are composed by the given
+        kanji
+      operationId: get-kanji-vocabularies
+      parameters:
+      - description: Kanji symbol
+        in: path
+        name: symbol
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cards.PartialVocabularyResponse'
+            type: array
+      summary: Query a kanji's vocabularies
+      tags:
+      - cards
+      - kanji
+  /api/v1/kanji/{symbol}:
+    delete:
+      consumes:
+      - '*/*'
+      description: Delete a kanji by its symbol
+      operationId: delete-kanji-delete
+      parameters:
+      - description: Kanji symbol
+        in: path
+        name: symbol
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Delete a kanji
+      tags:
+      - cards
+      - kanji
+    get:
+      consumes:
+      - '*/*'
+      description: Search a kanji by its symbol
+      operationId: get-kanji-query
+      parameters:
+      - description: Kanji symbol
+        in: path
+        name: symbol
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cards.Kanji'
+      summary: Query a kanji
+      tags:
+      - cards
+      - kanji
+    patch:
+      consumes:
+      - application/json
+      description: Update a kanji with the given values
+      operationId: patch-kanji-update
+      parameters:
+      - description: Kanji symbol
+        in: path
+        name: symbol
+        required: true
+        type: string
+      - description: Kanji fields to update
+        in: body
+        name: kanji
+        required: true
+        schema:
+          $ref: '#/definitions/cards.UpdateKanjiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cards.Kanji'
+      summary: Update a kanji
+      tags:
+      - cards
+      - kanji
+  /api/v1/radical:
+    get:
+      consumes:
+      - '*/*'
+      description: Return a list of all radicals
+      operationId: get-radical-all
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cards.PartialRadicalResponse'
+            type: array
+      summary: Query all radicals
+      tags:
+      - cards
+      - radical
+    post:
+      consumes:
+      - multipart/form-data
+      description: Creates a radical with the given values
+      operationId: post-radical-create
+      parameters:
+      - description: The radical to be created
+        in: body
+        name: radical
+        required: true
+        schema:
+          $ref: '#/definitions/cards.CreateRadicalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/cards.Radical'
+      summary: Create a new radical
+      tags:
+      - cards
+      - radical
+  /api/v1/radical/{:name}/kanji:
+    get:
+      consumes:
+      - '*/*'
+      description: Return a list of all kanji that are composed by the given radical
+      operationId: get-radical-kanji
+      parameters:
+      - description: Radical name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cards.PartialKanjiResponse'
+            type: array
+      summary: Query kanjis from radical
+      tags:
+      - cards
+      - radical
+  /api/v1/radical/{name}:
+    delete:
+      consumes:
+      - '*/*'
+      description: Delete a radical by its name
+      operationId: delete-radical-delete
+      parameters:
+      - description: Radical name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Delete a radical
+      tags:
+      - cards
+      - radical
+    get:
+      consumes:
+      - '*/*'
+      description: Search a radical by its name
+      operationId: get-radical-query
+      parameters:
+      - description: Radical name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cards.Radical'
+      summary: Query a radical
+      tags:
+      - cards
+      - radical
+    patch:
+      consumes:
+      - application/json
+      description: Update a radical with the given values
+      operationId: patch-radical-update
+      parameters:
+      - description: Radical name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Radical fields to update
+        in: body
+        name: radical
+        required: true
+        schema:
+          $ref: '#/definitions/cards.UpdateRadicalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cards.Radical'
+      summary: Update a radical
+      tags:
+      - cards
+      - radical
+  /api/v1/vocabulary:
+    get:
+      consumes:
+      - '*/*'
+      description: Return a list of all vocabulary
+      operationId: get-vocabulary-all
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cards.PartialVocabularyResponse'
+            type: array
+      summary: Query all vocabulary
+      tags:
+      - cards
+      - vocabulary
+    post:
+      consumes:
+      - application/json
+      description: Creates a vocabulary with the given values
+      operationId: post-vocabulary-create
+      parameters:
+      - description: The vocabulary to be created
+        in: body
+        name: vocabulary
+        required: true
+        schema:
+          $ref: '#/definitions/cards.CreateVocabularyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/cards.Vocabulary'
+      summary: Create a new vocabulary
+      tags:
+      - cards
+      - vocabulary
+  /api/v1/vocabulary/{:word}/kanji:
+    get:
+      consumes:
+      - '*/*'
+      description: Return a list of all kanji that composes the given vocabulary
+      operationId: get-vocabulary-kanji
+      parameters:
+      - description: Vocabulary word
+        in: path
+        name: word
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cards.PartialKanjiResponse'
+            type: array
+      summary: Query kanjis from vocabulary
+      tags:
+      - cards
+      - vocabulary
+  /api/v1/vocabulary/{word}:
+    delete:
+      consumes:
+      - '*/*'
+      description: Delete a vocabulary by its word
+      operationId: delete-vocabulary-delete
+      parameters:
+      - description: Vocabulary word
+        in: path
+        name: word
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Delete a vocabulary
+      tags:
+      - cards
+      - vocabulary
+    get:
+      consumes:
+      - '*/*'
+      description: Search a vocabulary by its word
+      operationId: get-vocabulary-query
+      parameters:
+      - description: Vocabulary word
+        in: path
+        name: word
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cards.Vocabulary'
+      summary: Query a vocabulary
+      tags:
+      - cards
+      - vocabulary
+    patch:
+      consumes:
+      - application/json
+      description: Update a vocabulary with the given values
+      operationId: patch-vocabulary-update
+      parameters:
+      - description: Vocabulary word
+        in: path
+        name: word
+        required: true
+        type: string
+      - description: Vocabulary fields to update
+        in: body
+        name: vocabulary
+        required: true
+        schema:
+          $ref: '#/definitions/cards.UpdateVocabularyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cards.Vocabulary'
+      summary: Update a vocabulary
+      tags:
+      - cards
+      - vocabulary
+  /health:
+    get:
+      consumes:
+      - '*/*'
+      description: Get the status of the server.
+      operationId: get-health-check
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Show the status of the server.
+      tags:
+      - health
+schemes:
+- http
+swagger: "2.0"
+tags:
+- description: API status
+  name: health
+- description: Cards API related
+  name: cards
+- description: Kanji cards actions
+  name: kanji
+- description: Radical cards actions
+  name: radical
+- description: Vocabulary cards actions
+  name: vocabulary

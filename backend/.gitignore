@@ -1,8 +1,0 @@
-target/
-result/
-.direnv/
-
-.env
-
-notes/
-nix/pgdata

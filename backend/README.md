@@ -1,3 +1,0 @@
-# ManeKani
-
-A WaniKani clone
