@@ -58,5 +58,5 @@ func (server *Server) UseLogger() *Server {
 
 func (server *Server) Start() {
 	server.bindRoutes()
-	log.Fatal(server.router.Start("0.0.0.0:8081"))
+	log.Fatal(server.router.Start("localhost:8081"))
 }

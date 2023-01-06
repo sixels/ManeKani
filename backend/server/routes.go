@@ -30,6 +30,6 @@ func (server *Server) bindRoutes() {
 // @Router /health [get]
 func healthCheck(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data": "Server is online",
+		"data": "server is online",
 	})
 }

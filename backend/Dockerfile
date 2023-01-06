@@ -1,18 +1,17 @@
-FROM golang:1.19-alpine as dev
+FROM golang:1.19-alpine
 
+WORKDIR /app/manekani
 
-WORKDIR /app/src/manekani
+ENV GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
-COPY go.mod .
-COPY go.sum .
-
+COPY go.mod ./
+COPY go.sum ./
 RUN go mod download
 
-COPY *.go .
+COPY . .
 
-
-RUN go build -o ./manekani/bin .
+RUN go build -o /manekani-server
 
 EXPOSE 8081
 
-CMD ["./manekani"]
+CMD ["/manekani-server"]
