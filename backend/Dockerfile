@@ -1,5 +1,7 @@
 FROM golang:1.19-alpine
 
+VOLUME ["/data"]
+
 WORKDIR /app/manekani
 
 ENV GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64

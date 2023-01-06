@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"log"
 
 	"github.com/labstack/echo/v4"
@@ -50,13 +51,14 @@ func New() *Server {
 	}
 }
 
-func (server *Server) UseLogger() *Server {
-	server.router.Use(middleware.Logger())
-	server.router.Use(middleware.Recover())
-	return server
-}
+func (server *Server) Start(logFile io.Writer) {
+	loggerConfig := middleware.DefaultLoggerConfig
+	loggerConfig.Output = logFile
+	server.router.Use(middleware.LoggerWithConfig(loggerConfig))
 
-func (server *Server) Start() {
+	server.router.Use(middleware.Recover())
+
 	server.bindRoutes()
-	log.Fatal(server.router.Start("localhost:8081"))
+
+	log.Fatal(server.router.Start("0.0.0.0:8081"))
 }

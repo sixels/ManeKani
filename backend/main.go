@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"path"
 
 	server "sixels.io/manekani/server"
 
@@ -42,8 +44,26 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("warn: could not load the .env file")
 	}
+	logFile := setLogFile()
+	defer logFile.Close()
 
 	server.New().
-		UseLogger().
-		Start()
+		Start(logFile)
+}
+
+func setLogFile() *os.File {
+	dataDir := os.Getenv("MANEKANI_DATA_HOME")
+	if dataDir == "" {
+		dataDir = "/data/"
+	}
+
+	logFile := path.Join(dataDir, "manekani.log")
+
+	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening log file: %v", err)
+	}
+
+	log.SetOutput(f)
+	return f
 }
