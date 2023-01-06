@@ -13,7 +13,7 @@ import (
 
 func (repo FilesRepository) CreateFile(ctx context.Context, req files.CreateFileRequest) (string, error) {
 	objectName := objectNameFromFile(req.FileInfo)
-	fmt.Printf("Object beign sent with key: (%d bytes) '%s'\n", req.Size, objectName)
+	log.Printf("object beign created with key: (%d bytes) '%s'\n", req.Size, objectName)
 
 	uploadInfo, err := repo.minio_client.PutObject(ctx,
 		BUCKET_NAME,
@@ -25,18 +25,18 @@ func (repo FilesRepository) CreateFile(ctx context.Context, req files.CreateFile
 		})
 
 	if err != nil {
+		log.Printf("create file '%s' failed with error: %v\n", objectName, err)
 		return "", errors.Unknown(err)
 	}
-
-	fmt.Println("uploadInfo")
 
 	return uploadInfo.Key, nil
 }
 
 func (repo FilesRepository) QueryFile(ctx context.Context, name string) (*files.ObjectWrapperResponse, error) {
-	log.Println(name)
+	log.Printf("querying file '%s'\n", name)
 	object, err := repo.minio_client.GetObject(ctx, BUCKET_NAME, name, minio.GetObjectOptions{})
 	if err != nil {
+		log.Printf("query file '%s' failed with error: %v\n", name, err)
 		return nil, errors.Unknown(err)
 	}
 
@@ -53,7 +53,9 @@ func (repo FilesRepository) QueryFile(ctx context.Context, name string) (*files.
 }
 
 func (repo FilesRepository) DeleteFile(ctx context.Context, name string) error {
+	log.Printf("deleting file '%s'\n", name)
 	if err := repo.minio_client.RemoveObject(ctx, BUCKET_NAME, name, minio.RemoveObjectOptions{}); err != nil {
+		log.Printf("delete file '%s' failed with error: %v\n", name, err)
 		return errors.Unknown(err)
 	}
 	return nil

@@ -199,7 +199,6 @@ func checkKanjis(actual ent.Kanjis, req []string) error {
 	}
 
 	if diff := util.DiffStrings(kanjis, req); diff != nil {
-		fmt.Printf("AAAA")
 		return errors.InvalidRequest(
 			fmt.Sprintf("invalid kanji in kanji composition: %q", diff))
 	}
