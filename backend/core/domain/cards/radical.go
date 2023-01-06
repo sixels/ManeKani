@@ -18,17 +18,17 @@ type (
 	}
 
 	CreateRadicalRequest struct {
-		Name            string  `json:"name"`
-		Level           int32   `json:"level"`
-		Symbol          *string `json:"symbol,omitempty"`
-		SymbolImage     *[]byte `json:"symbol_image,omitempty"`
-		MeaningMnemonic string  `json:"meaning_mnemonic"`
+		Name            string  `json:"name" form:"name"`
+		Level           int32   `json:"level" form:"level"`
+		Symbol          *string `json:"symbol,omitempty" form:"symbol"`
+		SymbolImage     *[]byte `json:"symbol_image,omitempty" form:"symbol_image"`
+		MeaningMnemonic string  `json:"meaning_mnemonic" form:"meaning_mnemonic"`
 	}
 
 	UpdateRadicalRequest struct {
-		Symbol          *string `json:"symbol,omitempty"`
-		Level           *int32  `json:"level,omitempty"`
-		MeaningMnemonic *string `json:"meaning_mnemonic,omitempty"`
+		Symbol          *string `json:"symbol,omitempty" form:"symbol"`
+		Level           *int32  `json:"level,omitempty" form:"level"`
+		MeaningMnemonic *string `json:"meaning_mnemonic,omitempty" form:"meaning_mnemonic"`
 	}
 
 	PartialRadicalResponse struct {

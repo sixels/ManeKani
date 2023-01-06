@@ -38,16 +38,16 @@ type (
 	}
 
 	UpdateKanjiRequest struct {
-		Level              *int32    `json:"level,omitempty"`
-		Name               *string   `json:"name,omitempty"`
-		AltNames           *[]string `json:"alt_names,omitempty"`
-		MeaningMnemonic    *string   `json:"meaning_mnemonic,omitempty"`
-		Reading            *string   `json:"reading,omitempty"`
-		ReadingMnemonic    *string   `json:"reading_mnemonic,omitempty"`
-		Onyomi             *[]string `json:"onyomi,omitempty"`
-		Kunyomi            *[]string `json:"kunyomi,omitempty"`
-		Nanori             *[]string `json:"nanori,omitempty"`
-		RadicalComposition *[]string `json:"radical_composition,omitempty"`
+		Level              *int32    `json:"level,omitempty" form:"level"`
+		Name               *string   `json:"name,omitempty" form:"name"`
+		AltNames           *[]string `json:"alt_names,omitempty" form:"alt_names"`
+		MeaningMnemonic    *string   `json:"meaning_mnemonic,omitempty" form:"meaning_mnemonic"`
+		Reading            *string   `json:"reading,omitempty" form:"reading"`
+		ReadingMnemonic    *string   `json:"reading_mnemonic,omitempty" form:"reading_mnemonic"`
+		Onyomi             *[]string `json:"onyomi,omitempty" form:"onyomi"`
+		Kunyomi            *[]string `json:"kunyomi,omitempty" form:"kunyomi"`
+		Nanori             *[]string `json:"nanori,omitempty" form:"nanori"`
+		RadicalComposition *[]string `json:"radical_composition,omitempty" form:"radical_composition"`
 	}
 
 	PartialKanjiResponse struct {
