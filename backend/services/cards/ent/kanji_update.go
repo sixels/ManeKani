@@ -64,6 +64,26 @@ func (ku *KanjiUpdate) ClearAltNames() *KanjiUpdate {
 	return ku
 }
 
+// SetSimilar sets the "similar" field.
+func (ku *KanjiUpdate) SetSimilar(pa pgtype.TextArray) *KanjiUpdate {
+	ku.mutation.SetSimilar(pa)
+	return ku
+}
+
+// SetNillableSimilar sets the "similar" field if the given value is not nil.
+func (ku *KanjiUpdate) SetNillableSimilar(pa *pgtype.TextArray) *KanjiUpdate {
+	if pa != nil {
+		ku.SetSimilar(*pa)
+	}
+	return ku
+}
+
+// ClearSimilar clears the value of the "similar" field.
+func (ku *KanjiUpdate) ClearSimilar() *KanjiUpdate {
+	ku.mutation.ClearSimilar()
+	return ku
+}
+
 // SetLevel sets the "level" field.
 func (ku *KanjiUpdate) SetLevel(i int32) *KanjiUpdate {
 	ku.mutation.ResetLevel()
@@ -319,6 +339,12 @@ func (ku *KanjiUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if ku.mutation.AltNamesCleared() {
 		_spec.ClearField(kanji.FieldAltNames, field.TypeOther)
 	}
+	if value, ok := ku.mutation.Similar(); ok {
+		_spec.SetField(kanji.FieldSimilar, field.TypeOther, value)
+	}
+	if ku.mutation.SimilarCleared() {
+		_spec.ClearField(kanji.FieldSimilar, field.TypeOther)
+	}
 	if value, ok := ku.mutation.Level(); ok {
 		_spec.SetField(kanji.FieldLevel, field.TypeInt32, value)
 	}
@@ -499,6 +525,26 @@ func (kuo *KanjiUpdateOne) SetNillableAltNames(pa *pgtype.TextArray) *KanjiUpdat
 // ClearAltNames clears the value of the "alt_names" field.
 func (kuo *KanjiUpdateOne) ClearAltNames() *KanjiUpdateOne {
 	kuo.mutation.ClearAltNames()
+	return kuo
+}
+
+// SetSimilar sets the "similar" field.
+func (kuo *KanjiUpdateOne) SetSimilar(pa pgtype.TextArray) *KanjiUpdateOne {
+	kuo.mutation.SetSimilar(pa)
+	return kuo
+}
+
+// SetNillableSimilar sets the "similar" field if the given value is not nil.
+func (kuo *KanjiUpdateOne) SetNillableSimilar(pa *pgtype.TextArray) *KanjiUpdateOne {
+	if pa != nil {
+		kuo.SetSimilar(*pa)
+	}
+	return kuo
+}
+
+// ClearSimilar clears the value of the "similar" field.
+func (kuo *KanjiUpdateOne) ClearSimilar() *KanjiUpdateOne {
+	kuo.mutation.ClearSimilar()
 	return kuo
 }
 
@@ -786,6 +832,12 @@ func (kuo *KanjiUpdateOne) sqlSave(ctx context.Context) (_node *Kanji, err error
 	}
 	if kuo.mutation.AltNamesCleared() {
 		_spec.ClearField(kanji.FieldAltNames, field.TypeOther)
+	}
+	if value, ok := kuo.mutation.Similar(); ok {
+		_spec.SetField(kanji.FieldSimilar, field.TypeOther, value)
+	}
+	if kuo.mutation.SimilarCleared() {
+		_spec.ClearField(kanji.FieldSimilar, field.TypeOther)
 	}
 	if value, ok := kuo.mutation.Level(); ok {
 		_spec.SetField(kanji.FieldLevel, field.TypeInt32, value)

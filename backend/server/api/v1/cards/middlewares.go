@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"strings"
 
 	"sixels.io/manekani/core/domain/errors"
 	"sixels.io/manekani/core/domain/files"
@@ -14,11 +15,11 @@ import (
 
 func (api *CardsApi) UploadRadicalImage(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		radicalName := c.FormValue("name")
+		radicalName := strings.TrimSpace(c.FormValue("name"))
 
 		// upload image if any
 		radicalSymbolImage, err := c.FormFile("symbol_image")
-		if err == nil && len(radicalName) > 0 {
+		if err == nil && radicalName != "" {
 			log.Println("middleware: ", radicalName)
 			radicalSymbolFile, err := radicalSymbolImage.Open()
 			if err != nil {

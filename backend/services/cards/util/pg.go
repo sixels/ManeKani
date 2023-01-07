@@ -3,7 +3,7 @@ package util
 import "github.com/jackc/pgtype"
 
 // Convert a string array into a postgres TextArray
-func IntoPgTextArray(elements []string) pgtype.TextArray {
+func ToPgTextArray(elements []string) pgtype.TextArray {
 	status := pgtype.Null
 	if elements != nil {
 		status = pgtype.Present

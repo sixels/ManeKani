@@ -52,6 +52,7 @@ func main() {
 }
 
 func setLogFile() *os.File {
+	// TODO: check XDG_DATA_HOME directory too
 	dataDir := os.Getenv("MANEKANI_DATA_HOME")
 	if dataDir == "" {
 		dataDir = "/data/"

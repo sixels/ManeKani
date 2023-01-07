@@ -20,9 +20,9 @@ type Service interface {
 }
 
 type Server struct {
-	router  *echo.Echo
-	v1Cards Service
-	files   Service
+	router *echo.Echo
+
+	services []Service
 }
 
 func New() *Server {
@@ -45,9 +45,8 @@ func New() *Server {
 	router := echo.New()
 
 	return &Server{
-		router:  router,
-		v1Cards: cardsV1,
-		files:   filesApi,
+		router:   router,
+		services: []Service{cardsV1, filesApi},
 	}
 }
 

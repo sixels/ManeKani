@@ -746,6 +746,12 @@ const docTemplate = `{
                 "reading_mnemonic": {
                     "type": "string"
                 },
+                "similar": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "symbol": {
                     "type": "string"
                 }
@@ -880,6 +886,12 @@ const docTemplate = `{
                 },
                 "reading_mnemonic": {
                     "type": "string"
+                },
+                "similar": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "symbol": {
                     "type": "string"
@@ -1031,6 +1043,12 @@ const docTemplate = `{
                 },
                 "reading_mnemonic": {
                     "type": "string"
+                },
+                "similar": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

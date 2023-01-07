@@ -15,8 +15,9 @@ func (server *Server) bindRoutes() {
 
 	server.router.GET("/health", healthCheck)
 
-	server.v1Cards.SetupRoutes(server.router)
-	server.files.SetupRoutes(server.router)
+	for _, service := range server.services {
+		service.SetupRoutes(server.router)
+	}
 }
 
 // HealthCheck godoc

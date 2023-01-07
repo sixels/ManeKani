@@ -12,6 +12,15 @@ import (
 	"sixels.io/manekani/services/cards/util"
 )
 
+var PARTIAL_VOCABULARY_FIELDS = [...]string{
+	vocabulary.FieldID,
+	vocabulary.FieldName,
+	vocabulary.FieldLevel,
+	vocabulary.FieldAltNames,
+	vocabulary.FieldWord,
+	vocabulary.FieldReading,
+}
+
 func (repo CardsRepository) CreateVocabulary(ctx context.Context, req cards.CreateVocabularyRequest) (*cards.Vocabulary, error) {
 	return util.WithTx(ctx, repo.client, func(tx *ent.Tx) (*cards.Vocabulary, error) {
 		kanjis, err := tx.Kanji.Query().Where(kanji.SymbolIn(req.KanjiComposition...)).All(ctx)
@@ -26,11 +35,11 @@ func (repo CardsRepository) CreateVocabulary(ctx context.Context, req cards.Crea
 		created, err := tx.Vocabulary.Create().
 			SetName(req.Name).
 			SetLevel(req.Level).
-			SetAltNames(util.IntoPgTextArray(req.AltNames)).
+			SetAltNames(util.ToPgTextArray(req.AltNames)).
 			SetWord(req.Word).
-			SetWordType(util.IntoPgTextArray(req.WordType)).
+			SetWordType(util.ToPgTextArray(req.WordType)).
 			SetReading(req.Reading).
-			SetAltReadings(util.IntoPgTextArray(req.AltReadings)).
+			SetAltReadings(util.ToPgTextArray(req.AltReadings)).
 			SetMeaningMnemonic(req.MeaningMnemonic).
 			SetReadingMnemonic(req.ReadingMnemonic).
 			SetPatterns(req.Patterns).
@@ -126,13 +135,7 @@ func (repo CardsRepository) DeleteVocabulary(ctx context.Context, word string) e
 
 func (repo CardsRepository) AllVocabularies(ctx context.Context) ([]*cards.PartialVocabularyResponse, error) {
 	queried, err := repo.client.Vocabulary.Query().
-		Select(
-			vocabulary.FieldID,
-			vocabulary.FieldName,
-			vocabulary.FieldLevel,
-			vocabulary.FieldAltNames,
-			vocabulary.FieldWord,
-			vocabulary.FieldReading).
+		Select(PARTIAL_VOCABULARY_FIELDS[:]...).
 		All(ctx)
 
 	if err != nil {
@@ -148,11 +151,7 @@ func (repo CardsRepository) QueryVocabularyKanjis(ctx context.Context, word stri
 			vq.Select(vocabulary.FieldID).
 				Where(vocabulary.WordEQ(word))
 		}).
-		Select(kanji.FieldID,
-			kanji.FieldName,
-			kanji.FieldReading,
-			kanji.FieldSymbol,
-			kanji.FieldLevel).
+		Select(PARTIAL_KANJI_FIELDS[:]...).
 		All(ctx)
 
 	if err != nil {

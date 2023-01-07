@@ -9,9 +9,16 @@ import (
 	"sixels.io/manekani/services/cards/ent"
 	"sixels.io/manekani/services/cards/ent/kanji"
 	"sixels.io/manekani/services/cards/ent/radical"
-	"sixels.io/manekani/services/cards/ent/vocabulary"
 	"sixels.io/manekani/services/cards/util"
 )
+
+var PARTIAL_KANJI_FIELDS = [...]string{
+	kanji.FieldID,
+	kanji.FieldName,
+	kanji.FieldReading,
+	kanji.FieldSymbol,
+	kanji.FieldLevel,
+}
 
 func (repo CardsRepository) CreateKanji(ctx context.Context, req cards.CreateKanjiRequest) (*cards.Kanji, error) {
 	return util.WithTx(ctx, repo.client, func(tx *ent.Tx) (*cards.Kanji, error) {
@@ -27,12 +34,13 @@ func (repo CardsRepository) CreateKanji(ctx context.Context, req cards.CreateKan
 		created, err := tx.Kanji.Create().
 			SetName(req.Name).
 			SetLevel(req.Level).
-			SetAltNames(util.IntoPgTextArray(req.AltNames)).
+			SetAltNames(util.ToPgTextArray(req.AltNames)).
 			SetSymbol(req.Symbol).
+			SetSimilar(util.ToPgTextArray(req.Similar)).
 			SetReading(req.Reading).
-			SetOnyomi(util.IntoPgTextArray(req.Onyomi)).
-			SetKunyomi(util.IntoPgTextArray(req.Kunyomi)).
-			SetNanori(util.IntoPgTextArray(req.Nanori)).
+			SetOnyomi(util.ToPgTextArray(req.Onyomi)).
+			SetKunyomi(util.ToPgTextArray(req.Kunyomi)).
+			SetNanori(util.ToPgTextArray(req.Nanori)).
 			SetMeaningMnemonic(req.MeaningMnemonic).
 			SetReadingMnemonic(req.ReadingMnemonic).
 			AddRadicals(radicals...).
@@ -74,6 +82,7 @@ func (repo CardsRepository) UpdateKanji(ctx context.Context, symbol string, req 
 
 		util.UpdateValue(req.Level, query.SetLevel)
 		util.UpdateValue(req.Name, query.SetName)
+		util.UpdateTextArray(req.Similar, query.SetSimilar)
 		util.UpdateTextArray(req.AltNames, query.SetAltNames)
 		util.UpdateValue(req.MeaningMnemonic, query.SetMeaningMnemonic)
 		util.UpdateValue(req.Reading, query.SetReading)
@@ -123,11 +132,7 @@ func (repo CardsRepository) DeleteKanji(ctx context.Context, symbol string) erro
 
 func (repo CardsRepository) AllKanji(ctx context.Context) ([]*cards.PartialKanjiResponse, error) {
 	queried, err := repo.client.Kanji.Query().
-		Select(kanji.FieldID,
-			kanji.FieldName,
-			kanji.FieldReading,
-			kanji.FieldSymbol,
-			kanji.FieldLevel).
+		Select(PARTIAL_KANJI_FIELDS[:]...).
 		All(ctx)
 
 	if err != nil {
@@ -143,13 +148,7 @@ func (repo CardsRepository) QueryKanjiVocabularies(ctx context.Context, symbol s
 			kq.Select(kanji.FieldID).
 				Where(kanji.SymbolEQ(symbol))
 		}).
-		Select(
-			vocabulary.FieldID,
-			vocabulary.FieldName,
-			vocabulary.FieldLevel,
-			vocabulary.FieldAltNames,
-			vocabulary.FieldWord,
-			vocabulary.FieldReading).
+		Select(PARTIAL_VOCABULARY_FIELDS[:]...).
 		All(ctx)
 
 	if err != nil {
@@ -165,11 +164,7 @@ func (repo CardsRepository) QueryKanjiRadicals(ctx context.Context, symbol strin
 			kq.Select(kanji.FieldID).
 				Where(kanji.SymbolEQ(symbol))
 		}).
-		Select(
-			radical.FieldID,
-			radical.FieldName,
-			radical.FieldLevel,
-			radical.FieldSymbol).
+		Select(PARTIAL_RADICAL_FIELDS[:]...).
 		All(ctx)
 
 	if err != nil {
@@ -188,6 +183,7 @@ func kanjiFromEnt(e *ent.Kanji) *cards.Kanji {
 		Level:           e.Level,
 		AltNames:        util.FromPgTextArray(e.AltNames),
 		Symbol:          e.Symbol,
+		Similar:         util.FromPgTextArray(e.Similar),
 		Reading:         e.Reading,
 		Onyomi:          util.FromPgTextArray(e.Onyomi),
 		Kunyomi:         util.FromPgTextArray(e.Kunyomi),

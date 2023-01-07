@@ -15,6 +15,7 @@ type (
 		Level           int32     `json:"level"`
 		AltNames        []string  `json:"alt_names,omitempty"`
 		Symbol          string    `json:"symbol"`
+		Similar         []string  `json:"similar,omitempty"`
 		Reading         string    `json:"reading"`
 		Onyomi          []string  `json:"onyomi"`
 		Kunyomi         []string  `json:"kunyomi"`
@@ -28,6 +29,7 @@ type (
 		Level              int32    `json:"level" form:"level"`
 		AltNames           []string `json:"alt_names,omitempty" form:"alt_names"`
 		Symbol             string   `json:"symbol" form:"symbol"`
+		Similar            []string `json:"similar,omitempty" form:"similar"`
 		Reading            string   `json:"reading" form:"reading"`
 		Onyomi             []string `json:"onyomi" form:"onyomi"`
 		Kunyomi            []string `json:"kunyomi" form:"kunyomi"`
@@ -41,6 +43,7 @@ type (
 		Level              *int32    `json:"level,omitempty" form:"level"`
 		Name               *string   `json:"name,omitempty" form:"name"`
 		AltNames           *[]string `json:"alt_names,omitempty" form:"alt_names"`
+		Similar            *[]string `json:"similar,omitempty" form:"similar"`
 		MeaningMnemonic    *string   `json:"meaning_mnemonic,omitempty" form:"meaning_mnemonic"`
 		Reading            *string   `json:"reading,omitempty" form:"reading"`
 		ReadingMnemonic    *string   `json:"reading_mnemonic,omitempty" form:"reading_mnemonic"`

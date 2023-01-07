@@ -23,6 +23,8 @@ const (
 	FieldName = "name"
 	// FieldAltNames holds the string denoting the alt_names field in the database.
 	FieldAltNames = "alt_names"
+	// FieldSimilar holds the string denoting the similar field in the database.
+	FieldSimilar = "similar"
 	// FieldLevel holds the string denoting the level field in the database.
 	FieldLevel = "level"
 	// FieldReading holds the string denoting the reading field in the database.
@@ -63,6 +65,7 @@ var Columns = []string{
 	FieldSymbol,
 	FieldName,
 	FieldAltNames,
+	FieldSimilar,
 	FieldLevel,
 	FieldReading,
 	FieldOnyomi,

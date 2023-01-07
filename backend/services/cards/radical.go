@@ -7,10 +7,16 @@ import (
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/errors"
 	"sixels.io/manekani/services/cards/ent"
-	"sixels.io/manekani/services/cards/ent/kanji"
 	"sixels.io/manekani/services/cards/ent/radical"
 	"sixels.io/manekani/services/cards/util"
 )
+
+var PARTIAL_RADICAL_FIELDS = [...]string{
+	radical.FieldID,
+	radical.FieldName,
+	radical.FieldLevel,
+	radical.FieldSymbol,
+}
 
 func (repo CardsRepository) CreateRadical(ctx context.Context, req cards.CreateRadicalRequest) (*cards.Radical, error) {
 	query := repo.client.Radical.Create().
@@ -85,11 +91,7 @@ func (repo CardsRepository) DeleteRadical(ctx context.Context, name string) erro
 
 func (repo CardsRepository) AllRadicals(ctx context.Context) ([]*cards.PartialRadicalResponse, error) {
 	queried, err := repo.client.Radical.Query().
-		Select(
-			radical.FieldID,
-			radical.FieldName,
-			radical.FieldLevel,
-			radical.FieldSymbol).
+		Select(PARTIAL_RADICAL_FIELDS[:]...).
 		All(ctx)
 
 	if err != nil {
@@ -105,11 +107,7 @@ func (repo CardsRepository) QueryRadicalKanjis(ctx context.Context, name string)
 			rq.Select(radical.FieldID).
 				Where(radical.NameEQ(name))
 		}).
-		Select(kanji.FieldID,
-			kanji.FieldName,
-			kanji.FieldReading,
-			kanji.FieldSymbol,
-			kanji.FieldLevel).
+		Select(PARTIAL_KANJI_FIELDS[:]...).
 		All(ctx)
 
 	if err != nil {

@@ -16,6 +16,7 @@ var (
 		{Name: "symbol", Type: field.TypeString, Unique: true, Size: 5},
 		{Name: "name", Type: field.TypeString, Size: 2147483647},
 		{Name: "alt_names", Type: field.TypeOther, Nullable: true, SchemaType: map[string]string{"postgres": "TEXT[]"}},
+		{Name: "similar", Type: field.TypeOther, Nullable: true, SchemaType: map[string]string{"postgres": "TEXT[]"}},
 		{Name: "level", Type: field.TypeInt32},
 		{Name: "reading", Type: field.TypeString, Size: 2147483647},
 		{Name: "onyomi", Type: field.TypeOther, SchemaType: map[string]string{"postgres": "TEXT[]"}},

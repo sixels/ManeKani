@@ -28,6 +28,8 @@ type Kanji struct {
 	Name string `json:"name,omitempty"`
 	// AltNames holds the value of the "alt_names" field.
 	AltNames pgtype.TextArray `json:"alt_names,omitempty"`
+	// Similar holds the value of the "similar" field.
+	Similar pgtype.TextArray `json:"similar,omitempty"`
 	// Level holds the value of the "level" field.
 	Level int32 `json:"level,omitempty"`
 	// Reading holds the value of the "reading" field.
@@ -81,7 +83,7 @@ func (*Kanji) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case kanji.FieldAltNames, kanji.FieldOnyomi, kanji.FieldKunyomi, kanji.FieldNanori:
+		case kanji.FieldAltNames, kanji.FieldSimilar, kanji.FieldOnyomi, kanji.FieldKunyomi, kanji.FieldNanori:
 			values[i] = new(pgtype.TextArray)
 		case kanji.FieldLevel:
 			values[i] = new(sql.NullInt64)
@@ -141,6 +143,12 @@ func (k *Kanji) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field alt_names", values[i])
 			} else if value != nil {
 				k.AltNames = *value
+			}
+		case kanji.FieldSimilar:
+			if value, ok := values[i].(*pgtype.TextArray); !ok {
+				return fmt.Errorf("unexpected type %T for field similar", values[i])
+			} else if value != nil {
+				k.Similar = *value
 			}
 		case kanji.FieldLevel:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -236,6 +244,9 @@ func (k *Kanji) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("alt_names=")
 	builder.WriteString(fmt.Sprintf("%v", k.AltNames))
+	builder.WriteString(", ")
+	builder.WriteString("similar=")
+	builder.WriteString(fmt.Sprintf("%v", k.Similar))
 	builder.WriteString(", ")
 	builder.WriteString("level=")
 	builder.WriteString(fmt.Sprintf("%v", k.Level))

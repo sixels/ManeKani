@@ -21,7 +21,7 @@ func TestDiffs(t *testing.T) {
 	assert.Equal(t,
 		[]string{"bar", "baz"}, util.DiffStrings(dups, a))
 	assert.Equal(t,
-		[]string{"ba!", "ba!"}, util.DiffStrings(a, dupsExclusive))
+		[]string{"ba!"}, util.DiffStrings(a, dupsExclusive))
 	assert.Equal(t,
 		[]string{"bar", "baz"}, util.DiffStrings(dupsExclusive, a))
 }

@@ -45,6 +45,7 @@ type KanjiMutation struct {
 	symbol              *string
 	name                *string
 	alt_names           *pgtype.TextArray
+	similar             *pgtype.TextArray
 	level               *int32
 	addlevel            *int32
 	reading             *string
@@ -360,6 +361,55 @@ func (m *KanjiMutation) AltNamesCleared() bool {
 func (m *KanjiMutation) ResetAltNames() {
 	m.alt_names = nil
 	delete(m.clearedFields, kanji.FieldAltNames)
+}
+
+// SetSimilar sets the "similar" field.
+func (m *KanjiMutation) SetSimilar(pa pgtype.TextArray) {
+	m.similar = &pa
+}
+
+// Similar returns the value of the "similar" field in the mutation.
+func (m *KanjiMutation) Similar() (r pgtype.TextArray, exists bool) {
+	v := m.similar
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSimilar returns the old "similar" field's value of the Kanji entity.
+// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KanjiMutation) OldSimilar(ctx context.Context) (v pgtype.TextArray, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSimilar is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSimilar requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSimilar: %w", err)
+	}
+	return oldValue.Similar, nil
+}
+
+// ClearSimilar clears the value of the "similar" field.
+func (m *KanjiMutation) ClearSimilar() {
+	m.similar = nil
+	m.clearedFields[kanji.FieldSimilar] = struct{}{}
+}
+
+// SimilarCleared returns if the "similar" field was cleared in this mutation.
+func (m *KanjiMutation) SimilarCleared() bool {
+	_, ok := m.clearedFields[kanji.FieldSimilar]
+	return ok
+}
+
+// ResetSimilar resets all changes to the "similar" field.
+func (m *KanjiMutation) ResetSimilar() {
+	m.similar = nil
+	delete(m.clearedFields, kanji.FieldSimilar)
 }
 
 // SetLevel sets the "level" field.
@@ -761,7 +811,7 @@ func (m *KanjiMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *KanjiMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, kanji.FieldCreatedAt)
 	}
@@ -776,6 +826,9 @@ func (m *KanjiMutation) Fields() []string {
 	}
 	if m.alt_names != nil {
 		fields = append(fields, kanji.FieldAltNames)
+	}
+	if m.similar != nil {
+		fields = append(fields, kanji.FieldSimilar)
 	}
 	if m.level != nil {
 		fields = append(fields, kanji.FieldLevel)
@@ -816,6 +869,8 @@ func (m *KanjiMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case kanji.FieldAltNames:
 		return m.AltNames()
+	case kanji.FieldSimilar:
+		return m.Similar()
 	case kanji.FieldLevel:
 		return m.Level()
 	case kanji.FieldReading:
@@ -849,6 +904,8 @@ func (m *KanjiMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldName(ctx)
 	case kanji.FieldAltNames:
 		return m.OldAltNames(ctx)
+	case kanji.FieldSimilar:
+		return m.OldSimilar(ctx)
 	case kanji.FieldLevel:
 		return m.OldLevel(ctx)
 	case kanji.FieldReading:
@@ -906,6 +963,13 @@ func (m *KanjiMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAltNames(v)
+		return nil
+	case kanji.FieldSimilar:
+		v, ok := value.(pgtype.TextArray)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSimilar(v)
 		return nil
 	case kanji.FieldLevel:
 		v, ok := value.(int32)
@@ -1004,6 +1068,9 @@ func (m *KanjiMutation) ClearedFields() []string {
 	if m.FieldCleared(kanji.FieldAltNames) {
 		fields = append(fields, kanji.FieldAltNames)
 	}
+	if m.FieldCleared(kanji.FieldSimilar) {
+		fields = append(fields, kanji.FieldSimilar)
+	}
 	return fields
 }
 
@@ -1020,6 +1087,9 @@ func (m *KanjiMutation) ClearField(name string) error {
 	switch name {
 	case kanji.FieldAltNames:
 		m.ClearAltNames()
+		return nil
+	case kanji.FieldSimilar:
+		m.ClearSimilar()
 		return nil
 	}
 	return fmt.Errorf("unknown Kanji nullable field %s", name)
@@ -1043,6 +1113,9 @@ func (m *KanjiMutation) ResetField(name string) error {
 		return nil
 	case kanji.FieldAltNames:
 		m.ResetAltNames()
+		return nil
+	case kanji.FieldSimilar:
+		m.ResetSimilar()
 		return nil
 	case kanji.FieldLevel:
 		m.ResetLevel()

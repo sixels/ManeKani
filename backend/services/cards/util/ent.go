@@ -18,7 +18,7 @@ func UpdateValue[T any, U any](value *T, setter func(T) U) {
 
 func UpdateTextArray[U any](value *[]string, setter func(pgtype.TextArray) U) {
 	if value != nil {
-		setter(IntoPgTextArray(*value))
+		setter(ToPgTextArray(*value))
 	}
 }
 

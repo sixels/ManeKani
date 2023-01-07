@@ -7,16 +7,24 @@ func DiffStrings(a, b []string) []string {
 		set[s] = struct{}{}
 	}
 
-	var diff []string
+	diff := make(map[string]struct{}, len(b))
 	for _, s := range b {
 		if _, exists := set[s]; !exists {
-			diff = append(diff, s)
+			diff[s] = struct{}{}
 		}
 	}
 
 	if len(diff) > 0 {
-		return diff
+		return MapKeys(diff)
 	}
 
 	return nil
+}
+
+func MapKeys[M ~map[K]V, K comparable, V any](m M) []K {
+	slice := make([]K, 0, len(m))
+	for key := range m {
+		slice = append(slice, key)
+	}
+	return slice
 }

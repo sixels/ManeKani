@@ -78,6 +78,20 @@ func (kc *KanjiCreate) SetNillableAltNames(pa *pgtype.TextArray) *KanjiCreate {
 	return kc
 }
 
+// SetSimilar sets the "similar" field.
+func (kc *KanjiCreate) SetSimilar(pa pgtype.TextArray) *KanjiCreate {
+	kc.mutation.SetSimilar(pa)
+	return kc
+}
+
+// SetNillableSimilar sets the "similar" field if the given value is not nil.
+func (kc *KanjiCreate) SetNillableSimilar(pa *pgtype.TextArray) *KanjiCreate {
+	if pa != nil {
+		kc.SetSimilar(*pa)
+	}
+	return kc
+}
+
 // SetLevel sets the "level" field.
 func (kc *KanjiCreate) SetLevel(i int32) *KanjiCreate {
 	kc.mutation.SetLevel(i)
@@ -375,6 +389,10 @@ func (kc *KanjiCreate) createSpec() (*Kanji, *sqlgraph.CreateSpec) {
 	if value, ok := kc.mutation.AltNames(); ok {
 		_spec.SetField(kanji.FieldAltNames, field.TypeOther, value)
 		_node.AltNames = value
+	}
+	if value, ok := kc.mutation.Similar(); ok {
+		_spec.SetField(kanji.FieldSimilar, field.TypeOther, value)
+		_node.Similar = value
 	}
 	if value, ok := kc.mutation.Level(); ok {
 		_spec.SetField(kanji.FieldLevel, field.TypeInt32, value)

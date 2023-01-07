@@ -54,19 +54,19 @@ func init() {
 	// kanji.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	kanji.NameValidator = kanjiDescName.Validators[0].(func(string) error)
 	// kanjiDescLevel is the schema descriptor for level field.
-	kanjiDescLevel := kanjiFields[4].Descriptor()
+	kanjiDescLevel := kanjiFields[5].Descriptor()
 	// kanji.LevelValidator is a validator for the "level" field. It is called by the builders before save.
 	kanji.LevelValidator = kanjiDescLevel.Validators[0].(func(int32) error)
 	// kanjiDescReading is the schema descriptor for reading field.
-	kanjiDescReading := kanjiFields[5].Descriptor()
+	kanjiDescReading := kanjiFields[6].Descriptor()
 	// kanji.ReadingValidator is a validator for the "reading" field. It is called by the builders before save.
 	kanji.ReadingValidator = kanjiDescReading.Validators[0].(func(string) error)
 	// kanjiDescMeaningMnemonic is the schema descriptor for meaning_mnemonic field.
-	kanjiDescMeaningMnemonic := kanjiFields[9].Descriptor()
+	kanjiDescMeaningMnemonic := kanjiFields[10].Descriptor()
 	// kanji.MeaningMnemonicValidator is a validator for the "meaning_mnemonic" field. It is called by the builders before save.
 	kanji.MeaningMnemonicValidator = kanjiDescMeaningMnemonic.Validators[0].(func(string) error)
 	// kanjiDescReadingMnemonic is the schema descriptor for reading_mnemonic field.
-	kanjiDescReadingMnemonic := kanjiFields[10].Descriptor()
+	kanjiDescReadingMnemonic := kanjiFields[11].Descriptor()
 	// kanji.ReadingMnemonicValidator is a validator for the "reading_mnemonic" field. It is called by the builders before save.
 	kanji.ReadingMnemonicValidator = kanjiDescReadingMnemonic.Validators[0].(func(string) error)
 	// kanjiDescID is the schema descriptor for id field.
