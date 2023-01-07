@@ -31,6 +31,10 @@ type (
 		MeaningMnemonic *string `json:"meaning_mnemonic,omitempty" form:"meaning_mnemonic"`
 	}
 
+	QueryAllRadicalRequest struct {
+		FilterLevel
+	}
+
 	PartialRadicalResponse struct {
 		Id     uuid.UUID `json:"id"`
 		Name   string    `json:"name"`

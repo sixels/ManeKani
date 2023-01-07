@@ -112,8 +112,12 @@ func (api *CardsApi) DeleteVocabulary(c echo.Context) error {
 // @Success 200 {array} cards.PartialVocabularyResponse
 // @Router /api/v1/vocabulary [get]
 func (api *CardsApi) AllVocabularies(c echo.Context) error {
-	ctx := c.Request().Context()
-	vocabularies, err := api.cards.AllVocabularies(ctx)
+	filters := new(cards.QueryAllVocabularyRequest)
+	if err := c.Bind(filters); err != nil {
+		return err
+	}
+
+	vocabularies, err := api.cards.AllVocabularies(c.Request().Context(), *filters)
 	if err != nil {
 		return c.JSON(err.(*errors.Error).Status, err)
 	}

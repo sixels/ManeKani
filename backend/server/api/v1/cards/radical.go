@@ -113,7 +113,12 @@ func (api *CardsApi) DeleteRadical(c echo.Context) error {
 // @Success 200 {array} cards.PartialRadicalResponse
 // @Router /api/v1/radical [get]
 func (api *CardsApi) AllRadicals(c echo.Context) error {
-	radicals, err := api.cards.AllRadicals(c.Request().Context())
+	filters := new(cards.QueryAllRadicalRequest)
+	if err := c.Bind(filters); err != nil {
+		return err
+	}
+
+	radicals, err := api.cards.AllRadicals(c.Request().Context(), *filters)
 	if err != nil {
 		return c.JSON(err.(*errors.Error).Status, err)
 	}

@@ -12,7 +12,7 @@ type (
 		QueryKanji(ctx context.Context, symbol string) (*domain.Kanji, error)
 		UpdateKanji(ctx context.Context, symbol string, req domain.UpdateKanjiRequest) (*domain.Kanji, error)
 		DeleteKanji(ctx context.Context, symbol string) error
-		AllKanji(ctx context.Context) ([]*domain.PartialKanjiResponse, error)
+		AllKanji(ctx context.Context, req domain.QueryAllKanjiRequest) ([]*domain.PartialKanjiResponse, error)
 
 		QueryKanjiRadicals(ctx context.Context, symbol string) ([]*domain.PartialRadicalResponse, error)
 		QueryKanjiVocabularies(ctx context.Context, symbol string) ([]*domain.PartialVocabularyResponse, error)
@@ -23,7 +23,7 @@ type (
 		QueryRadical(ctx context.Context, name string) (*domain.Radical, error)
 		UpdateRadical(ctx context.Context, name string, req domain.UpdateRadicalRequest) (*domain.Radical, error)
 		DeleteRadical(ctx context.Context, name string) error
-		AllRadicals(ctx context.Context) ([]*domain.PartialRadicalResponse, error)
+		AllRadicals(ctx context.Context, req domain.QueryAllRadicalRequest) ([]*domain.PartialRadicalResponse, error)
 
 		QueryRadicalKanjis(ctx context.Context, name string) ([]*domain.PartialKanjiResponse, error)
 	}
@@ -33,7 +33,7 @@ type (
 		QueryVocabulary(ctx context.Context, word string) (*domain.Vocabulary, error)
 		UpdateVocabulary(ctx context.Context, word string, req domain.UpdateVocabularyRequest) (*domain.Vocabulary, error)
 		DeleteVocabulary(ctx context.Context, word string) error
-		AllVocabularies(ctx context.Context) ([]*domain.PartialVocabularyResponse, error)
+		AllVocabularies(ctx context.Context, req domain.QueryAllVocabularyRequest) ([]*domain.PartialVocabularyResponse, error)
 
 		QueryVocabularyKanjis(ctx context.Context, word string) ([]*domain.PartialKanjiResponse, error)
 	}

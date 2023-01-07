@@ -133,9 +133,19 @@ func (repo CardsRepository) DeleteVocabulary(ctx context.Context, word string) e
 	return nil
 }
 
-func (repo CardsRepository) AllVocabularies(ctx context.Context) ([]*cards.PartialVocabularyResponse, error) {
+func (repo CardsRepository) AllVocabularies(ctx context.Context, req cards.QueryAllVocabularyRequest) ([]*cards.PartialVocabularyResponse, error) {
+	var min int32 = 0
+	if req.Level != nil && *req.Level >= 1 {
+		min = *req.Level
+	}
+	var max int32 = min + 10
+	if req.MaxLevel != nil && *req.MaxLevel >= 1 {
+		max = *req.MaxLevel
+	}
+
 	queried, err := repo.client.Vocabulary.Query().
 		Select(PARTIAL_VOCABULARY_FIELDS[:]...).
+		Where(vocabulary.And(vocabulary.LevelGTE(min), vocabulary.LevelLTE(max))).
 		All(ctx)
 
 	if err != nil {

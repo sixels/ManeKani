@@ -53,6 +53,10 @@ type (
 		RadicalComposition *[]string `json:"radical_composition,omitempty" form:"radical_composition"`
 	}
 
+	QueryAllKanjiRequest struct {
+		FilterLevel
+	}
+
 	PartialKanjiResponse struct {
 		Id       uuid.UUID `json:"id"`
 		Name     string    `json:"name"`

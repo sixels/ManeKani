@@ -55,6 +55,10 @@ type (
 		KanjiComposition *[]string          `json:"kanji_composition,omitempty" form:"kanji_composition"`
 	}
 
+	QueryAllVocabularyRequest struct {
+		FilterLevel
+	}
+
 	PartialVocabularyResponse struct {
 		Id       uuid.UUID `json:"id"`
 		Name     string    `json:"name"`

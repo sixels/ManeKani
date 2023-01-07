@@ -130,9 +130,19 @@ func (repo CardsRepository) DeleteKanji(ctx context.Context, symbol string) erro
 	return nil
 }
 
-func (repo CardsRepository) AllKanji(ctx context.Context) ([]*cards.PartialKanjiResponse, error) {
+func (repo CardsRepository) AllKanji(ctx context.Context, req cards.QueryAllKanjiRequest) ([]*cards.PartialKanjiResponse, error) {
+	var min int32 = 1
+	if req.Level != nil && *req.Level >= 1 {
+		min = *req.Level
+	}
+	var max int32 = min + 10
+	if req.MaxLevel != nil && *req.MaxLevel >= 1 {
+		max = *req.MaxLevel
+	}
+
 	queried, err := repo.client.Kanji.Query().
 		Select(PARTIAL_KANJI_FIELDS[:]...).
+		Where(kanji.And(kanji.LevelGTE(min), kanji.LevelLTE(max))).
 		All(ctx)
 
 	if err != nil {

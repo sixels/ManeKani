@@ -112,8 +112,13 @@ func (api *CardsApi) DeleteKanji(c echo.Context) error {
 // @Success 200 {array} cards.PartialKanjiResponse
 // @Router /api/v1/kanji [get]
 func (api *CardsApi) AllKanji(c echo.Context) error {
-	ctx := c.Request().Context()
-	kanjis, err := api.cards.AllKanji(ctx)
+
+	filters := new(cards.QueryAllKanjiRequest)
+	if err := c.Bind(filters); err != nil {
+		return err
+	}
+
+	kanjis, err := api.cards.AllKanji(c.Request().Context(), *filters)
 	if err != nil {
 		return c.JSON(err.(*errors.Error).Status, err)
 	}
