@@ -43,4 +43,6 @@ func (api *CardsApi) SetupRoutes(router *echo.Echo) {
 	apiV1.DELETE("/vocabulary/:word", api.DeleteVocabulary)
 	apiV1.GET("/vocabulary", api.AllVocabularies)
 	apiV1.GET("/vocabulary/:word/kanji", api.QueryVocabularyKanjis)
+
+	apiV1.GET("/level", api.AllLevels)
 }
