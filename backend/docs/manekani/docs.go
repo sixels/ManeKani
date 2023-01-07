@@ -265,6 +265,36 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/level": {
+            "get": {
+                "description": "Return a list of all radicals, kanji and vocabularies by the given level",
+                "consumes": [
+                    "*/*"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cards",
+                    "kanji",
+                    "radical",
+                    "vocabulary"
+                ],
+                "summary": "Query all radicals, kanji and vocabularies by level",
+                "operationId": "get-level-all",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/cards.Level"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/radical": {
             "get": {
                 "description": "Return a list of all radicals",
@@ -898,6 +928,29 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "cards.Level": {
+            "type": "object",
+            "properties": {
+                "kanji": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/cards.PartialKanjiResponse"
+                    }
+                },
+                "radical": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/cards.PartialRadicalResponse"
+                    }
+                },
+                "vocabulary": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/cards.PartialVocabularyResponse"
+                    }
                 }
             }
         },

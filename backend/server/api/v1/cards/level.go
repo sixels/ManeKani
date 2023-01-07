@@ -8,6 +8,15 @@ import (
 	"sixels.io/manekani/core/domain/errors"
 )
 
+// AllLevels godoc
+// @Id get-level-all
+// @Summary Query all radicals, kanji and vocabularies by level
+// @Description Return a list of all radicals, kanji and vocabularies by the given level
+// @Tags cards, kanji, radical, vocabulary
+// @Accept */*
+// @Produce json
+// @Success 200 {array} cards.Level
+// @Router /api/v1/level [get]
 func (api *CardsApi) AllLevels(c echo.Context) error {
 	filters := new(cards.FilterLevel)
 	if err := c.Bind(filters); err != nil {

@@ -134,6 +134,21 @@ definitions:
       updated_at:
         type: string
     type: object
+  cards.Level:
+    properties:
+      kanji:
+        items:
+          $ref: '#/definitions/cards.PartialKanjiResponse'
+        type: array
+      radical:
+        items:
+          $ref: '#/definitions/cards.PartialRadicalResponse'
+        type: array
+      vocabulary:
+        items:
+          $ref: '#/definitions/cards.PartialVocabularyResponse'
+        type: array
+    type: object
   cards.PartialKanjiResponse:
     properties:
       alt_names:
@@ -514,6 +529,28 @@ paths:
       tags:
       - cards
       - kanji
+  /api/v1/level:
+    get:
+      consumes:
+      - '*/*'
+      description: Return a list of all radicals, kanji and vocabularies by the given
+        level
+      operationId: get-level-all
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cards.Level'
+            type: array
+      summary: Query all radicals, kanji and vocabularies by level
+      tags:
+      - cards
+      - kanji
+      - radical
+      - vocabulary
   /api/v1/radical:
     get:
       consumes:
