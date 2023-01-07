@@ -33,7 +33,7 @@ func (Kanji) Fields() []ent.Field {
 		field.Text("name").NotEmpty(),
 		util.TextArray("alt_names", true),
 		util.TextArray("similar", true),
-		field.Int32("level").NonNegative(),
+		field.Int32("level").Positive(),
 
 		field.Text("reading").NotEmpty(),
 		util.TextArray("onyomi", false),

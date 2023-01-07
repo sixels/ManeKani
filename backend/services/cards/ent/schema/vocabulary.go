@@ -26,7 +26,7 @@ func (Vocabulary) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
 		field.Text("name").NotEmpty(),
 		util.TextArray("alt_names", true),
-		field.Int32("level").NonNegative(),
+		field.Int32("level").Positive(),
 
 		field.Text("word").NotEmpty().Unique(),
 		util.TextArray("word_type", false),

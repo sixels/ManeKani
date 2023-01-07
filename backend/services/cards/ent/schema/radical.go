@@ -25,7 +25,7 @@ func (Radical) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
 		field.Text("name").Unique().NotEmpty(),
-		field.Int32("level").NonNegative(),
+		field.Int32("level").Positive(),
 		field.Text("symbol").NotEmpty().Nillable(),
 		field.Text("meaning_mnemonic").NotEmpty(),
 	}
