@@ -1,5 +1,5 @@
 generate_ent:
-    go generate ./services/cards/ent
+    go generate ./ent
 
 generate_swag:
     swag init --propertyStrategy snakecase -g ./main.go -o docs/manekani
