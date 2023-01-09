@@ -7,10 +7,10 @@ import (
 )
 
 type FilesApi struct {
-	files *files.FilesService
+	files *files.FilesRepository
 }
 
-func New(filesService *files.FilesService) *FilesApi {
+func New(filesService *files.FilesRepository) *FilesApi {
 	return &FilesApi{
 		files: filesService,
 	}

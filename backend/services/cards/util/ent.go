@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"sixels.io/manekani/core/domain/errors"
-	"sixels.io/manekani/services/cards/ent"
+	"sixels.io/manekani/ent"
 
 	"github.com/jackc/pgtype"
 )

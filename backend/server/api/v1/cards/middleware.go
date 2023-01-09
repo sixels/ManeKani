@@ -50,7 +50,7 @@ func (api *CardsApi) UploadRadicalImage(next echo.HandlerFunc) echo.HandlerFunc 
 	}
 }
 
-func uploadFile(ctx context.Context, filesService *filesService.FilesService, f io.Reader, info files.FileInfo) (string, error) {
+func uploadFile(ctx context.Context, filesService *filesService.FilesRepository, f io.Reader, info files.FileInfo) (string, error) {
 	return filesService.CreateFile(ctx, files.CreateFileRequest{
 		FileInfo: info,
 		Handle:   f,

@@ -6,8 +6,8 @@ import (
 
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/errors"
-	"sixels.io/manekani/services/cards/ent"
-	"sixels.io/manekani/services/cards/ent/radical"
+	"sixels.io/manekani/ent"
+	"sixels.io/manekani/ent/radical"
 	"sixels.io/manekani/services/cards/util"
 )
 

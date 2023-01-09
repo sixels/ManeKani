@@ -3,7 +3,7 @@ package cards
 import (
 	"time"
 
-	"sixels.io/manekani/services/cards/ent/schema"
+	"sixels.io/manekani/ent/schema"
 
 	"github.com/google/uuid"
 )

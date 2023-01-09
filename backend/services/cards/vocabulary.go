@@ -6,9 +6,9 @@ import (
 
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/errors"
-	"sixels.io/manekani/services/cards/ent"
-	"sixels.io/manekani/services/cards/ent/kanji"
-	"sixels.io/manekani/services/cards/ent/vocabulary"
+	"sixels.io/manekani/ent"
+	"sixels.io/manekani/ent/kanji"
+	"sixels.io/manekani/ent/vocabulary"
 	"sixels.io/manekani/services/cards/util"
 )
 

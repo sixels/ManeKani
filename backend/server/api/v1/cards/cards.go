@@ -10,14 +10,14 @@ import (
 )
 
 type CardsApi struct {
-	cards         *cards.CardsService
-	files         *files.FilesService
+	cards         *cards.CardsRepository
+	files         *files.FilesRepository
 	authenticator *auth.Authenticator
 }
 
 func New(
-	cardsService *cards.CardsService,
-	filesService *files.FilesService,
+	cardsService *cards.CardsRepository,
+	filesService *files.FilesRepository,
 	authService *auth.Authenticator,
 ) *CardsApi {
 	return &CardsApi{

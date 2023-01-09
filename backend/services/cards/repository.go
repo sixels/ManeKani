@@ -6,36 +6,33 @@ import (
 	"fmt"
 	"os"
 
-	"sixels.io/manekani/services/cards/ent"
-	"sixels.io/manekani/services/cards/ent/migrate"
+	"sixels.io/manekani/ent"
+	"sixels.io/manekani/ent/migrate"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 type CardsRepository struct {
 	client *ent.Client
 }
 
-func NewRepository(ctx context.Context) (CardsRepository, error) {
+func NewRepository(ctx context.Context) (*CardsRepository, error) {
 	dbUrl := os.Getenv("MANEKANI_DB_URL")
 
 	client, err := open(dbUrl)
 	if err != nil {
-		return CardsRepository{}, fmt.Errorf("failed to open a connection to postgres: %v", err)
+		return nil, fmt.Errorf("failed to open a connection to postgres: %v", err)
 	}
 
 	if err := client.Schema.Create(ctx, migrate.WithGlobalUniqueID(true)); err != nil {
 		client.Close()
-		return CardsRepository{}, fmt.Errorf("failed to migrate: %v", err)
+		return nil, fmt.Errorf("failed to migrate: %v", err)
 	}
 
-	repo := CardsRepository{
+	return &CardsRepository{
 		client: client,
-	}
-
-	return repo, nil
+	}, nil
 }
 
 func (repo CardsRepository) Close() {

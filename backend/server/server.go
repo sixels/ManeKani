@@ -46,11 +46,8 @@ func New() *Server {
 		log.Fatalf("Could not create the Files repository: %v", err)
 	}
 
-	cardsService := cards.NewService(cardsRepo)
-	filesService := files.NewService(filesRepo)
-
-	cardsV1 := v1CardsApi.New(cardsService, filesService, authenticator)
-	filesApi := filesApi.New(filesService)
+	cardsV1 := v1CardsApi.New(cardsRepo, filesRepo, authenticator)
+	filesApi := filesApi.New(filesRepo)
 	authApi := authApi.New(authenticator)
 
 	router := echo.New()
