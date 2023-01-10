@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
@@ -61,6 +62,7 @@ func New() *Server {
 }
 
 func (server *Server) Start(logFile io.Writer) {
+	// session
 	redisUrl := os.Getenv("REDIS_URL")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 	redisStore, err := redis.NewStore(10000, "tcp", redisUrl, redisPassword, []byte("TODO: SECRET KEY"))
@@ -73,6 +75,14 @@ func (server *Server) Start(logFile io.Writer) {
 		[]string{"auth-session", "user-session"},
 		redisStore,
 	))
+
+	// cors
+	server.router.Use(cors.New(cors.Config{
+		AllowWildcard:    true,
+		AllowCredentials: true,
+		AllowOrigins:     []string{"localhost"},
+		AllowMethods:     []string{"GET", "PATCH", "POST", "DELETE"},
+	}))
 
 	server.bindRoutes()
 

@@ -5,6 +5,7 @@ go 1.19
 require (
 	entgo.io/ent v0.11.4
 	github.com/coreos/go-oidc/v3 v3.5.0
+	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/sessions v0.0.5
 	github.com/gin-gonic/gin v1.8.2
 	github.com/google/uuid v1.3.0
