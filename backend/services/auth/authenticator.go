@@ -59,3 +59,7 @@ func (a *Authenticator) VerifyIDToken(ctx context.Context, token *oauth2.Token) 
 
 	return a.Verifier(oidcConfig).Verify(ctx, rawIDToken)
 }
+
+func (a *Authenticator) GetUserInfo(ctx context.Context, token *oauth2.Token) (*oidc.UserInfo, error) {
+	return a.UserInfo(ctx, oauth2.ReuseTokenSource(token, a.TokenSource(ctx, token)))
+}

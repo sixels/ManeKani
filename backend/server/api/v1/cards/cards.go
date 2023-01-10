@@ -30,25 +30,27 @@ func New(
 func (api *CardsApi) SetupRoutes(router *echo.Echo) {
 	apiV1 := router.Group("/api/v1")
 
-	apiV1.POST("/radical", api.CreateRadical, middlewares.LoginRequired(*api.authenticator), api.UploadRadicalImage)
+	loginRequired := middlewares.LoginRequired(*api.authenticator)
+
+	apiV1.POST("/radical", api.CreateRadical, loginRequired, api.UploadRadicalImage)
 	apiV1.GET("/radical/:name", api.QueryRadical)
-	apiV1.PATCH("/radical/:name", api.UpdateRadical, middlewares.LoginRequired(*api.authenticator))
-	apiV1.DELETE("/radical/:name", api.DeleteRadical, middlewares.LoginRequired(*api.authenticator))
+	apiV1.PATCH("/radical/:name", api.UpdateRadical, loginRequired)
+	apiV1.DELETE("/radical/:name", api.DeleteRadical, loginRequired)
 	apiV1.GET("/radical", api.AllRadicals)
 	apiV1.GET("/radical/:name/kanji", api.QueryRadicalKanjis)
 
-	apiV1.POST("/kanji", api.CreateKanji, middlewares.LoginRequired(*api.authenticator))
+	apiV1.POST("/kanji", api.CreateKanji, loginRequired)
 	apiV1.GET("/kanji/:symbol", api.QueryKanji)
-	apiV1.PATCH("/kanji/:symbol", api.UpdateKanji, middlewares.LoginRequired(*api.authenticator))
-	apiV1.DELETE("/kanji/:symbol", api.DeleteKanji, middlewares.LoginRequired(*api.authenticator))
+	apiV1.PATCH("/kanji/:symbol", api.UpdateKanji, loginRequired)
+	apiV1.DELETE("/kanji/:symbol", api.DeleteKanji, loginRequired)
 	apiV1.GET("/kanji", api.AllKanji)
 	apiV1.GET("/kanji/:symbol/radicals", api.QueryKanjiRadicals)
 	apiV1.GET("/kanji/:symbol/vocabularies", api.QueryKanjiVocabularies)
 
-	apiV1.POST("/vocabulary", api.CreateVocabulary, middlewares.LoginRequired(*api.authenticator))
+	apiV1.POST("/vocabulary", api.CreateVocabulary, loginRequired)
 	apiV1.GET("/vocabulary/:word", api.QueryVocabulary)
-	apiV1.PATCH("/vocabulary/:word", api.UpdateVocabulary, middlewares.LoginRequired(*api.authenticator))
-	apiV1.DELETE("/vocabulary/:word", api.DeleteVocabulary, middlewares.LoginRequired(*api.authenticator))
+	apiV1.PATCH("/vocabulary/:word", api.UpdateVocabulary, loginRequired)
+	apiV1.DELETE("/vocabulary/:word", api.DeleteVocabulary, loginRequired)
 	apiV1.GET("/vocabulary", api.AllVocabularies)
 	apiV1.GET("/vocabulary/:word/kanji", api.QueryVocabularyKanjis)
 

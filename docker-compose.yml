@@ -67,7 +67,7 @@ services:
       AWS_ACCESS_KEY_ID: Kz31iB793qov0cTW
       AWS_SECRET_ACCESS_KEY: jKyin9lWVio2tCIDXu0JHr3a1zfcPQ78
       KEYCLOAK_CLIENT_ID: manekani-backend
-      KEYCLOAK_CLIENT_SECRET: 3Wltkal8xnDTUSltry8LNxLpzdCarSsJ
+      KEYCLOAK_CLIENT_SECRET: Zzmv9gFDHs5YOuL7ajfvhX5vERFVzyAs
       KEYCLOAK_URL: "http://keycloak:9100"
       KEYCLOAK_REALM: manekani
     # env_file:

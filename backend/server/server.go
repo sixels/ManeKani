@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/gob"
 	"io"
 	"log"
 
@@ -62,6 +63,7 @@ func (server *Server) Start(logFile io.Writer) {
 	loggerConfig := middleware.DefaultLoggerConfig
 	loggerConfig.Output = logFile
 
+	gob.Register(auth.StaticToken{})
 	server.router.Use(middleware.LoggerWithConfig(loggerConfig))
 	server.router.Use(middleware.Recover())
 	server.router.Use(session.Middleware(

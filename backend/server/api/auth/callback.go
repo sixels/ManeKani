@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"sixels.io/manekani/core/domain/errors"
+	"sixels.io/manekani/services/auth"
 )
 
 func (api *AuthApi) OAuthCallback(c echo.Context) error {
@@ -28,15 +28,12 @@ func (api *AuthApi) OAuthCallback(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	code := c.QueryParam("code")
-	log.Println("code:", code)
-
-	oauthToken, err := api.Exchange(ctx, code)
+	authToken, err := api.Exchange(ctx, c.QueryParam("code"))
 	if err != nil {
 		return errors.Unknown(fmt.Errorf("token exchange failed: %w", err))
 	}
 
-	idToken, err := api.VerifyIDToken(ctx, oauthToken)
+	idToken, err := api.VerifyIDToken(ctx, authToken)
 	if err != nil {
 		return errors.Unknown(fmt.Errorf("validation falied: %w", err))
 	}
@@ -47,7 +44,7 @@ func (api *AuthApi) OAuthCallback(c echo.Context) error {
 
 	var profile map[string]interface{}
 	if err := idToken.Claims(&profile); err != nil {
-		return errors.Unknown(err)
+		return errors.Unknown(fmt.Errorf("invalid token claims: %w", err))
 	}
 
 	profileSession, _ := session.Get("manekani-profile", c)
@@ -58,9 +55,8 @@ func (api *AuthApi) OAuthCallback(c echo.Context) error {
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
-	log.Printf("%#v", profile)
 
-	profileSession.Values["manekani-acctoken"] = oauthToken.AccessToken
+	profileSession.Values["AuthToken"] = auth.ToStaticToken(authToken)
 
 	if err := profileSession.Save(c.Request(), c.Response().Writer); err != nil {
 		return errors.Unknown(err)

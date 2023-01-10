@@ -17,7 +17,7 @@ func LoginRequired(authenticator auth.Authenticator) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 
 			sess, _ := session.Get("manekani-profile", c)
-			if _, ok := sess.Values["manekani-acctoken"].(string); !ok {
+			if token, ok := sess.Values["AuthToken"].(auth.StaticToken); !ok || !auth.ReviveToken(token).Valid() {
 				return c.NoContent(http.StatusUnauthorized)
 			}
 			if err := next(c); err != nil {
