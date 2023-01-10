@@ -8,10 +8,6 @@ import (
 	"sixels.io/manekani/services/auth"
 )
 
-type OpenIdAuthConfig struct {
-	Authenticator *auth.Authenticator
-}
-
 func LoginRequired(authenticator auth.Authenticator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.DefaultMany(c, "user-session")
