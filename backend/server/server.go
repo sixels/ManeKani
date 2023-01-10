@@ -5,11 +5,12 @@ import (
 	"encoding/gob"
 	"io"
 	"log"
+	"os"
 
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/redis"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
 
 	_ "sixels.io/manekani/docs/manekani"
 	authApi "sixels.io/manekani/server/api/auth"
@@ -22,11 +23,11 @@ import (
 )
 
 type Service interface {
-	SetupRoutes(router *echo.Echo)
+	SetupRoutes(router *gin.Engine)
 }
 
 type Server struct {
-	router *echo.Echo
+	router *gin.Engine
 
 	services []Service
 }
@@ -51,7 +52,7 @@ func New() *Server {
 	filesApi := filesApi.New(filesRepo)
 	authApi := authApi.New(authenticator)
 
-	router := echo.New()
+	router := gin.Default()
 
 	return &Server{
 		router:   router,
@@ -60,16 +61,20 @@ func New() *Server {
 }
 
 func (server *Server) Start(logFile io.Writer) {
-	loggerConfig := middleware.DefaultLoggerConfig
-	loggerConfig.Output = logFile
+	redisUrl := os.Getenv("REDIS_URL")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisStore, err := redis.NewStore(10000, "tcp", redisUrl, redisPassword, []byte("TODO: SECRET KEY"))
+	if err != nil {
+		log.Fatalf("could not connect with the redis session: %v", err)
+	}
 
-	gob.Register(auth.StaticToken{})
-	server.router.Use(middleware.LoggerWithConfig(loggerConfig))
-	server.router.Use(middleware.Recover())
-	server.router.Use(session.Middleware(
-		sessions.NewCookieStore([]byte("TODO: secret keys"))))
+	gob.Register(oauth2.Token{})
+	server.router.Use(sessions.SessionsMany(
+		[]string{"auth-session", "user-session"},
+		redisStore,
+	))
 
 	server.bindRoutes()
 
-	log.Fatal(server.router.Start("0.0.0.0:8081"))
+	log.Fatal(server.router.Run("0.0.0.0:8081"))
 }

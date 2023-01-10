@@ -6,7 +6,7 @@ import (
 	"sixels.io/manekani/services/cards"
 	"sixels.io/manekani/services/files"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 )
 
 type CardsApi struct {
@@ -27,32 +27,32 @@ func New(
 	}
 }
 
-func (api *CardsApi) SetupRoutes(router *echo.Echo) {
-	apiV1 := router.Group("/api/v1")
-
+func (api *CardsApi) SetupRoutes(router *gin.Engine) {
+	r := router.Group("/api/v1")
 	loginRequired := middlewares.LoginRequired(*api.authenticator)
 
-	apiV1.POST("/radical", api.CreateRadical, loginRequired, api.UploadRadicalImage)
-	apiV1.GET("/radical/:name", api.QueryRadical)
-	apiV1.PATCH("/radical/:name", api.UpdateRadical, loginRequired)
-	apiV1.DELETE("/radical/:name", api.DeleteRadical, loginRequired)
-	apiV1.GET("/radical", api.AllRadicals)
-	apiV1.GET("/radical/:name/kanji", api.QueryRadicalKanjis)
-
-	apiV1.POST("/kanji", api.CreateKanji, loginRequired)
-	apiV1.GET("/kanji/:symbol", api.QueryKanji)
-	apiV1.PATCH("/kanji/:symbol", api.UpdateKanji, loginRequired)
-	apiV1.DELETE("/kanji/:symbol", api.DeleteKanji, loginRequired)
-	apiV1.GET("/kanji", api.AllKanji)
-	apiV1.GET("/kanji/:symbol/radicals", api.QueryKanjiRadicals)
-	apiV1.GET("/kanji/:symbol/vocabularies", api.QueryKanjiVocabularies)
-
-	apiV1.POST("/vocabulary", api.CreateVocabulary, loginRequired)
-	apiV1.GET("/vocabulary/:word", api.QueryVocabulary)
-	apiV1.PATCH("/vocabulary/:word", api.UpdateVocabulary, loginRequired)
-	apiV1.DELETE("/vocabulary/:word", api.DeleteVocabulary, loginRequired)
-	apiV1.GET("/vocabulary", api.AllVocabularies)
-	apiV1.GET("/vocabulary/:word/kanji", api.QueryVocabularyKanjis)
-
-	apiV1.GET("/level", api.AllLevels)
+	r.
+		POST("/radical", api.CreateRadical(), loginRequired, api.UploadRadicalImage()).
+		GET("/radical/:name", api.QueryRadical()).
+		PATCH("/radical/:name", api.UpdateRadical(), loginRequired).
+		DELETE("/radical/:name", api.DeleteRadical(), loginRequired).
+		GET("/radical", api.AllRadicals(), loginRequired).
+		GET("/radical/:name/kanji", api.QueryRadicalKanjis())
+	r.
+		POST("/kanji", api.CreateKanji(), loginRequired).
+		GET("/kanji/:symbol", api.QueryKanji()).
+		PATCH("/kanji/:symbol", api.UpdateKanji(), loginRequired).
+		DELETE("/kanji/:symbol", api.DeleteKanji(), loginRequired).
+		GET("/kanji", api.AllKanji()).
+		GET("/kanji/:symbol/radicals", api.QueryKanjiRadicals()).
+		GET("/kanji/:symbol/vocabularies", api.QueryKanjiVocabularies())
+	r.
+		POST("/vocabulary", api.CreateVocabulary(), loginRequired).
+		GET("/vocabulary/:word", api.QueryVocabulary()).
+		PATCH("/vocabulary/:word", api.UpdateVocabulary(), loginRequired).
+		DELETE("/vocabulary/:word", api.DeleteVocabulary(), loginRequired).
+		GET("/vocabulary", api.AllVocabularies()).
+		GET("/vocabulary/:word/kanji", api.QueryVocabularyKanjis())
+	r.
+		GET("/level", api.AllLevels())
 }

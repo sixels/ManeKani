@@ -1,9 +1,10 @@
 package v1
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/errors"
 )
@@ -17,30 +18,46 @@ import (
 // @Produce json
 // @Success 200 {array} cards.Level
 // @Router /api/v1/level [get]
-func (api *CardsApi) AllLevels(c echo.Context) error {
-	filters := new(cards.FilterLevel)
-	if err := c.Bind(filters); err != nil {
-		return err
-	}
+func (api *CardsApi) AllLevels() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filters := new(cards.FilterLevel)
+		if err := c.Bind(filters); err != nil {
+			c.Error(err)
+			return
+		}
 
-	ctx := c.Request().Context()
+		ctx := c.Request.Context()
+		kanjis, err := queryAll(ctx, api.cards.AllKanji, filters)
+		if err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+			return
+		}
+		radicals, err := queryAll(ctx, api.cards.AllRadicals, filters)
+		if err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+			return
+		}
+		vocabularies, err := queryAll(ctx, api.cards.AllVocabularies, filters)
+		if err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+			return
+		}
 
-	kanjis, err := api.cards.AllKanji(ctx, cards.QueryAllKanjiRequest{FilterLevel: *filters})
-	if err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
+		c.JSON(http.StatusOK, cards.Level{
+			Kanji:      kanjis,
+			Radical:    radicals,
+			Vocabulary: vocabularies,
+		})
 	}
-	radicals, err := api.cards.AllRadicals(ctx, cards.QueryAllRadicalRequest{FilterLevel: *filters})
-	if err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
-	}
-	vocabularies, err := api.cards.AllVocabularies(ctx, cards.QueryAllVocabularyRequest{FilterLevel: *filters})
-	if err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
-	}
+}
 
-	return c.JSON(http.StatusOK, cards.Level{
-		Kanji:      kanjis,
-		Radical:    radicals,
-		Vocabulary: vocabularies,
-	})
+type filterByLevel interface {
+	~struct{ cards.FilterLevel }
+}
+
+func queryAll[T filterByLevel, A any](ctx context.Context, q func(context.Context, T) ([]*A, error), filters *cards.FilterLevel) ([]*A, error) {
+	return q(ctx, T{*filters})
 }

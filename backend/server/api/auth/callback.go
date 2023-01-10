@@ -3,64 +3,63 @@ package auth
 import (
 	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"sixels.io/manekani/core/domain/errors"
-	"sixels.io/manekani/services/auth"
 )
 
-func (api *AuthApi) OAuthCallback(c echo.Context) error {
-	state := c.QueryParam("state")
+func (api *AuthApi) OAuthCallback() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		state := c.Query("state")
 
-	authSession, _ := session.Get("manekani-auth", c)
+		authSession := sessions.DefaultMany(c, "auth-session")
 
-	cookieState, hasState := authSession.Values["oauthstate"].(string)
-	cookieNonce, hasNonce := authSession.Values["oauthnonce"].(string)
+		cookieState, hasState := authSession.Get("OauthState").(string)
+		cookieNonce, hasNonce := authSession.Get("OauthNonce").(string)
 
-	println(cookieState, cookieNonce)
+		println(cookieState, cookieNonce)
 
-	if !hasState || !hasNonce || state != cookieState {
-		return errors.InvalidRequest("invalid auth state")
+		if !hasState || !hasNonce || state != cookieState {
+			e := errors.InvalidRequest("invalid auth state")
+			c.Error(e)
+			c.JSON(e.Status, e)
+			return
+		}
+
+		ctx := c.Request.Context()
+		authToken, err := api.Exchange(ctx, c.Query("code"))
+		if err != nil {
+			c.Error(fmt.Errorf("token exchange failed: %w", err))
+			return
+		}
+
+		idToken, err := api.VerifyIDToken(ctx, authToken)
+		if err != nil {
+			c.Error(fmt.Errorf("validation falied: %w", err))
+			return
+		}
+
+		if idToken.Nonce != cookieNonce {
+			c.Error(errors.InvalidRequest("invalid state nonce"))
+			return
+		}
+
+		var profile map[string]interface{}
+		if err := idToken.Claims(&profile); err != nil {
+			c.Error(errors.Unknown(fmt.Errorf("invalid token claims: %w", err)))
+			return
+		}
+
+		profileSession := sessions.DefaultMany(c, "user-session")
+
+		profileSession.Set("AuthToken", authToken)
+
+		if err := profileSession.Save(); err != nil {
+			c.Error(err)
+			return
+		}
+
+		c.Redirect(http.StatusPermanentRedirect, "/user")
 	}
-
-	ctx := c.Request().Context()
-
-	authToken, err := api.Exchange(ctx, c.QueryParam("code"))
-	if err != nil {
-		return errors.Unknown(fmt.Errorf("token exchange failed: %w", err))
-	}
-
-	idToken, err := api.VerifyIDToken(ctx, authToken)
-	if err != nil {
-		return errors.Unknown(fmt.Errorf("validation falied: %w", err))
-	}
-
-	if idToken.Nonce != cookieNonce {
-		return errors.InvalidRequest("invalid state nonce")
-	}
-
-	var profile map[string]interface{}
-	if err := idToken.Claims(&profile); err != nil {
-		return errors.Unknown(fmt.Errorf("invalid token claims: %w", err))
-	}
-
-	profileSession, _ := session.Get("manekani-profile", c)
-	profileSession.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
-		Secure:   c.IsTLS(),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	profileSession.Values["AuthToken"] = auth.ToStaticToken(authToken)
-
-	if err := profileSession.Save(c.Request(), c.Response().Writer); err != nil {
-		return errors.Unknown(err)
-	}
-
-	return c.Redirect(http.StatusTemporaryRedirect, "/user")
 }

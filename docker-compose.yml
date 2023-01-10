@@ -56,6 +56,16 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    container_name: manekani-redis
+    image: redis:7-alpine
+    hostname: redis
+    command: redis-server --save 20 1 --requirepass 123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-session:/data
+
   manekani:
     container_name: manekani-backend
     hostname: manekani
@@ -70,6 +80,8 @@ services:
       KEYCLOAK_CLIENT_SECRET: Zzmv9gFDHs5YOuL7ajfvhX5vERFVzyAs
       KEYCLOAK_URL: "http://keycloak:9100"
       KEYCLOAK_REALM: manekani
+      REDIS_URL: "http://redis:6379"
+      REDIS_PASSWORD: "123"
     # env_file:
     #   - ./backend/.env
     ports:
@@ -101,3 +113,7 @@ services:
       - minio
       - keycloak
       # - manekani
+
+volumes:
+  redis-session:
+    driver: local

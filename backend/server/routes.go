@@ -3,14 +3,15 @@ package server
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func (server *Server) bindRoutes() {
 	// TODO: don't expose swagger routes in production
 	if true {
-		server.router.GET("/swagger/*", echoSwagger.WrapHandler)
+		server.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
 	server.router.GET("/health", healthCheck)
@@ -29,8 +30,8 @@ func (server *Server) bindRoutes() {
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Router /health [get]
-func healthCheck(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]interface{}{
+func healthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, map[string]interface{}{
 		"data": "server is online",
 	})
 }

@@ -1,9 +1,8 @@
 package files
 
 import (
+	"github.com/gin-gonic/gin"
 	"sixels.io/manekani/services/files"
-
-	"github.com/labstack/echo/v4"
 )
 
 type FilesApi struct {
@@ -16,8 +15,8 @@ func New(filesService *files.FilesRepository) *FilesApi {
 	}
 }
 
-func (api *FilesApi) SetupRoutes(router *echo.Echo) {
-	filesRoute := router.Group("/files")
+func (api *FilesApi) SetupRoutes(router *gin.Engine) {
+	r := router.Group("/files")
 
-	filesRoute.GET("/:kind/:namespace/:name", api.QueryFile)
+	r.GET("/:kind/:namespace/:name", api.QueryFile())
 }

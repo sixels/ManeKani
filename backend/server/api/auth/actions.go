@@ -7,39 +7,42 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
-	"sixels.io/manekani/core/domain/errors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
-func (api *AuthApi) Login(c echo.Context) error {
-	state, err := randomString()
-	if err != nil {
-		return errors.Unknown(err)
-	}
-	nonce, err := randomString()
-	if err != nil {
-		return errors.Unknown(err)
-	}
+func (api *AuthApi) Login() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		state, err := randomString()
+		if err != nil {
+			c.Error(err)
+			return
+		}
+		nonce, err := randomString()
+		if err != nil {
+			c.Error(err)
+			return
+		}
 
-	sess, _ := session.Get("manekani-auth", c)
-	sess.Options = &sessions.Options{
-		Path:     "/auth/callback",
-		MaxAge:   int((20 * time.Minute).Seconds()),
-		Secure:   c.IsTLS(),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		authSession := sessions.DefaultMany(c, "auth-session")
+		authSession.Options(sessions.Options{
+			Path:     "/auth/callback",
+			MaxAge:   int((20 * time.Minute).Seconds()),
+			Secure:   c.Request.TLS != nil,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
+
+		authSession.Set("OauthState", state)
+		authSession.Set("OauthNonce", nonce)
+
+		if err := authSession.Save(); err != nil {
+			c.Error(err)
+			return
+		}
+
+		c.Redirect(http.StatusTemporaryRedirect, api.AuthCodeURL(state, oidc.Nonce(nonce)))
 	}
-
-	sess.Values["oauthstate"] = state
-	sess.Values["oauthnonce"] = nonce
-
-	if err := sess.Save(c.Request(), c.Response()); err != nil {
-		return errors.Unknown(err)
-	}
-
-	return c.Redirect(http.StatusTemporaryRedirect, api.AuthCodeURL(state, oidc.Nonce(nonce)))
 }
 
 func randomString() (string, error) {

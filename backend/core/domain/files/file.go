@@ -17,6 +17,7 @@ type (
 
 	ObjectWrapperResponse struct {
 		io.ReadCloser
+		Size        int64
 		ContentType string
 	}
 

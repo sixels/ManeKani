@@ -1,13 +1,12 @@
 package v1
 
 import (
-	"log"
 	"net/http"
 
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/errors"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 )
 
 // CreateRadical godoc
@@ -20,19 +19,23 @@ import (
 // @Param radical body cards.CreateRadicalRequest true "The radical to be created"
 // @Success 201 {object} cards.Radical
 // @Router /api/v1/radical [post]
-func (api *CardsApi) CreateRadical(c echo.Context) error {
-	radical := new(cards.CreateRadicalRequest)
-	if err := c.Bind(radical); err != nil {
-		return err
-	}
-	log.Println("route: ", radical)
+func (api *CardsApi) CreateRadical() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		radical := new(cards.CreateRadicalRequest)
+		if err := c.Bind(radical); err != nil {
+			c.Error(err)
+			return
+		}
 
-	ctx := c.Request().Context()
-	created, err := api.cards.CreateRadical(ctx, *radical)
-	if err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
+		ctx := c.Request.Context()
+		created, err := api.cards.CreateRadical(ctx, *radical)
+		if err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+		} else {
+			c.JSON(http.StatusCreated, created)
+		}
 	}
-	return c.JSON(http.StatusCreated, created)
 }
 
 // QueryRadical godoc
@@ -45,15 +48,19 @@ func (api *CardsApi) CreateRadical(c echo.Context) error {
 // @Param name path string true "Radical name"
 // @Success 200 {object} cards.Radical
 // @Router /api/v1/radical/{name} [get]
-func (api *CardsApi) QueryRadical(c echo.Context) error {
-	name := c.Param("name")
+func (api *CardsApi) QueryRadical() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		name := c.Param("name")
 
-	ctx := c.Request().Context()
-	queried, err := api.cards.QueryRadical(ctx, name)
-	if err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
+		ctx := c.Request.Context()
+		queried, err := api.cards.QueryRadical(ctx, name)
+		if err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+		} else {
+			c.JSON(http.StatusOK, queried)
+		}
 	}
-	return c.JSON(http.StatusOK, queried)
 }
 
 // UpdateRadical godoc
@@ -67,20 +74,27 @@ func (api *CardsApi) QueryRadical(c echo.Context) error {
 // @Param radical body cards.UpdateRadicalRequest true "Radical fields to update"
 // @Success 200 {object} cards.Radical
 // @Router /api/v1/radical/{name} [patch]
-func (api *CardsApi) UpdateRadical(c echo.Context) error {
-	name := c.Param("name")
+func (api *CardsApi) UpdateRadical() gin.HandlerFunc {
+	return func(c *gin.Context) {
 
-	radical := new(cards.UpdateRadicalRequest)
-	if err := c.Bind(radical); err != nil {
-		return err
+		name := c.Param("name")
+
+		radical := new(cards.UpdateRadicalRequest)
+		if err := c.Bind(radical); err != nil {
+			c.Error(err)
+			return
+		}
+
+		ctx := c.Request.Context()
+		updated, err := api.cards.UpdateRadical(ctx, name, *radical)
+		if err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+		} else {
+			c.JSON(http.StatusOK, updated)
+		}
 	}
 
-	ctx := c.Request().Context()
-	updated, err := api.cards.UpdateRadical(ctx, name, *radical)
-	if err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
-	}
-	return c.JSON(http.StatusOK, updated)
 }
 
 // DeleteRadical godoc
@@ -93,14 +107,18 @@ func (api *CardsApi) UpdateRadical(c echo.Context) error {
 // @Param name path string true "Radical name"
 // @Success 200
 // @Router /api/v1/radical/{name} [delete]
-func (api *CardsApi) DeleteRadical(c echo.Context) error {
-	name := c.Param("name")
+func (api *CardsApi) DeleteRadical() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		name := c.Param("name")
 
-	ctx := c.Request().Context()
-	if err := api.cards.DeleteRadical(ctx, name); err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
+		ctx := c.Request.Context()
+		if err := api.cards.DeleteRadical(ctx, name); err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+		} else {
+			c.Status(http.StatusNoContent)
+		}
 	}
-	return c.NoContent(http.StatusNoContent)
 }
 
 // AllRadicals godoc
@@ -112,17 +130,23 @@ func (api *CardsApi) DeleteRadical(c echo.Context) error {
 // @Produce json
 // @Success 200 {array} cards.PartialRadicalResponse
 // @Router /api/v1/radical [get]
-func (api *CardsApi) AllRadicals(c echo.Context) error {
-	filters := new(cards.QueryAllRadicalRequest)
-	if err := c.Bind(filters); err != nil {
-		return err
-	}
+func (api *CardsApi) AllRadicals() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filters := new(cards.QueryAllRadicalRequest)
+		if err := c.Bind(filters); err != nil {
+			c.Error(err)
+			return
+		}
 
-	radicals, err := api.cards.AllRadicals(c.Request().Context(), *filters)
-	if err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
+		ctx := c.Request.Context()
+		radicals, err := api.cards.AllRadicals(ctx, *filters)
+		if err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+		} else {
+			c.JSON(http.StatusOK, radicals)
+		}
 	}
-	return c.JSON(http.StatusOK, radicals)
 }
 
 // QueryRadicalKanjis godoc
@@ -135,11 +159,17 @@ func (api *CardsApi) AllRadicals(c echo.Context) error {
 // @Param name path string true "Radical name"
 // @Success 200 {array} cards.PartialKanjiResponse
 // @Router /api/v1/radical/{:name}/kanji [get]
-func (api *CardsApi) QueryRadicalKanjis(c echo.Context) error {
-	name := c.Param("name")
-	kanjis, err := api.cards.QueryRadicalKanjis(c.Request().Context(), name)
-	if err != nil {
-		return c.JSON(err.(*errors.Error).Status, err)
+func (api *CardsApi) QueryRadicalKanjis() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		name := c.Param("name")
+
+		ctx := c.Request.Context()
+		kanjis, err := api.cards.QueryRadicalKanjis(ctx, name)
+		if err != nil {
+			c.Error(err)
+			c.JSON(err.(*errors.Error).Status, err)
+		} else {
+			c.JSON(http.StatusOK, kanjis)
+		}
 	}
-	return c.JSON(http.StatusOK, kanjis)
 }

@@ -4,18 +4,19 @@ import (
 	"context"
 	"io"
 	"log"
+	"net/http"
 	"strings"
 
 	"sixels.io/manekani/core/domain/errors"
 	"sixels.io/manekani/core/domain/files"
 	filesService "sixels.io/manekani/services/files"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 )
 
-func (api *CardsApi) UploadRadicalImage(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		radicalName := strings.TrimSpace(c.FormValue("name"))
+func (api *CardsApi) UploadRadicalImage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		radicalName := strings.TrimSpace(c.Request.FormValue("name"))
 
 		// upload image if any
 		radicalSymbolImage, err := c.FormFile("symbol_image")
@@ -23,30 +24,28 @@ func (api *CardsApi) UploadRadicalImage(next echo.HandlerFunc) echo.HandlerFunc 
 			log.Println("middleware: ", radicalName)
 			radicalSymbolFile, err := radicalSymbolImage.Open()
 			if err != nil {
-				return errors.InvalidRequest("invalid file in symbol_image")
+				c.AbortWithError(http.StatusBadRequest, errors.InvalidRequest("invalid file in symbol_image"))
+				return
 			}
 			defer radicalSymbolFile.Close()
 
-			storedKey, err := uploadFile(c.Request().Context(), api.files, radicalSymbolFile, files.FileInfo{
+			objectKey, err := uploadFile(c.Request.Context(), api.files, radicalSymbolFile, files.FileInfo{
 				Size:      radicalSymbolImage.Size,
 				Name:      radicalName,
 				Namespace: "radical",
 				Kind:      "image",
 			})
 			if err != nil {
-				return err
+				c.AbortWithError(err.(*errors.Error).Status, err)
+				return
 			}
 
-			form := c.Request().Form
-			form.Set("symbol", storedKey)
+			form := c.Request.Form
+			form.Set("symbol", objectKey)
 			form.Del("symbol_image")
 		}
 
-		if err := next(c); err != nil {
-			c.Error(err)
-		}
-
-		return nil
+		c.Next()
 	}
 }
 

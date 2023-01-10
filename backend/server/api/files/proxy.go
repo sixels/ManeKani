@@ -1,26 +1,30 @@
 package files
 
 import (
-	"io"
+	"net/http"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 )
 
 // TODO: swagger comment
-func (api *FilesApi) QueryFile(c echo.Context) error {
-	key := strings.Join(c.ParamValues(), "/")
+func (api *FilesApi) QueryFile() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		paramKind := c.Param("kind")
+		paramNamespace := c.Param("namespace")
+		paramName := c.Param("name")
 
-	object, err := api.files.QueryFile(c.Request().Context(), key)
-	if err != nil {
-		return err
+		key := strings.Join([]string{paramKind, paramNamespace, paramName}, "/")
+
+		object, err := api.files.QueryFile(c.Request.Context(), key)
+		if err != nil {
+			c.Error(err)
+			c.Status(http.StatusNotFound)
+			return
+		}
+		defer object.Close()
+
+		c.DataFromReader(
+			http.StatusOK, object.Size, object.ContentType, object, map[string]string{})
 	}
-	defer object.Close()
-
-	if _, err := io.Copy(c.Response(), object); err != nil {
-		return err
-	}
-	c.Response().Header().Set("content-type", object.ContentType)
-
-	return nil
 }
