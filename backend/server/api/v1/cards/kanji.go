@@ -131,7 +131,7 @@ func (api *CardsApi) DeleteKanji() gin.HandlerFunc {
 func (api *CardsApi) AllKanji() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		filters := new(cards.QueryAllKanjiRequest)
-		if err := c.Bind(filters); err != nil {
+		if err := c.BindQuery(filters); err != nil {
 			c.Error(err)
 			return
 		}

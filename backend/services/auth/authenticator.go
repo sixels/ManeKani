@@ -2,12 +2,11 @@ package auth
 
 import (
 	"context"
-	"errors"
-	"log"
-	"net/url"
-	"os"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/supertokens/supertokens-golang/recipe/emailpassword"
+	"github.com/supertokens/supertokens-golang/recipe/session"
+	"github.com/supertokens/supertokens-golang/supertokens"
 	"golang.org/x/oauth2"
 )
 
@@ -16,48 +15,41 @@ type Authenticator struct {
 	oauth2.Config
 }
 
-func NewAuthenticator() (*Authenticator, error) {
-	keycloakUrl := os.Getenv("KEYCLOAK_URL")
-	clientId := os.Getenv("KEYCLOAK_CLIENT_ID")
-	clientSecret := os.Getenv("KEYCLOAK_CLIENT_SECRET")
+func StartAuthenticator() error {
+	var (
+		// TODO: get these values from env var
+		supertokensURL    string = "http://localhost:3567"
+		supertokensSecret string = "60f98a9e-ce60-48c2-bfa2-8c4f623874af"
+		websiteDomain     string = "http://localhost:8082"
+		apiDomain         string = "http://localhost:8081"
+		apiBasePath       string = "/auth"
+		websiteBasePath   string = "/auth"
+	)
 
-	log.Println("keycloak client id:", clientId)
-
-	realmUrl, err := url.JoinPath(keycloakUrl, "/realms/manekani")
-	if err != nil {
-		return nil, err
+	supertokensConfig := supertokens.ConnectionInfo{
+		ConnectionURI: supertokensURL,
+		APIKey:        supertokensSecret,
+	}
+	supertokensAppInfo := supertokens.AppInfo{
+		AppName:         "manekani",
+		APIDomain:       apiDomain,
+		APIBasePath:     &apiBasePath,
+		WebsiteDomain:   websiteDomain,
+		WebsiteBasePath: &websiteBasePath,
 	}
 
-	// TODO: set the server url or port on an env var
-	callbackUrl := "http://localhost:8081/auth/callback"
-
-	provider, err := oidc.NewProvider(context.Background(), realmUrl)
-	if err != nil {
-		return nil, err
+	if err := supertokens.Init(supertokens.TypeInput{
+		Supertokens: &supertokensConfig,
+		AppInfo:     supertokensAppInfo,
+		RecipeList: []supertokens.Recipe{
+			emailpassword.Init(nil),
+			session.Init(nil),
+		},
+	}); err != nil {
+		return err
 	}
 
-	config := oauth2.Config{
-		ClientID:     clientId,
-		ClientSecret: clientSecret,
-		Endpoint:     provider.Endpoint(),
-		RedirectURL:  callbackUrl,
-		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
-	}
-
-	return &Authenticator{Provider: provider, Config: config}, nil
-}
-
-func (a *Authenticator) VerifyIDToken(ctx context.Context, token *oauth2.Token) (*oidc.IDToken, error) {
-	rawIDToken, ok := token.Extra("id_token").(string)
-	if !ok {
-		return nil, errors.New("no id_token field in oauth2 token")
-	}
-
-	oidcConfig := &oidc.Config{
-		ClientID: a.ClientID,
-	}
-
-	return a.Verifier(oidcConfig).Verify(ctx, rawIDToken)
+	return nil
 }
 
 func (a *Authenticator) GetUserInfo(ctx context.Context, token *oauth2.Token) (*oidc.UserInfo, error) {

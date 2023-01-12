@@ -131,7 +131,7 @@ func (api *CardsApi) DeleteVocabulary() gin.HandlerFunc {
 func (api *CardsApi) AllVocabularies() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		filters := new(cards.QueryAllVocabularyRequest)
-		if err := c.Bind(filters); err != nil {
+		if err := c.BindQuery(filters); err != nil {
 			c.Error(err)
 			return
 		}

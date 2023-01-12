@@ -133,7 +133,7 @@ func (api *CardsApi) DeleteRadical() gin.HandlerFunc {
 func (api *CardsApi) AllRadicals() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		filters := new(cards.QueryAllRadicalRequest)
-		if err := c.Bind(filters); err != nil {
+		if err := c.BindQuery(filters); err != nil {
 			c.Error(err)
 			return
 		}
