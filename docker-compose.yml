@@ -19,26 +19,6 @@ services:
     volumes:
       - /home/sixels/.manekani/minio:/data
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    container_name: manekani-keycloak
-    hostname: keycloak
-    restart: always
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HTTP_PORT: "9100"
-      KC_DB: dev-file
-      # KC_DB_PORT: "5433"
-      # KC_DB_PASSWORD: "123"
-      # KC_DB_USERNAME: adm_keycloak
-      # KC_LOG: file
-    ports:
-      - "9100:9100"
-    command: start-dev
-    volumes:
-      - /home/sixels/.manekani/keycloak:/data
-
   postgres:
     image: postgres:15-alpine
     container_name: manekani-postgres
@@ -56,15 +36,40 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    container_name: manekani-redis
-    image: redis:7-alpine
-    hostname: redis
-    command: redis-server --save 20 1 --requirepass 123
-    ports:
-      - "6379:6379"
+  # supertokens can be used to authenticate multiple clients,
+  # we don't ant to keep wit on the same manekani database
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    hostname: auth-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sixels
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: supertokens
+    expose:
+      - "5432"
     volumes:
-      - redis-session:/data
+      - auth-volume:/var/lib/postgresql/data
+
+  supertokens:
+    container_name: auth-supertokens
+    image: registry.supertokens.io/supertokens/supertokens-postgresql
+    hostname: supertokens
+    depends_on:
+      - auth-db
+    expose:
+      - "3567"
+    environment:
+      POSTGRESQL_CONNECTION_URI: "postgresql://sixels:123@auth-db/supertokens"
+      API_KEYS: "60f98a9e-ce60-48c2-bfa2-8c4f623874af"
+    restart: unless-stopped
+    healthcheck:
+      test: >
+        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 && cat <&3 | grep "Hello"'
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   manekani:
     container_name: manekani-backend
@@ -107,13 +112,15 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-      - "9100:9100"
+      - "3567:3567"
       # - "8081:8081"
     depends_on:
       - minio
-      - keycloak
+      - supertokens
       # - manekani
 
 volumes:
   redis-session:
+    driver: local
+  auth-volume:
     driver: local
