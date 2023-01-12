@@ -1,27 +1,42 @@
+export interface ApiError {
+  status: number;
+  message: string;
+}
+
+export function isApiError(obj: any): obj is ApiError {
+  return "status" in obj && "message" in obj;
+}
+
 export async function fetchJSON<T>(
   input: RequestInfo,
-  init?: RequestInit,
-): Promise<T> {
+  init?: RequestInit
+): Promise<T | ApiError | null> {
   const res = await fetch(input, init)
     .catch((e) => {
-      console.log(e);
+      console.error(e);
       return null;
     })
     .then((r) => r);
 
   if (!res) {
-    return Promise.reject('');
+    console.error("failed to send the request");
+    return null;
   }
-  const data = await res.json();
+
+  const data: { [key: string | number | symbol]: any } = await res
+    .json()
+    .catch((_) => ({ message: res.statusText }));
 
   // check for error response
   if (!res.ok) {
     // get error message from body or default to response statusText
-    const error = new Error(
-      data && 'message' in data ? data.message : res.statusText,
-    );
-    return Promise.reject(error);
+    const error = {
+      status: res.status,
+      message: data.message,
+    };
+
+    return error;
   }
 
-  return data;
+  return data as T;
 }

@@ -1,8 +1,25 @@
-import { fetchJSON } from './utils';
+import { join } from "path";
+import { fetchJSON, ApiError, isApiError } from "./utils";
 
-export async function fetchApi<T>(
+const API_URL = process.env.API_URL || "http://localhost:8081";
+
+export async function fetchApi<T = any>(
   endpoint: string,
-  opts?: RequestInit,
-): Promise<T> {
-  return await fetchJSON(`${process.env.API_URL}/api/${endpoint}`, opts);
+  version: "v1",
+  opts?: RequestInit
+): Promise<T | null> {
+  const resourceUrl = `${API_URL}${join("/api", version, endpoint)}`;
+
+  const data = await fetchJSON<T>(resourceUrl, opts);
+
+  if (isApiError(data)) {
+    console.error(
+      `fetch api error: ${opts?.method || "GET"} ${resourceUrl} ${
+        data.status
+      }: ${data.message}`
+    );
+    return null;
+  }
+
+  return data;
 }
