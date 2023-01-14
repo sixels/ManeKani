@@ -157,10 +157,7 @@ func (repo CardsRepository) AllVocabularies(ctx context.Context, req cards.Query
 
 func (repo CardsRepository) QueryVocabularyKanjis(ctx context.Context, word string) ([]*cards.PartialKanjiResponse, error) {
 	queried, err := repo.client.Kanji.Query().
-		WithVocabularies(func(vq *ent.VocabularyQuery) {
-			vq.Select(vocabulary.FieldID).
-				Where(vocabulary.WordEQ(word))
-		}).
+		Where(kanji.HasVocabulariesWith(vocabulary.WordEQ(word))).
 		Select(PARTIAL_KANJI_FIELDS[:]...).
 		All(ctx)
 

@@ -9,6 +9,7 @@ import (
 	"sixels.io/manekani/ent"
 	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/radical"
+	"sixels.io/manekani/ent/vocabulary"
 	"sixels.io/manekani/services/cards/util"
 )
 
@@ -96,6 +97,7 @@ func (repo CardsRepository) UpdateKanji(ctx context.Context, symbol string, req 
 			if err != nil {
 				return nil, util.ParseEntError(err)
 			}
+			fmt.Println(radicals)
 
 			if err := checkRadicals(radicals, *req.RadicalComposition); err != nil {
 				return nil, err
@@ -154,10 +156,7 @@ func (repo CardsRepository) AllKanji(ctx context.Context, req cards.QueryAllKanj
 
 func (repo CardsRepository) QueryKanjiVocabularies(ctx context.Context, symbol string) ([]*cards.PartialVocabularyResponse, error) {
 	queried, err := repo.client.Vocabulary.Query().
-		WithKanjis(func(kq *ent.KanjiQuery) {
-			kq.Select(kanji.FieldID).
-				Where(kanji.SymbolEQ(symbol))
-		}).
+		Where(vocabulary.HasKanjisWith(kanji.SymbolEQ(symbol))).
 		Select(PARTIAL_VOCABULARY_FIELDS[:]...).
 		All(ctx)
 
@@ -170,10 +169,7 @@ func (repo CardsRepository) QueryKanjiVocabularies(ctx context.Context, symbol s
 
 func (repo CardsRepository) QueryKanjiRadicals(ctx context.Context, symbol string) ([]*cards.PartialRadicalResponse, error) {
 	queried, err := repo.client.Radical.Query().
-		WithKanjis(func(kq *ent.KanjiQuery) {
-			kq.Select(kanji.FieldID).
-				Where(kanji.SymbolEQ(symbol))
-		}).
+		Where(radical.HasKanjisWith(kanji.SymbolEQ(symbol))).
 		Select(PARTIAL_RADICAL_FIELDS[:]...).
 		All(ctx)
 

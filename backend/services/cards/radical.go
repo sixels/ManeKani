@@ -7,6 +7,7 @@ import (
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/errors"
 	"sixels.io/manekani/ent"
+	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/radical"
 	"sixels.io/manekani/services/cards/util"
 )
@@ -113,10 +114,7 @@ func (repo CardsRepository) AllRadicals(ctx context.Context, req cards.QueryAllR
 
 func (repo CardsRepository) QueryRadicalKanjis(ctx context.Context, name string) ([]*cards.PartialKanjiResponse, error) {
 	queried, err := repo.client.Kanji.Query().
-		WithRadicals(func(rq *ent.RadicalQuery) {
-			rq.Select(radical.FieldID).
-				Where(radical.NameEQ(name))
-		}).
+		Where(kanji.HasRadicalsWith(radical.NameEQ(name))).
 		Select(PARTIAL_KANJI_FIELDS[:]...).
 		All(ctx)
 
