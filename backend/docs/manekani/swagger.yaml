@@ -44,15 +44,12 @@ definitions:
       level:
         type: integer
       meaning_mnemonic:
+        description: SymbolImage     *[]byte `json:"symbol_image,omitempty" form:"symbol_image"`
         type: string
       name:
         type: string
       symbol:
         type: string
-      symbol_image:
-        items:
-          type: integer
-        type: array
     type: object
   cards.CreateVocabularyRequest:
     properties:

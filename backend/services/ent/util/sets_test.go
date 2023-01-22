@@ -3,7 +3,7 @@ package util_test
 import (
 	"testing"
 
-	"sixels.io/manekani/services/cards/util"
+	"sixels.io/manekani/services/ent/util"
 
 	"github.com/stretchr/testify/assert"
 )

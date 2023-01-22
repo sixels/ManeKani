@@ -9,7 +9,7 @@ import (
 	"sixels.io/manekani/ent"
 	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/radical"
-	"sixels.io/manekani/services/cards/util"
+	"sixels.io/manekani/services/ent/util"
 )
 
 var PARTIAL_RADICAL_FIELDS = [...]string{

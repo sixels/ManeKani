@@ -16,6 +16,8 @@ type Tx struct {
 	Kanji *KanjiClient
 	// Radical is the client for interacting with the Radical builders.
 	Radical *RadicalClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 	// Vocabulary is the client for interacting with the Vocabulary builders.
 	Vocabulary *VocabularyClient
 
@@ -151,6 +153,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Kanji = NewKanjiClient(tx.config)
 	tx.Radical = NewRadicalClient(tx.config)
+	tx.User = NewUserClient(tx.config)
 	tx.Vocabulary = NewVocabularyClient(tx.config)
 }
 

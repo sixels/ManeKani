@@ -24,6 +24,10 @@ func (api *FilesApi) QueryFile() gin.HandlerFunc {
 		}
 		defer object.Close()
 
+		// c.Header("Content-Type", object.ContentType)
+		// c.Header("Content-Length", fmt.Sprintf("%d", object.Size))
+		// c.Status(http.StatusOK)
+		// io.Copy(c.Writer, object)
 		c.DataFromReader(
 			http.StatusOK, object.Size, object.ContentType, object, map[string]string{})
 	}

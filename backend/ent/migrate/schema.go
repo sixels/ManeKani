@@ -47,6 +47,18 @@ var (
 		Columns:    RadicalsColumns,
 		PrimaryKey: []*schema.Column{RadicalsColumns[0]},
 	}
+	// UsersColumns holds the columns for the "users" table.
+	UsersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "username", Type: field.TypeString, Unique: true, Size: 20},
+		{Name: "email", Type: field.TypeString, Unique: true, Size: 255},
+	}
+	// UsersTable holds the schema information for the "users" table.
+	UsersTable = &schema.Table{
+		Name:       "users",
+		Columns:    UsersColumns,
+		PrimaryKey: []*schema.Column{UsersColumns[0]},
+	}
 	// VocabulariesColumns holds the columns for the "vocabularies" table.
 	VocabulariesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -124,6 +136,7 @@ var (
 	Tables = []*schema.Table{
 		KanjisTable,
 		RadicalsTable,
+		UsersTable,
 		VocabulariesTable,
 		KanjiRadicalsTable,
 		VocabularyKanjisTable,

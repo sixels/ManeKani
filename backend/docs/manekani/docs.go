@@ -794,6 +794,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "meaning_mnemonic": {
+                    "description": "SymbolImage     *[]byte ` + "`" + `json:\"symbol_image,omitempty\" form:\"symbol_image\"` + "`" + `",
                     "type": "string"
                 },
                 "name": {
@@ -801,12 +802,6 @@ const docTemplate = `{
                 },
                 "symbol": {
                     "type": "string"
-                },
-                "symbol_image": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
                 }
             }
         },

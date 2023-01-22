@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -46,6 +47,8 @@ func main() {
 	}
 	logFile := setLogFile()
 	defer logFile.Close()
+
+	fmt.Println("Starting the server")
 
 	server.New().
 		Start(logFile)

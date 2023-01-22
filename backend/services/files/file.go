@@ -48,6 +48,7 @@ func (repo FilesRepository) QueryFile(ctx context.Context, name string) (*files.
 
 	return &files.ObjectWrapperResponse{
 		ReadCloser:  object,
+		Size:        info.Size,
 		ContentType: info.ContentType,
 	}, nil
 }

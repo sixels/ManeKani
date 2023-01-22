@@ -10,7 +10,8 @@ import (
 	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/radical"
 	"sixels.io/manekani/ent/vocabulary"
-	"sixels.io/manekani/services/cards/util"
+	"sixels.io/manekani/services/ent/util"
+
 )
 
 var PARTIAL_KANJI_FIELDS = [...]string{
@@ -22,7 +23,7 @@ var PARTIAL_KANJI_FIELDS = [...]string{
 }
 
 func (repo CardsRepository) CreateKanji(ctx context.Context, req cards.CreateKanjiRequest) (*cards.Kanji, error) {
-	return util.WithTx(ctx, repo.client, func(tx *ent.Tx) (*cards.Kanji, error) {
+	return util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (*cards.Kanji, error) {
 		radicals, err := tx.Radical.Query().Where(radical.NameIn(req.RadicalComposition...)).All(ctx)
 		if err != nil {
 			return nil, util.ParseEntError(err)
@@ -68,7 +69,7 @@ func (repo CardsRepository) QueryKanji(ctx context.Context, symbol string) (*car
 }
 
 func (repo CardsRepository) UpdateKanji(ctx context.Context, symbol string, req cards.UpdateKanjiRequest) (*cards.Kanji, error) {
-	return util.WithTx(ctx, repo.client, func(tx *ent.Tx) (*cards.Kanji, error) {
+	return util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (*cards.Kanji, error) {
 
 		kanj, err := repo.client.Kanji.Query().
 			Where(kanji.SymbolEQ(symbol)).

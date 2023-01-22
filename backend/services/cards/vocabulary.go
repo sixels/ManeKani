@@ -9,7 +9,7 @@ import (
 	"sixels.io/manekani/ent"
 	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/vocabulary"
-	"sixels.io/manekani/services/cards/util"
+	"sixels.io/manekani/services/ent/util"
 )
 
 var PARTIAL_VOCABULARY_FIELDS = [...]string{
@@ -22,7 +22,7 @@ var PARTIAL_VOCABULARY_FIELDS = [...]string{
 }
 
 func (repo CardsRepository) CreateVocabulary(ctx context.Context, req cards.CreateVocabularyRequest) (*cards.Vocabulary, error) {
-	return util.WithTx(ctx, repo.client, func(tx *ent.Tx) (*cards.Vocabulary, error) {
+	return util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (*cards.Vocabulary, error) {
 		kanjis, err := tx.Kanji.Query().Where(kanji.SymbolIn(req.KanjiComposition...)).All(ctx)
 		if err != nil {
 			return nil, util.ParseEntError(err)
@@ -69,7 +69,7 @@ func (repo CardsRepository) QueryVocabulary(ctx context.Context, word string) (*
 }
 
 func (repo CardsRepository) UpdateVocabulary(ctx context.Context, word string, req cards.UpdateVocabularyRequest) (*cards.Vocabulary, error) {
-	return util.WithTx(ctx, repo.client, func(tx *ent.Tx) (*cards.Vocabulary, error) {
+	return util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (*cards.Vocabulary, error) {
 
 		vocab, err := repo.client.Vocabulary.Query().
 			Where(vocabulary.WordEQ(word)).

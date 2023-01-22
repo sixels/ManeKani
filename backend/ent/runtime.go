@@ -9,6 +9,7 @@ import (
 	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/radical"
 	"sixels.io/manekani/ent/schema"
+	"sixels.io/manekani/ent/user"
 	"sixels.io/manekani/ent/vocabulary"
 )
 
@@ -108,6 +109,44 @@ func init() {
 	radicalDescID := radicalFields[0].Descriptor()
 	// radical.DefaultID holds the default value on creation for the id field.
 	radical.DefaultID = radicalDescID.Default.(func() uuid.UUID)
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescUsername is the schema descriptor for username field.
+	userDescUsername := userFields[1].Descriptor()
+	// user.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
+	user.UsernameValidator = func() func(string) error {
+		validators := userDescUsername.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(username string) error {
+			for _, fn := range fns {
+				if err := fn(username); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// userDescEmail is the schema descriptor for email field.
+	userDescEmail := userFields[2].Descriptor()
+	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	user.EmailValidator = func() func(string) error {
+		validators := userDescEmail.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(email string) error {
+			for _, fn := range fns {
+				if err := fn(email); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	vocabularyMixin := schema.Vocabulary{}.Mixin()
 	vocabularyMixinFields0 := vocabularyMixin[0].Fields()
 	_ = vocabularyMixinFields0

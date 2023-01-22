@@ -12,5 +12,8 @@ type Kanji func(*sql.Selector)
 // Radical is the predicate function for radical builders.
 type Radical func(*sql.Selector)
 
+// User is the predicate function for user builders.
+type User func(*sql.Selector)
+
 // Vocabulary is the predicate function for vocabulary builders.
 type Vocabulary func(*sql.Selector)

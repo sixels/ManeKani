@@ -26,6 +26,7 @@ type config struct {
 type hooks struct {
 	Kanji      []ent.Hook
 	Radical    []ent.Hook
+	User       []ent.Hook
 	Vocabulary []ent.Hook
 }
 

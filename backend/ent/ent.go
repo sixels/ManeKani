@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/radical"
+	"sixels.io/manekani/ent/user"
 	"sixels.io/manekani/ent/vocabulary"
 )
 
@@ -35,6 +36,7 @@ func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		kanji.Table:      kanji.ValidColumn,
 		radical.Table:    radical.ValidColumn,
+		user.Table:       user.ValidColumn,
 		vocabulary.Table: vocabulary.ValidColumn,
 	}
 	check, ok := checks[table]

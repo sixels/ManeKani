@@ -790,6 +790,7 @@
                     "type": "integer"
                 },
                 "meaning_mnemonic": {
+                    "description": "SymbolImage     *[]byte `json:\"symbol_image,omitempty\" form:\"symbol_image\"`",
                     "type": "string"
                 },
                 "name": {
@@ -797,12 +798,6 @@
                 },
                 "symbol": {
                     "type": "string"
-                },
-                "symbol_image": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
                 }
             }
         },
