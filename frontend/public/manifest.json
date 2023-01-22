@@ -1,0 +1,37 @@
+{
+  "short_name": "ManeKani",
+  "name": "ManeKani",
+  "description": "A flashcard website to help you learn japanese",
+  "start_url": "/",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#FF4003",
+  "icons": [
+    {
+      "src": "/assets/favicon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/assets/favicon-256.png",
+      "type": "image/png",
+      "sizes": "256x256"
+    },
+    {
+      "src": "/assets/favicon-196.png",
+      "type": "image/png",
+      "sizes": "196x196"
+    },
+    {
+      "src": "/assets/favicon-128.png",
+      "type": "image/png",
+      "sizes": "128x128"
+    },
+    {
+      "src": "/assets/favicon-96.png",
+      "type": "image/png",
+      "sizes": "96x96"
+    }
+  ]
+}

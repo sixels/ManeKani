@@ -1,16 +1,20 @@
 import { GetServerSidePropsContext } from "next";
-import { fetchApi } from "@/lib/api/fetchApi";
 
+import { fetchApi } from "@/lib/api/fetchApi";
 import {
   Kanji,
   PartialRadicalResponse,
   PartialVocabularyResponse,
 } from "@/lib/models/cards";
+import { kanjiSections } from "@/ui/Sections/kanjiSections";
+import { PageWithLayout } from "@/ui/layouts";
+import DefaultLayout from "@/ui/layouts/Default";
+import CardPage from "@/ui/CardPage";
 
 interface KanjiProps {
-  kanji?: Kanji;
-  kanjiRadicals?: PartialRadicalResponse;
-  kanjiVocabularies?: PartialVocabularyResponse;
+  kanji: Kanji;
+  kanjiRadicals?: PartialRadicalResponse[];
+  kanjiVocabularies?: PartialVocabularyResponse[];
 }
 
 export async function getServerSideProps({
@@ -37,18 +41,30 @@ export async function getServerSideProps({
   return { props: { kanji, kanjiRadicals, kanjiVocabularies } };
 }
 
-export default function QueryKanji({
+const PageLayout = DefaultLayout;
+const Page: PageWithLayout<KanjiProps> = ({
   kanji,
   kanjiRadicals,
   kanjiVocabularies,
-}: KanjiProps) {
+}) => {
+  const sections = kanjiSections(kanji, kanjiVocabularies, kanjiRadicals);
+
   return (
-    <>
-      {kanji}
-      <br />
-      {kanjiRadicals}
-      <br />
-      {kanjiVocabularies}
-    </>
+    <CardPage
+      card={{
+        kind: "kanji",
+        level: kanji.level,
+        meaning: kanji.name,
+        value: kanji.symbol,
+        reading: kanji.reading,
+      }}
+      sections={sections}
+    />
   );
-}
+};
+
+Page.getLayout = (page) => {
+  return <PageLayout>{page}</PageLayout>;
+};
+
+export default Page;

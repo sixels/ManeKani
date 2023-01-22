@@ -40,16 +40,16 @@ export interface Kanji {
   alt_names?: string[];
   created_at?: string;
   id?: string;
-  kunyomi?: string[];
-  level?: number;
-  meaning_mnemonic?: string;
-  name?: string;
-  nanori?: string[];
-  onyomi?: string[];
-  reading?: string;
-  reading_mnemonic?: string;
+  kunyomi: string[];
+  level: number;
+  meaning_mnemonic: string;
+  name: string;
+  nanori: string[];
+  onyomi: string[];
+  reading: string;
+  reading_mnemonic: string;
   similar?: string[];
-  symbol?: string;
+  symbol: string;
   updated_at?: string;
 }
 
@@ -69,28 +69,28 @@ export interface PartialKanjiResponse {
 }
 
 export interface PartialRadicalResponse {
-  id?: string;
-  level?: number;
-  name?: string;
-  symbol?: string;
+  id: string;
+  level: number;
+  name: string;
+  symbol: string;
 }
 
 export interface PartialVocabularyResponse {
   alt_names?: string[];
-  id?: string;
-  level?: number;
-  name?: string;
-  reading?: string;
-  word?: string;
+  id: string;
+  level: number;
+  name: string;
+  reading: string;
+  word: string;
 }
 
 export interface Radical {
   created_at?: string;
-  id?: string;
-  level?: number;
-  meaning_mnemonic?: string;
-  name?: string;
-  symbol?: string;
+  id: string;
+  level: number;
+  meaning_mnemonic: string;
+  name: string;
+  symbol: string;
   updated_at?: string;
 }
 
@@ -132,25 +132,25 @@ export interface Vocabulary {
   alt_names?: string[];
   alt_readings?: string[];
   created_at?: string;
-  id?: string;
-  level?: number;
-  meaning_mnemonic?: string;
-  name?: string;
+  id: string;
+  level: number;
+  meaning_mnemonic: string;
+  name: string;
   patterns?: Pattern[];
-  reading?: string;
-  reading_mnemonic?: string;
+  reading: string;
+  reading_mnemonic: string;
   sentences?: Sentence[];
   updated_at?: string;
-  word?: string;
-  word_type?: string[];
+  word: string;
+  word_type: string[];
 }
 
 export interface Pattern {
-  name?: string;
-  sentences?: Sentence[];
+  name: string;
+  sentences: Sentence[];
 }
 
 export interface Sentence {
-  meaning?: string;
-  sentence?: string;
+  meaning: string;
+  sentence: string;
 }

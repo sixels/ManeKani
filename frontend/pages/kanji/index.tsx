@@ -17,18 +17,16 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
 }
 
 export default function Index({ kanji }: IndexProps) {
-  fetchApi("/kanji", "v1", { method: "POST" });
+  fetchApi("/kanji", "v1");
 
-  function renderKanji() {
-    for (let kanj of kanji) {
-      return (
+  return (
+    <>
+      {kanji.map((k) => (
         <>
-          {kanj.name} - {kanj.symbol}
+          {k.name} - {k.symbol}
           <hr />
         </>
-      );
-    }
-  }
-
-  return <>{renderKanji()}</>;
+      ))}
+    </>
+  );
 }

@@ -2,18 +2,27 @@
   "scripts": {
     "dev": "next dev -p 8082",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 8082",
     "lint": "next lint"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.4.7",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
+    "@radix-ui/react-icons": "^1.1.1",
     "framer-motion": "^6",
+    "mdast": "^3.0.0",
     "next": "^13.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "supertokens-auth-react": "^0.29.0"
+    "rehype-format": "^4.0.1",
+    "rehype-stringify": "^9.0.3",
+    "remark-parse": "^10.0.1",
+    "remark-rehype": "^10.1.0",
+    "supertokens-auth-react": "^0.29.0",
+    "unified": "^10.1.2",
+    "unist-builder": "^3.0.0",
+    "wanakana": "^5.0.2"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",

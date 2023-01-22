@@ -4,7 +4,7 @@ export interface ApiError {
 }
 
 export function isApiError(obj: any): obj is ApiError {
-  return "status" in obj && "message" in obj;
+  return obj && "status" in obj && "message" in obj;
 }
 
 export async function fetchJSON<T>(
