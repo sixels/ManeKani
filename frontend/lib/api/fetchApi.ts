@@ -1,7 +1,7 @@
 import { join } from "path";
 import { fetchJSON, isApiError } from "./utils";
 
-export const API_URL = process.env.API_URL || "http://localhost:8081";
+export const API_URL = process.env.API_URL || "http://192.168.15.9:8081";
 
 export async function fetchApi<T = any>(
   endpoint: string,
