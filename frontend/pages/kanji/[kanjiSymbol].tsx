@@ -6,7 +6,7 @@ import {
   PartialRadicalResponse,
   PartialVocabularyResponse,
 } from "@/lib/models/cards";
-import { kanjiSections } from "@/ui/Sections/kanjiSections";
+import { kanjiSections } from "@/ui/CardPage/Sections/kanjiSections";
 import { PageWithLayout } from "@/ui/layouts";
 import DefaultLayout from "@/ui/layouts/Default";
 import CardPage from "@/ui/CardPage";

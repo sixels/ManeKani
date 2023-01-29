@@ -1,7 +1,7 @@
 import { GetServerSidePropsContext } from "next";
 
 import { PartialKanjiResponse, Vocabulary } from "@/lib/models/cards";
-import { vocabularySections } from "@/ui/Sections/vocabularySections";
+import { vocabularySections } from "@/ui/CardPage/Sections/vocabularySections";
 import { fetchApi } from "@/lib/api/fetchApi";
 import DefaultLayout from "@/ui/layouts/Default";
 import { PageWithLayout } from "@/ui/layouts";

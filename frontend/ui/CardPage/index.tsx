@@ -8,7 +8,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 
-import { Section, SectionProps } from "@/ui/Sections";
+import { Section, SectionProps } from "@/ui/CardPage/Sections";
 
 export type CardPageProps = {
   card: {

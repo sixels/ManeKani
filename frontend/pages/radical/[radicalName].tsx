@@ -1,7 +1,7 @@
 import { GetServerSidePropsContext } from "next";
 
 import { PartialKanjiResponse, Radical, Vocabulary } from "@/lib/models/cards";
-import { radicalSections } from "@/ui/Sections/radicalSections";
+import { radicalSections } from "@/ui/CardPage/Sections/radicalSections";
 import { API_URL, fetchApi } from "@/lib/api/fetchApi";
 import DefaultLayout from "@/ui/layouts/Default";
 import { PageWithLayout } from "@/ui/layouts";
