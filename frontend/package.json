@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "next dev -p 8082",
+    "dev": "next dev -p 8082 -H 0.0.0.0",
     "build": "next build",
     "start": "next start -p 8082",
     "lint": "next lint"
@@ -9,11 +9,18 @@
     "@chakra-ui/react": "^2.4.7",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
+    "@fontsource/inter": "^4.5.15",
+    "@fortawesome/fontawesome-svg-core": "^6.2.1",
+    "@fortawesome/free-regular-svg-icons": "^6.2.1",
+    "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@fortawesome/react-fontawesome": "^0.2.0",
     "@radix-ui/react-icons": "^1.1.1",
+    "date-fns": "^2.29.3",
     "framer-motion": "^6",
     "mdast": "^3.0.0",
     "next": "^13.1.1",
     "react": "^18.2.0",
+    "react-calendar": "^4.0.0",
     "react-dom": "^18.2.0",
     "rehype-format": "^4.0.1",
     "rehype-stringify": "^9.0.3",
