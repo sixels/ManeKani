@@ -35,7 +35,7 @@ export default function Navbar() {
     <Flex
       alignItems={"center"}
       justifyContent={"space-between"}
-      px={{ base: 4, md: 10 }}
+      px={{ base: 4, md: 6, lg: 10 }}
       py={1}
       position="fixed"
       top={0}

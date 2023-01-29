@@ -32,7 +32,10 @@ export function UserAvatar({ fallback }: UserAvatarProps) {
       <MenuButton py={2} transition="all 0.3s" _focus={{ boxShadow: "none" }}>
         <HStack spacing={1}>
           <Avatar
-            size="sm"
+            // size="sm"
+            h={"38px"}
+            w={"38px"}
+            // height="10%"
             src={`https://api.dicebear.com/5.x/lorelei/svg?seed=${user.user.username}&flip=true&backgroundColor=F64D07`}
           />
           <Box display={{ base: "none", md: "block" }}>
