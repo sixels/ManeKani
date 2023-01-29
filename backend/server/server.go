@@ -67,15 +67,14 @@ func New() *Server {
 func (server *Server) Start(logFile io.Writer) {
 	// cors
 	hostname, _ := os.Hostname()
-	fmt.Println(hostname)
-	server.router.Use(cors.New(cors.Config{
-		AllowWildcard:    true,
+	corsConfig := cors.Config{
 		AllowCredentials: true,
-		AllowOrigins:     []string{"http://" + hostname + ":8082", "http://localhost:8082"},
+		AllowOrigins:     []string{"http://localhost:8082", fmt.Sprintf("http://%s:8082", hostname), "http://192.168.15.9:8082"},
 		AllowMethods:     []string{"GET", "POST", "DELETE", "PUT", "OPTIONS"},
-		AllowHeaders: append([]string{"content-type"},
+		AllowHeaders: append([]string{"Content-Type"},
 			supertokens.GetAllCORSHeaders()...),
-	}))
+	}
+	server.router.Use(cors.New(corsConfig))
 
 	// SuperTokens
 	server.router.Use(authApi.SupertokensMiddleware)

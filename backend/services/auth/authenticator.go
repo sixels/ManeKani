@@ -17,10 +17,10 @@ import (
 func StartAuthenticator(users *users.UsersRepository) error {
 	var (
 		// TODO: get these values from env var
-		supertokensURL    string = "http://0.0.0.0:3567"
+		supertokensURL    string = "http://localhost:3567"
 		supertokensSecret string = "60f98a9e-ce60-48c2-bfa2-8c4f623874af"
-		websiteDomain     string = "http://0.0.0.0:8082"
-		apiDomain         string = "http://0.0.0.0:8081"
+		websiteDomain     string = "http://192.168.15.9:8082"
+		apiDomain         string = "http://192.168.15.9:8081"
 		apiBasePath       string = "/auth"
 		websiteBasePath   string = "/auth"
 	)
