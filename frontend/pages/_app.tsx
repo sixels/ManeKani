@@ -7,14 +7,19 @@ import Head from "next/head";
 
 import { frontendConfig } from "@/lib/supertokens/frontendConfig";
 import { SEO } from "@/lib/config";
+import { UserDataProvider } from "@/lib/auth/context";
+import { theme } from "@/lib/theme";
 
 import Footer from "@/ui/Footer";
 import Navbar from "@/ui/Navbar";
 
 import Favicon from "@/assets/icon.svg";
 
-import "./kanji/style.css";
-import { UserDataProvider } from "@/lib/auth/context";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/700.css";
+import "@/assets/styles/calendar.css";
+import "@/assets/styles/markdown.css";
 
 if (typeof window !== "undefined") {
   SuperTokensReact.init(frontendConfig());
@@ -35,7 +40,7 @@ function App({ Component, pageProps }: AppProps) {
         <meta property="og:image" content={Favicon.src} />
       </Head>
 
-      <ChakraProvider>
+      <ChakraProvider theme={theme}>
         <SuperTokensWrapper>
           <UserDataProvider>
             <Navbar />
