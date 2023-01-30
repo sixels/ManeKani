@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionPanel,
   Box,
+  Button,
   Divider,
   Flex,
   HStack,
@@ -146,22 +147,21 @@ function NavLinks() {
         item.text in colors ? colors[item.text] : colors["default"];
 
       const element = (
-        <Text
-          as="div"
-          cursor="pointer"
+        <Button
+          variant="ghost"
           _hover={{
             backgroundColor: bgColor,
             color: fgColor,
           }}
-          transition={"background-color ease-in-out 130ms, color ease 130ms"}
           py={2}
           px={2}
           rounded="sm"
+          fontWeight="normal"
           textTransform={"capitalize"}
           color="gray.700"
         >
           {item.text}
-        </Text>
+        </Button>
       );
 
       if (item.isLink) {
@@ -183,7 +183,7 @@ function NavLinks() {
             py={3}
             bgColor={menuBg}
             color={menuFg}
-            border={0}
+            border={"none"}
             boxShadow="2xl"
             w="full"
           >
