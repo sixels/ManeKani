@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"sixels.io/manekani/ent/schema/util"
+	"sixels.io/manekani/ent/schema/common"
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
@@ -16,7 +16,7 @@ type Radical struct {
 
 func (Radical) Mixin() []ent.Mixin {
 	return []ent.Mixin{
-		util.TimeMixin{},
+		common.TimeMixin{},
 	}
 }
 
@@ -33,9 +33,11 @@ func (Radical) Fields() []ent.Field {
 
 // Edges of the Radical.
 func (Radical) Edges() []ent.Edge {
-	// kanji <--kanjis--- radical
 	return []ent.Edge{
+		// kanji <--kanjis--- radical
 		edge.From("kanjis", Kanji.Type).
 			Ref("radicals"),
+
+		edge.To("card", Card.Type),
 	}
 }

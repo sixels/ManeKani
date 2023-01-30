@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"sixels.io/manekani/ent/schema/util"
+	"sixels.io/manekani/ent/schema/common"
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
@@ -17,7 +17,7 @@ type Kanji struct {
 
 func (Kanji) Mixin() []ent.Mixin {
 	return []ent.Mixin{
-		util.TimeMixin{},
+		common.TimeMixin{},
 	}
 }
 
@@ -31,14 +31,14 @@ func (Kanji) Fields() []ent.Field {
 			Immutable().
 			Unique(),
 		field.Text("name").NotEmpty(),
-		util.TextArray("alt_names", true),
-		util.TextArray("similar", true),
+		common.TextArray("alt_names", true),
+		common.TextArray("similar", true),
 		field.Int32("level").Positive(),
 
 		field.Text("reading").NotEmpty(),
-		util.TextArray("onyomi", false),
-		util.TextArray("kunyomi", false),
-		util.TextArray("nanori", false),
+		common.TextArray("onyomi", false),
+		common.TextArray("kunyomi", false),
+		common.TextArray("nanori", false),
 
 		field.Text("meaning_mnemonic").NotEmpty(),
 		field.Text("reading_mnemonic").NotEmpty(),
@@ -47,11 +47,13 @@ func (Kanji) Fields() []ent.Field {
 
 // Edges of the Kanji.
 func (Kanji) Edges() []ent.Edge {
-	// vocabulary <--vocabularies--- kanji
-	// kanji ---radicals--> radicals
 	return []ent.Edge{
+		// vocabulary <--vocabularies--- kanji
 		edge.From("vocabularies", Vocabulary.Type).
 			Ref("kanjis"),
+		// kanji ---radicals--> radicals
 		edge.To("radicals", Radical.Type),
+
+		edge.To("card", Card.Type),
 	}
 }

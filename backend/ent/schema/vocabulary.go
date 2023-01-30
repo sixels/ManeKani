@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"sixels.io/manekani/ent/schema/util"
+	"sixels.io/manekani/ent/schema/common"
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
@@ -16,7 +16,7 @@ type Vocabulary struct {
 
 func (Vocabulary) Mixin() []ent.Mixin {
 	return []ent.Mixin{
-		util.TimeMixin{},
+		common.TimeMixin{},
 	}
 }
 
@@ -25,14 +25,14 @@ func (Vocabulary) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
 		field.Text("name").NotEmpty(),
-		util.TextArray("alt_names", true),
+		common.TextArray("alt_names", true),
 		field.Int32("level").Positive(),
 
 		field.Text("word").NotEmpty().Unique(),
-		util.TextArray("word_type", false),
+		common.TextArray("word_type", false),
 
 		field.Text("reading").NotEmpty(),
-		util.TextArray("alt_readings", true),
+		common.TextArray("alt_readings", true),
 		field.JSON("patterns", []Pattern{}),
 		field.JSON("sentences", []Sentence{}),
 
@@ -43,9 +43,11 @@ func (Vocabulary) Fields() []ent.Field {
 
 // Edges of the Vocabulary.
 func (Vocabulary) Edges() []ent.Edge {
-	// vocabulary ---kanjis---> kanji
 	return []ent.Edge{
+		// vocabulary ---kanjis---> kanji
 		edge.To("kanjis", Kanji.Type),
+
+		edge.To("card", Card.Type),
 	}
 }
 
