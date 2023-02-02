@@ -1,4 +1,4 @@
-import { useUserData } from "@/lib/auth/context";
+import { useUser } from "@/lib/hooks/user";
 import {
   Menu,
   MenuButton,
@@ -17,13 +17,13 @@ export type UserAvatarProps = {
   fallback: ReactElement;
 };
 export function UserAvatar({ fallback }: UserAvatarProps) {
-  const user = useUserData();
+  const { user, isLoading, isError } = useUser();
 
-  if (user.loading) {
+  if (isLoading) {
     return null;
   }
 
-  if (!user.user) {
+  if (isError || !user) {
     return <>{fallback}</>;
   }
 
@@ -36,7 +36,7 @@ export function UserAvatar({ fallback }: UserAvatarProps) {
             h={"38px"}
             w={"38px"}
             // height="10%"
-            src={`https://api.dicebear.com/5.x/lorelei/svg?seed=${user.user.username}&flip=true&backgroundColor=F64D07`}
+            src={`https://api.dicebear.com/5.x/lorelei/svg?seed=${user.username}&flip=true&backgroundColor=F64D07`}
           />
           <Box display={{ base: "none", md: "block" }}>
             <ChevronDownIcon />
@@ -45,7 +45,7 @@ export function UserAvatar({ fallback }: UserAvatarProps) {
       </MenuButton>
       <MenuList bg={"white"} borderColor={"gray.200"}>
         <MenuGroup
-          title={`signed in as ${user.user.username}`}
+          title={`signed in as ${user.username}`}
           color={"gray.700"}
           textAlign={"center"}
         >

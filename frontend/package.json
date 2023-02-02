@@ -27,6 +27,7 @@
     "remark-parse": "^10.0.1",
     "remark-rehype": "^10.1.0",
     "supertokens-auth-react": "^0.29.0",
+    "swr": "^2.0.3",
     "unified": "^10.1.2",
     "unist-builder": "^3.0.0",
     "wanakana": "^5.0.2"

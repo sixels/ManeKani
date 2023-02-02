@@ -1,15 +1,27 @@
-import { Container, SimpleGrid, Stack, Box, Grid } from "@chakra-ui/react";
+import {
+  Container,
+  SimpleGrid,
+  Stack,
+  Box,
+  Grid,
+  Spinner,
+  Text,
+  VStack,
+  Heading,
+} from "@chakra-ui/react";
 import { subHours, setHours, addDays } from "date-fns";
 
 import AuthRoute from "@/lib/auth/wrappers/AuthRoute";
 import { Calendar } from "@/ui/Calendar";
 import ReviewForecast from "@/ui/Dashboard/ReviewForecast";
 import LinkCard from "@/ui/Dashboard/LinkCard";
+import useSWR from "swr";
 
 import LessonImage from "@/assets/images/Lesson.svg";
 import ReviewImage from "@/assets/images/Review.svg";
 import ExtraStudy from "@/ui/Dashboard/ExtraStudy";
 import { LevelProgress } from "@/ui/Dashboard/LevelProgress";
+import { API_URL } from "@/lib/api/fetchApi";
 
 const N_LESSONS = 13;
 const N_REVIEWS = 30;
@@ -123,6 +135,28 @@ const REVIEW_SCHEDULE: {
 ];
 
 function Dashboard() {
+  const { data, isLoading, error } = useSWR(`${API_URL}/user/srs`);
+
+  if (isLoading) {
+    return (
+      <VStack spacing={4}>
+        <Text>Loading data</Text>
+        <Spinner />
+      </VStack>
+    );
+  }
+
+  if (error) {
+    return (
+      <VStack>
+        <Heading>Ooops..</Heading>
+        <Text>{JSON.stringify(error)}</Text>
+      </VStack>
+    );
+  }
+
+  console.log(data);
+
   return (
     <Container maxW={"8xl"} mt={6}>
       <Grid
@@ -194,8 +228,8 @@ function Dashboard() {
 
 export default function () {
   return (
-    // <AuthRoute>
-    <Dashboard />
-    // </AuthRoute>
+    <AuthRoute>
+      <Dashboard />
+    </AuthRoute>
   );
 }

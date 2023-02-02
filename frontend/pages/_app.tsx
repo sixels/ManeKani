@@ -6,9 +6,10 @@ import { ChakraProvider } from "@chakra-ui/react";
 import Head from "next/head";
 
 import { frontendConfig } from "@/lib/supertokens/frontendConfig";
-import { SEO } from "@/lib/config";
-import { UserDataProvider } from "@/lib/auth/context";
+import SEO from "@/lib/config/seo";
+import swrConfiguration from "@/lib/config/swr";
 import { theme } from "@/lib/theme";
+import { SWRConfig } from "swr";
 
 import Footer from "@/ui/Footer";
 import Navbar from "@/ui/Navbar";
@@ -42,11 +43,11 @@ function App({ Component, pageProps }: AppProps) {
 
       <ChakraProvider theme={theme}>
         <SuperTokensWrapper>
-          <UserDataProvider>
+          <SWRConfig value={swrConfiguration}>
             <Navbar />
             <Component {...pageProps} />
             <Footer />
-          </UserDataProvider>
+          </SWRConfig>
         </SuperTokensWrapper>
       </ChakraProvider>
     </>
