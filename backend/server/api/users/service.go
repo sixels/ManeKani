@@ -15,6 +15,6 @@ func New(repo *users.UsersRepository) *UserApi {
 
 func (api *UserApi) SetupRoutes(router *gin.Engine) {
 	router.GET("/user", api.GetBasicUserInfo())
-
-	router.POST("/auth/signin")
+	router.GET("/user/srs", api.RequiresUser(), api.GetSRSInfo())
+	router.GET("/user/srs/reset", api.RequiresUser(), api.ResetSRSData())
 }

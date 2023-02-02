@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
+	"encoding/gob"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"os/user"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -36,12 +38,14 @@ type Server struct {
 }
 
 func New() *Server {
+	gob.Register(user.User{})
+
 	entClient, err := ent.Connect()
 	if err != nil {
 		log.Fatalf("Could not connect with ManeKani database: %v", err)
 	}
 	cardsRepo := cards.NewRepository(entClient)
-	usersRepo := users.NewRepository(entClient)
+	usersRepo := users.NewRepository(entClient, cardsRepo)
 
 	if err := auth.StartAuthenticator(usersRepo); err != nil {
 		log.Fatalf("Could not start the authenticator: %v", err)

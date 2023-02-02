@@ -51,7 +51,7 @@ func StartAuthenticator(users *users.UsersRepository) error {
 								message := "Username is invalid"
 								return &message
 							}
-							if isAvailable, err := users.UsernameAvailable(context.Background(), username); !isAvailable || err != nil {
+							if isAvailable, err := users.IsUsernameAvailable(context.Background(), username); !isAvailable || err != nil {
 								var message string
 								if err != nil {
 									log.Println(err)

@@ -11,7 +11,6 @@ import (
 	"sixels.io/manekani/ent/radical"
 	"sixels.io/manekani/ent/vocabulary"
 	"sixels.io/manekani/services/ent/util"
-
 )
 
 var PARTIAL_KANJI_FIELDS = [...]string{
@@ -38,7 +37,7 @@ func (repo CardsRepository) CreateKanji(ctx context.Context, req cards.CreateKan
 			SetLevel(req.Level).
 			SetAltNames(util.ToPgTextArray(req.AltNames)).
 			SetSymbol(req.Symbol).
-			SetSimilar(util.ToPgTextArray(req.Similar)).
+			// SetSimilar(util.ToPgTextArray(req.Similar)).
 			SetReading(req.Reading).
 			SetOnyomi(util.ToPgTextArray(req.Onyomi)).
 			SetKunyomi(util.ToPgTextArray(req.Kunyomi)).
@@ -84,7 +83,7 @@ func (repo CardsRepository) UpdateKanji(ctx context.Context, symbol string, req 
 
 		util.UpdateValue(req.Level, query.SetLevel)
 		util.UpdateValue(req.Name, query.SetName)
-		util.UpdateTextArray(req.Similar, query.SetSimilar)
+		// util.UpdateTextArray(req.Similar, query.SetSimilar)
 		util.UpdateTextArray(req.AltNames, query.SetAltNames)
 		util.UpdateValue(req.MeaningMnemonic, query.SetMeaningMnemonic)
 		util.UpdateValue(req.Reading, query.SetReading)
@@ -183,14 +182,14 @@ func (repo CardsRepository) QueryKanjiRadicals(ctx context.Context, symbol strin
 
 func kanjiFromEnt(e *ent.Kanji) *cards.Kanji {
 	return &cards.Kanji{
-		Id:              e.ID,
-		CreatedAt:       e.CreatedAt,
-		UpdatedAt:       e.UpdatedAt,
-		Name:            e.Name,
-		Level:           e.Level,
-		AltNames:        util.FromPgTextArray(e.AltNames),
-		Symbol:          e.Symbol,
-		Similar:         util.FromPgTextArray(e.Similar),
+		Id:        e.ID,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+		Name:      e.Name,
+		Level:     e.Level,
+		AltNames:  util.FromPgTextArray(e.AltNames),
+		Symbol:    e.Symbol,
+		// Similar:         util.FromPgTextArray(e.Similar),
 		Reading:         e.Reading,
 		Onyomi:          util.FromPgTextArray(e.Onyomi),
 		Kunyomi:         util.FromPgTextArray(e.Kunyomi),

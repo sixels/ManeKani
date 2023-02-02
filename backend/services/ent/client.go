@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "sixels.io/manekani/ent/runtime"
 )
 
 type EntClient struct {
@@ -30,6 +31,8 @@ func Connect() (*EntClient, error) {
 		client.Close()
 		return nil, fmt.Errorf("failed to migrate: %v", err)
 	}
+
+	SetupHooks(client)
 
 	return &EntClient{
 		Client: client,

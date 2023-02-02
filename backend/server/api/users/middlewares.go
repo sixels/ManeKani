@@ -7,36 +7,29 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/emailpassword"
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
-	"sixels.io/manekani/core/domain/user"
 )
 
-func (api *UserApi) GetBasicUserInfo() gin.HandlerFunc {
+func (api *UserApi) RequiresUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		sessionRequired := false
+		sessionRequired := true
 		currentSession, err := session.GetSession(c.Request, c.Writer, &sessmodels.VerifySessionOptions{SessionRequired: &sessionRequired})
 		if err != nil {
-			c.Error(err)
-			c.Status(http.StatusUnauthorized)
+			c.AbortWithError(http.StatusUnauthorized, err)
 			return
 		}
 
 		authUser, err := emailpassword.GetUserByID(currentSession.GetUserID())
 		if err != nil {
-			c.Error(err)
-			c.Status(http.StatusBadRequest)
-			return
-		}
-		userInfo, err := api.users.QueryUser(c.Request.Context(), authUser.ID)
-		if err != nil {
-			c.Error(err)
-			c.Status(http.StatusInternalServerError)
+			c.AbortWithError(http.StatusNotAcceptable, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, user.UserBasic{
-			Email:    userInfo.Email,
-			Username: userInfo.Username,
-			Level:    userInfo.Level,
-		})
+		userInfo, err := api.users.QueryUserResolved(c.Request.Context(), authUser.ID)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		c.Set("user", userInfo)
 	}
 }
