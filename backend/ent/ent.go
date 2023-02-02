@@ -10,8 +10,11 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sixels.io/manekani/ent/card"
 	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/radical"
+	"sixels.io/manekani/ent/review"
+	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
 	"sixels.io/manekani/ent/vocabulary"
 )
@@ -34,8 +37,11 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
+		card.Table:       card.ValidColumn,
 		kanji.Table:      kanji.ValidColumn,
 		radical.Table:    radical.ValidColumn,
+		review.Table:     review.ValidColumn,
+		subject.Table:    subject.ValidColumn,
 		user.Table:       user.ValidColumn,
 		vocabulary.Table: vocabulary.ValidColumn,
 	}

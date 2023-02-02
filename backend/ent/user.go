@@ -3,10 +3,12 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
+	"sixels.io/manekani/ent/schema"
 	"sixels.io/manekani/ent/user"
 )
 
@@ -17,8 +19,33 @@ type User struct {
 	ID string `json:"id,omitempty"`
 	// Username holds the value of the "username" field.
 	Username string `json:"username,omitempty"`
+	// PendingActions holds the value of the "pending_actions" field.
+	PendingActions []schema.PendingAction `json:"pending_actions,omitempty"`
 	// Email holds the value of the "email" field.
 	Email string `json:"email,omitempty"`
+	// Level holds the value of the "level" field.
+	Level int32 `json:"level,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges UserEdges `json:"edges"`
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// Cards holds the value of the cards edge.
+	Cards []*Card `json:"cards,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// CardsOrErr returns the Cards value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) CardsOrErr() ([]*Card, error) {
+	if e.loadedTypes[0] {
+		return e.Cards, nil
+	}
+	return nil, &NotLoadedError{edge: "cards"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -26,6 +53,10 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldPendingActions:
+			values[i] = new([]byte)
+		case user.FieldLevel:
+			values[i] = new(sql.NullInt64)
 		case user.FieldID, user.FieldUsername, user.FieldEmail:
 			values[i] = new(sql.NullString)
 		default:
@@ -55,15 +86,34 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.Username = value.String
 			}
+		case user.FieldPendingActions:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field pending_actions", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &u.PendingActions); err != nil {
+					return fmt.Errorf("unmarshal field pending_actions: %w", err)
+				}
+			}
 		case user.FieldEmail:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field email", values[i])
 			} else if value.Valid {
 				u.Email = value.String
 			}
+		case user.FieldLevel:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field level", values[i])
+			} else if value.Valid {
+				u.Level = int32(value.Int64)
+			}
 		}
 	}
 	return nil
+}
+
+// QueryCards queries the "cards" edge of the User entity.
+func (u *User) QueryCards() *CardQuery {
+	return (&UserClient{config: u.config}).QueryCards(u)
 }
 
 // Update returns a builder for updating this User.
@@ -92,8 +142,14 @@ func (u *User) String() string {
 	builder.WriteString("username=")
 	builder.WriteString(u.Username)
 	builder.WriteString(", ")
+	builder.WriteString("pending_actions=")
+	builder.WriteString(fmt.Sprintf("%v", u.PendingActions))
+	builder.WriteString(", ")
 	builder.WriteString("email=")
 	builder.WriteString(u.Email)
+	builder.WriteString(", ")
+	builder.WriteString("level=")
+	builder.WriteString(fmt.Sprintf("%v", u.Level))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -30,9 +30,9 @@ func (Kanji) Fields() []ent.Field {
 			NotEmpty().
 			Immutable().
 			Unique(),
+
 		field.Text("name").NotEmpty(),
 		common.TextArray("alt_names", true),
-		common.TextArray("similar", true),
 		field.Int32("level").Positive(),
 
 		field.Text("reading").NotEmpty(),
@@ -53,7 +53,7 @@ func (Kanji) Edges() []ent.Edge {
 			Ref("kanjis"),
 		// kanji ---radicals--> radicals
 		edge.To("radicals", Radical.Type),
-
-		edge.To("card", Card.Type),
+		// kanji ---similar--> kanji
+		edge.To("visuallySimilar", Kanji.Type),
 	}
 }

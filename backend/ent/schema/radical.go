@@ -37,7 +37,5 @@ func (Radical) Edges() []ent.Edge {
 		// kanji <--kanjis--- radical
 		edge.From("kanjis", Kanji.Type).
 			Ref("radicals"),
-
-		edge.To("card", Card.Type),
 	}
 }

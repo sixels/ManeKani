@@ -118,13 +118,6 @@ func AltNames(v pgtype.TextArray) predicate.Kanji {
 	})
 }
 
-// Similar applies equality check predicate on the "similar" field. It's identical to SimilarEQ.
-func Similar(v pgtype.TextArray) predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSimilar), v))
-	})
-}
-
 // Level applies equality check predicate on the "level" field. It's identical to LevelEQ.
 func Level(v int32) predicate.Kanji {
 	return predicate.Kanji(func(s *sql.Selector) {
@@ -575,84 +568,6 @@ func AltNamesIsNil() predicate.Kanji {
 func AltNamesNotNil() predicate.Kanji {
 	return predicate.Kanji(func(s *sql.Selector) {
 		s.Where(sql.NotNull(s.C(FieldAltNames)))
-	})
-}
-
-// SimilarEQ applies the EQ predicate on the "similar" field.
-func SimilarEQ(v pgtype.TextArray) predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSimilar), v))
-	})
-}
-
-// SimilarNEQ applies the NEQ predicate on the "similar" field.
-func SimilarNEQ(v pgtype.TextArray) predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldSimilar), v))
-	})
-}
-
-// SimilarIn applies the In predicate on the "similar" field.
-func SimilarIn(vs ...pgtype.TextArray) predicate.Kanji {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldSimilar), v...))
-	})
-}
-
-// SimilarNotIn applies the NotIn predicate on the "similar" field.
-func SimilarNotIn(vs ...pgtype.TextArray) predicate.Kanji {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldSimilar), v...))
-	})
-}
-
-// SimilarGT applies the GT predicate on the "similar" field.
-func SimilarGT(v pgtype.TextArray) predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldSimilar), v))
-	})
-}
-
-// SimilarGTE applies the GTE predicate on the "similar" field.
-func SimilarGTE(v pgtype.TextArray) predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldSimilar), v))
-	})
-}
-
-// SimilarLT applies the LT predicate on the "similar" field.
-func SimilarLT(v pgtype.TextArray) predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldSimilar), v))
-	})
-}
-
-// SimilarLTE applies the LTE predicate on the "similar" field.
-func SimilarLTE(v pgtype.TextArray) predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldSimilar), v))
-	})
-}
-
-// SimilarIsNil applies the IsNil predicate on the "similar" field.
-func SimilarIsNil() predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldSimilar)))
-	})
-}
-
-// SimilarNotNil applies the NotNil predicate on the "similar" field.
-func SimilarNotNil() predicate.Kanji {
-	return predicate.Kanji(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldSimilar)))
 	})
 }
 
@@ -1256,6 +1171,34 @@ func HasRadicalsWith(preds ...predicate.Radical) predicate.Kanji {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(RadicalsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, RadicalsTable, RadicalsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasVisuallySimilar applies the HasEdge predicate on the "visuallySimilar" edge.
+func HasVisuallySimilar() predicate.Kanji {
+	return predicate.Kanji(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(VisuallySimilarTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, VisuallySimilarTable, VisuallySimilarPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasVisuallySimilarWith applies the HasEdge predicate on the "visuallySimilar" edge with a given conditions (other predicates).
+func HasVisuallySimilarWith(preds ...predicate.Kanji) predicate.Kanji {
+	return predicate.Kanji(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, VisuallySimilarTable, VisuallySimilarPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

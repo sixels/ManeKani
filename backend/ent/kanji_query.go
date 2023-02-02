@@ -21,14 +21,15 @@ import (
 // KanjiQuery is the builder for querying Kanji entities.
 type KanjiQuery struct {
 	config
-	limit            *int
-	offset           *int
-	unique           *bool
-	order            []OrderFunc
-	fields           []string
-	predicates       []predicate.Kanji
-	withVocabularies *VocabularyQuery
-	withRadicals     *RadicalQuery
+	limit               *int
+	offset              *int
+	unique              *bool
+	order               []OrderFunc
+	fields              []string
+	predicates          []predicate.Kanji
+	withVocabularies    *VocabularyQuery
+	withRadicals        *RadicalQuery
+	withVisuallySimilar *KanjiQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +103,28 @@ func (kq *KanjiQuery) QueryRadicals() *RadicalQuery {
 			sqlgraph.From(kanji.Table, kanji.FieldID, selector),
 			sqlgraph.To(radical.Table, radical.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, kanji.RadicalsTable, kanji.RadicalsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(kq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryVisuallySimilar chains the current query on the "visuallySimilar" edge.
+func (kq *KanjiQuery) QueryVisuallySimilar() *KanjiQuery {
+	query := &KanjiQuery{config: kq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := kq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := kq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kanji.Table, kanji.FieldID, selector),
+			sqlgraph.To(kanji.Table, kanji.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, kanji.VisuallySimilarTable, kanji.VisuallySimilarPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(kq.driver.Dialect(), step)
 		return fromU, nil
@@ -285,13 +308,14 @@ func (kq *KanjiQuery) Clone() *KanjiQuery {
 		return nil
 	}
 	return &KanjiQuery{
-		config:           kq.config,
-		limit:            kq.limit,
-		offset:           kq.offset,
-		order:            append([]OrderFunc{}, kq.order...),
-		predicates:       append([]predicate.Kanji{}, kq.predicates...),
-		withVocabularies: kq.withVocabularies.Clone(),
-		withRadicals:     kq.withRadicals.Clone(),
+		config:              kq.config,
+		limit:               kq.limit,
+		offset:              kq.offset,
+		order:               append([]OrderFunc{}, kq.order...),
+		predicates:          append([]predicate.Kanji{}, kq.predicates...),
+		withVocabularies:    kq.withVocabularies.Clone(),
+		withRadicals:        kq.withRadicals.Clone(),
+		withVisuallySimilar: kq.withVisuallySimilar.Clone(),
 		// clone intermediate query.
 		sql:    kq.sql.Clone(),
 		path:   kq.path,
@@ -318,6 +342,17 @@ func (kq *KanjiQuery) WithRadicals(opts ...func(*RadicalQuery)) *KanjiQuery {
 		opt(query)
 	}
 	kq.withRadicals = query
+	return kq
+}
+
+// WithVisuallySimilar tells the query-builder to eager-load the nodes that are connected to
+// the "visuallySimilar" edge. The optional arguments are used to configure the query builder of the edge.
+func (kq *KanjiQuery) WithVisuallySimilar(opts ...func(*KanjiQuery)) *KanjiQuery {
+	query := &KanjiQuery{config: kq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	kq.withVisuallySimilar = query
 	return kq
 }
 
@@ -394,9 +429,10 @@ func (kq *KanjiQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Kanji,
 	var (
 		nodes       = []*Kanji{}
 		_spec       = kq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			kq.withVocabularies != nil,
 			kq.withRadicals != nil,
+			kq.withVisuallySimilar != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -428,6 +464,13 @@ func (kq *KanjiQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Kanji,
 		if err := kq.loadRadicals(ctx, query, nodes,
 			func(n *Kanji) { n.Edges.Radicals = []*Radical{} },
 			func(n *Kanji, e *Radical) { n.Edges.Radicals = append(n.Edges.Radicals, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := kq.withVisuallySimilar; query != nil {
+		if err := kq.loadVisuallySimilar(ctx, query, nodes,
+			func(n *Kanji) { n.Edges.VisuallySimilar = []*Kanji{} },
+			func(n *Kanji, e *Kanji) { n.Edges.VisuallySimilar = append(n.Edges.VisuallySimilar, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -543,6 +586,64 @@ func (kq *KanjiQuery) loadRadicals(ctx context.Context, query *RadicalQuery, nod
 		nodes, ok := nids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected "radicals" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (kq *KanjiQuery) loadVisuallySimilar(ctx context.Context, query *KanjiQuery, nodes []*Kanji, init func(*Kanji), assign func(*Kanji, *Kanji)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Kanji)
+	nids := make(map[uuid.UUID]map[*Kanji]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(kanji.VisuallySimilarTable)
+		s.Join(joinT).On(s.C(kanji.FieldID), joinT.C(kanji.VisuallySimilarPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(kanji.VisuallySimilarPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(kanji.VisuallySimilarPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(uuid.UUID)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := *values[0].(*uuid.UUID)
+			inValue := *values[1].(*uuid.UUID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Kanji]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "visuallySimilar" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)

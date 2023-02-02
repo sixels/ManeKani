@@ -1,16 +1,21 @@
 package user
 
+import "sixels.io/manekani/ent/schema"
+
 type User struct {
 	Id       string `json:"-"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 
-	// TODO
+	Level int32 `json:"level"`
+
+	PendingActions []schema.PendingAction `json:"-"`
 }
 
-type BasicUserInfo struct {
+type UserBasic struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
+	Level    int32  `json:"level"`
 }
 
 type CreateUserRequest struct {

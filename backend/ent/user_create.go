@@ -9,6 +9,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
+	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/schema"
 	"sixels.io/manekani/ent/user"
 )
 
@@ -25,9 +28,29 @@ func (uc *UserCreate) SetUsername(s string) *UserCreate {
 	return uc
 }
 
+// SetPendingActions sets the "pending_actions" field.
+func (uc *UserCreate) SetPendingActions(sa []schema.PendingAction) *UserCreate {
+	uc.mutation.SetPendingActions(sa)
+	return uc
+}
+
 // SetEmail sets the "email" field.
 func (uc *UserCreate) SetEmail(s string) *UserCreate {
 	uc.mutation.SetEmail(s)
+	return uc
+}
+
+// SetLevel sets the "level" field.
+func (uc *UserCreate) SetLevel(i int32) *UserCreate {
+	uc.mutation.SetLevel(i)
+	return uc
+}
+
+// SetNillableLevel sets the "level" field if the given value is not nil.
+func (uc *UserCreate) SetNillableLevel(i *int32) *UserCreate {
+	if i != nil {
+		uc.SetLevel(*i)
+	}
 	return uc
 }
 
@@ -35,6 +58,21 @@ func (uc *UserCreate) SetEmail(s string) *UserCreate {
 func (uc *UserCreate) SetID(s string) *UserCreate {
 	uc.mutation.SetID(s)
 	return uc
+}
+
+// AddCardIDs adds the "cards" edge to the Card entity by IDs.
+func (uc *UserCreate) AddCardIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddCardIDs(ids...)
+	return uc
+}
+
+// AddCards adds the "cards" edges to the Card entity.
+func (uc *UserCreate) AddCards(c ...*Card) *UserCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uc.AddCardIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -48,6 +86,7 @@ func (uc *UserCreate) Save(ctx context.Context) (*User, error) {
 		err  error
 		node *User
 	)
+	uc.defaults()
 	if len(uc.hooks) == 0 {
 		if err = uc.check(); err != nil {
 			return nil, err
@@ -111,6 +150,14 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (uc *UserCreate) defaults() {
+	if _, ok := uc.mutation.Level(); !ok {
+		v := user.DefaultLevel
+		uc.mutation.SetLevel(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.Username(); !ok {
@@ -121,12 +168,23 @@ func (uc *UserCreate) check() error {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "User.username": %w`, err)}
 		}
 	}
+	if _, ok := uc.mutation.PendingActions(); !ok {
+		return &ValidationError{Name: "pending_actions", err: errors.New(`ent: missing required field "User.pending_actions"`)}
+	}
 	if _, ok := uc.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "User.email"`)}
 	}
 	if v, ok := uc.mutation.Email(); ok {
 		if err := user.EmailValidator(v); err != nil {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
+		}
+	}
+	if _, ok := uc.mutation.Level(); !ok {
+		return &ValidationError{Name: "level", err: errors.New(`ent: missing required field "User.level"`)}
+	}
+	if v, ok := uc.mutation.Level(); ok {
+		if err := user.LevelValidator(v); err != nil {
+			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "User.level": %w`, err)}
 		}
 	}
 	return nil
@@ -169,9 +227,36 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
+	if value, ok := uc.mutation.PendingActions(); ok {
+		_spec.SetField(user.FieldPendingActions, field.TypeJSON, value)
+		_node.PendingActions = value
+	}
 	if value, ok := uc.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 		_node.Email = value
+	}
+	if value, ok := uc.mutation.Level(); ok {
+		_spec.SetField(user.FieldLevel, field.TypeInt32, value)
+		_node.Level = value
+	}
+	if nodes := uc.mutation.CardsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CardsTable,
+			Columns: []string{user.CardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: card.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -190,6 +275,7 @@ func (ucb *UserCreateBulk) Save(ctx context.Context) ([]*User, error) {
 	for i := range ucb.builders {
 		func(i int, root context.Context) {
 			builder := ucb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*UserMutation)
 				if !ok {

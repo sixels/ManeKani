@@ -23,8 +23,6 @@ const (
 	FieldName = "name"
 	// FieldAltNames holds the string denoting the alt_names field in the database.
 	FieldAltNames = "alt_names"
-	// FieldSimilar holds the string denoting the similar field in the database.
-	FieldSimilar = "similar"
 	// FieldLevel holds the string denoting the level field in the database.
 	FieldLevel = "level"
 	// FieldReading holds the string denoting the reading field in the database.
@@ -43,6 +41,8 @@ const (
 	EdgeVocabularies = "vocabularies"
 	// EdgeRadicals holds the string denoting the radicals edge name in mutations.
 	EdgeRadicals = "radicals"
+	// EdgeVisuallySimilar holds the string denoting the visuallysimilar edge name in mutations.
+	EdgeVisuallySimilar = "visuallySimilar"
 	// Table holds the table name of the kanji in the database.
 	Table = "kanjis"
 	// VocabulariesTable is the table that holds the vocabularies relation/edge. The primary key declared below.
@@ -55,6 +55,8 @@ const (
 	// RadicalsInverseTable is the table name for the Radical entity.
 	// It exists in this package in order to avoid circular dependency with the "radical" package.
 	RadicalsInverseTable = "radicals"
+	// VisuallySimilarTable is the table that holds the visuallySimilar relation/edge. The primary key declared below.
+	VisuallySimilarTable = "kanji_visuallySimilar"
 )
 
 // Columns holds all SQL columns for kanji fields.
@@ -65,7 +67,6 @@ var Columns = []string{
 	FieldSymbol,
 	FieldName,
 	FieldAltNames,
-	FieldSimilar,
 	FieldLevel,
 	FieldReading,
 	FieldOnyomi,
@@ -82,6 +83,9 @@ var (
 	// RadicalsPrimaryKey and RadicalsColumn2 are the table columns denoting the
 	// primary key for the radicals relation (M2M).
 	RadicalsPrimaryKey = []string{"kanji_id", "radical_id"}
+	// VisuallySimilarPrimaryKey and VisuallySimilarColumn2 are the table columns denoting the
+	// primary key for the visuallySimilar relation (M2M).
+	VisuallySimilarPrimaryKey = []string{"kanji_id", "visuallySimilar_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

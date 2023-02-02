@@ -9,6 +9,19 @@ import (
 	"sixels.io/manekani/ent"
 )
 
+// The CardFunc type is an adapter to allow the use of ordinary
+// function as Card mutator.
+type CardFunc func(context.Context, *ent.CardMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CardFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.CardMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CardMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The KanjiFunc type is an adapter to allow the use of ordinary
 // function as Kanji mutator.
 type KanjiFunc func(context.Context, *ent.KanjiMutation) (ent.Value, error)
@@ -31,6 +44,32 @@ func (f RadicalFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	mv, ok := m.(*ent.RadicalMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RadicalMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ReviewFunc type is an adapter to allow the use of ordinary
+// function as Review mutator.
+type ReviewFunc func(context.Context, *ent.ReviewMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReviewFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ReviewMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReviewMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The SubjectFunc type is an adapter to allow the use of ordinary
+// function as Subject mutator.
+type SubjectFunc func(context.Context, *ent.SubjectMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SubjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.SubjectMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectMutation", m)
 	}
 	return f(ctx, mv)
 }

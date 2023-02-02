@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -26,43 +24,31 @@ func (Card) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
 
-		field.UUID("radical_id", uuid.UUID{}).Nillable(),
-		field.UUID("kanji_id", uuid.UUID{}).Nillable(),
-		field.UUID("vocabulary_id", uuid.UUID{}).Nillable(),
-
 		field.Uint8("progress").Default(0),
-		field.Uint("errors").Default(0),
+		field.Int32("total_errors").Default(0),
 
 		// timestamps
-		field.Time("unlocked_at").Default(time.Now).Immutable(),
-		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
-
-		field.Time("started_at").Nillable().
-			Comment(`
-				The time in which the user started progressing this card.
-			`),
-		field.Time("passed_at").Nillable().
-			Comment(`
-				The time when the card passed the apprendice stage.
-			`),
-		field.Time("available_at").Default(time.Now()).
-			Comment(`
-				The time when the card will be available to review.
-			`),
-		field.Time("burned_at").Nillable().
-			Comment(`
-				The time when the card reached the fluent stage.
-			`),
+		field.Time("unlocked_at").Optional().Nillable(),
+		field.Time("started_at").Optional().Nillable(),
+		field.Time("passed_at").Optional().Nillable(),
+		field.Time("available_at").Optional().Nillable(),
+		field.Time("burned_at").Optional().Nillable(),
 	}
 }
 
 // Edges of the Card.
 func (Card) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", User.Type).Required(),
+		edge.From("user", User.Type).
+			Ref("cards").
+			Required().
+			Unique(),
 
-		edge.From("radical", Radical.Type).Unique().Field("radical_id"),
-		edge.From("kanji", Kanji.Type).Unique().Field("kanji_id"),
-		edge.From("vocabulary", Vocabulary.Type).Unique().Field("vocabulary_id"),
+		edge.From("subject", Subject.Type).
+			Ref("cards").
+			Required().
+			Unique(),
+
+		edge.To("reviews", Review.Type),
 	}
 }

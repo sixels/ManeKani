@@ -46,8 +46,6 @@ func (Vocabulary) Edges() []ent.Edge {
 	return []ent.Edge{
 		// vocabulary ---kanjis---> kanji
 		edge.To("kanjis", Kanji.Type),
-
-		edge.To("card", Card.Type),
 	}
 }
 

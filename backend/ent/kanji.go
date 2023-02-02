@@ -28,8 +28,6 @@ type Kanji struct {
 	Name string `json:"name,omitempty"`
 	// AltNames holds the value of the "alt_names" field.
 	AltNames pgtype.TextArray `json:"alt_names,omitempty"`
-	// Similar holds the value of the "similar" field.
-	Similar pgtype.TextArray `json:"similar,omitempty"`
 	// Level holds the value of the "level" field.
 	Level int32 `json:"level,omitempty"`
 	// Reading holds the value of the "reading" field.
@@ -55,9 +53,11 @@ type KanjiEdges struct {
 	Vocabularies []*Vocabulary `json:"vocabularies,omitempty"`
 	// Radicals holds the value of the radicals edge.
 	Radicals []*Radical `json:"radicals,omitempty"`
+	// VisuallySimilar holds the value of the visuallySimilar edge.
+	VisuallySimilar []*Kanji `json:"visuallySimilar,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // VocabulariesOrErr returns the Vocabularies value or an error if the edge
@@ -78,12 +78,21 @@ func (e KanjiEdges) RadicalsOrErr() ([]*Radical, error) {
 	return nil, &NotLoadedError{edge: "radicals"}
 }
 
+// VisuallySimilarOrErr returns the VisuallySimilar value or an error if the edge
+// was not loaded in eager-loading.
+func (e KanjiEdges) VisuallySimilarOrErr() ([]*Kanji, error) {
+	if e.loadedTypes[2] {
+		return e.VisuallySimilar, nil
+	}
+	return nil, &NotLoadedError{edge: "visuallySimilar"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Kanji) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case kanji.FieldAltNames, kanji.FieldSimilar, kanji.FieldOnyomi, kanji.FieldKunyomi, kanji.FieldNanori:
+		case kanji.FieldAltNames, kanji.FieldOnyomi, kanji.FieldKunyomi, kanji.FieldNanori:
 			values[i] = new(pgtype.TextArray)
 		case kanji.FieldLevel:
 			values[i] = new(sql.NullInt64)
@@ -144,12 +153,6 @@ func (k *Kanji) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				k.AltNames = *value
 			}
-		case kanji.FieldSimilar:
-			if value, ok := values[i].(*pgtype.TextArray); !ok {
-				return fmt.Errorf("unexpected type %T for field similar", values[i])
-			} else if value != nil {
-				k.Similar = *value
-			}
 		case kanji.FieldLevel:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field level", values[i])
@@ -207,6 +210,11 @@ func (k *Kanji) QueryRadicals() *RadicalQuery {
 	return (&KanjiClient{config: k.config}).QueryRadicals(k)
 }
 
+// QueryVisuallySimilar queries the "visuallySimilar" edge of the Kanji entity.
+func (k *Kanji) QueryVisuallySimilar() *KanjiQuery {
+	return (&KanjiClient{config: k.config}).QueryVisuallySimilar(k)
+}
+
 // Update returns a builder for updating this Kanji.
 // Note that you need to call Kanji.Unwrap() before calling this method if this Kanji
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -244,9 +252,6 @@ func (k *Kanji) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("alt_names=")
 	builder.WriteString(fmt.Sprintf("%v", k.AltNames))
-	builder.WriteString(", ")
-	builder.WriteString("similar=")
-	builder.WriteString(fmt.Sprintf("%v", k.Similar))
 	builder.WriteString(", ")
 	builder.WriteString("level=")
 	builder.WriteString(fmt.Sprintf("%v", k.Level))

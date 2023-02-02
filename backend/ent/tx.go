@@ -12,10 +12,16 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Card is the client for interacting with the Card builders.
+	Card *CardClient
 	// Kanji is the client for interacting with the Kanji builders.
 	Kanji *KanjiClient
 	// Radical is the client for interacting with the Radical builders.
 	Radical *RadicalClient
+	// Review is the client for interacting with the Review builders.
+	Review *ReviewClient
+	// Subject is the client for interacting with the Subject builders.
+	Subject *SubjectClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// Vocabulary is the client for interacting with the Vocabulary builders.
@@ -151,8 +157,11 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Card = NewCardClient(tx.config)
 	tx.Kanji = NewKanjiClient(tx.config)
 	tx.Radical = NewRadicalClient(tx.config)
+	tx.Review = NewReviewClient(tx.config)
+	tx.Subject = NewSubjectClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.Vocabulary = NewVocabularyClient(tx.config)
 }
@@ -164,7 +173,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Kanji.QueryXXX(), the query will be executed
+// applies a query, for example: Card.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

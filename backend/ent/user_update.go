@@ -9,8 +9,12 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
+	"sixels.io/manekani/ent/card"
 	"sixels.io/manekani/ent/predicate"
+	"sixels.io/manekani/ent/schema"
 	"sixels.io/manekani/ent/user"
 )
 
@@ -33,15 +37,84 @@ func (uu *UserUpdate) SetUsername(s string) *UserUpdate {
 	return uu
 }
 
+// SetPendingActions sets the "pending_actions" field.
+func (uu *UserUpdate) SetPendingActions(sa []schema.PendingAction) *UserUpdate {
+	uu.mutation.SetPendingActions(sa)
+	return uu
+}
+
+// AppendPendingActions appends sa to the "pending_actions" field.
+func (uu *UserUpdate) AppendPendingActions(sa []schema.PendingAction) *UserUpdate {
+	uu.mutation.AppendPendingActions(sa)
+	return uu
+}
+
 // SetEmail sets the "email" field.
 func (uu *UserUpdate) SetEmail(s string) *UserUpdate {
 	uu.mutation.SetEmail(s)
 	return uu
 }
 
+// SetLevel sets the "level" field.
+func (uu *UserUpdate) SetLevel(i int32) *UserUpdate {
+	uu.mutation.ResetLevel()
+	uu.mutation.SetLevel(i)
+	return uu
+}
+
+// SetNillableLevel sets the "level" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableLevel(i *int32) *UserUpdate {
+	if i != nil {
+		uu.SetLevel(*i)
+	}
+	return uu
+}
+
+// AddLevel adds i to the "level" field.
+func (uu *UserUpdate) AddLevel(i int32) *UserUpdate {
+	uu.mutation.AddLevel(i)
+	return uu
+}
+
+// AddCardIDs adds the "cards" edge to the Card entity by IDs.
+func (uu *UserUpdate) AddCardIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddCardIDs(ids...)
+	return uu
+}
+
+// AddCards adds the "cards" edges to the Card entity.
+func (uu *UserUpdate) AddCards(c ...*Card) *UserUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uu.AddCardIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
+}
+
+// ClearCards clears all "cards" edges to the Card entity.
+func (uu *UserUpdate) ClearCards() *UserUpdate {
+	uu.mutation.ClearCards()
+	return uu
+}
+
+// RemoveCardIDs removes the "cards" edge to Card entities by IDs.
+func (uu *UserUpdate) RemoveCardIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveCardIDs(ids...)
+	return uu
+}
+
+// RemoveCards removes "cards" edges to Card entities.
+func (uu *UserUpdate) RemoveCards(c ...*Card) *UserUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uu.RemoveCardIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -116,6 +189,11 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := uu.mutation.Level(); ok {
+		if err := user.LevelValidator(v); err != nil {
+			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "User.level": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -140,8 +218,76 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
 	}
+	if value, ok := uu.mutation.PendingActions(); ok {
+		_spec.SetField(user.FieldPendingActions, field.TypeJSON, value)
+	}
+	if value, ok := uu.mutation.AppendedPendingActions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldPendingActions, value)
+		})
+	}
 	if value, ok := uu.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.Level(); ok {
+		_spec.SetField(user.FieldLevel, field.TypeInt32, value)
+	}
+	if value, ok := uu.mutation.AddedLevel(); ok {
+		_spec.AddField(user.FieldLevel, field.TypeInt32, value)
+	}
+	if uu.mutation.CardsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CardsTable,
+			Columns: []string{user.CardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: card.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedCardsIDs(); len(nodes) > 0 && !uu.mutation.CardsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CardsTable,
+			Columns: []string{user.CardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: card.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.CardsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CardsTable,
+			Columns: []string{user.CardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: card.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -168,15 +314,84 @@ func (uuo *UserUpdateOne) SetUsername(s string) *UserUpdateOne {
 	return uuo
 }
 
+// SetPendingActions sets the "pending_actions" field.
+func (uuo *UserUpdateOne) SetPendingActions(sa []schema.PendingAction) *UserUpdateOne {
+	uuo.mutation.SetPendingActions(sa)
+	return uuo
+}
+
+// AppendPendingActions appends sa to the "pending_actions" field.
+func (uuo *UserUpdateOne) AppendPendingActions(sa []schema.PendingAction) *UserUpdateOne {
+	uuo.mutation.AppendPendingActions(sa)
+	return uuo
+}
+
 // SetEmail sets the "email" field.
 func (uuo *UserUpdateOne) SetEmail(s string) *UserUpdateOne {
 	uuo.mutation.SetEmail(s)
 	return uuo
 }
 
+// SetLevel sets the "level" field.
+func (uuo *UserUpdateOne) SetLevel(i int32) *UserUpdateOne {
+	uuo.mutation.ResetLevel()
+	uuo.mutation.SetLevel(i)
+	return uuo
+}
+
+// SetNillableLevel sets the "level" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableLevel(i *int32) *UserUpdateOne {
+	if i != nil {
+		uuo.SetLevel(*i)
+	}
+	return uuo
+}
+
+// AddLevel adds i to the "level" field.
+func (uuo *UserUpdateOne) AddLevel(i int32) *UserUpdateOne {
+	uuo.mutation.AddLevel(i)
+	return uuo
+}
+
+// AddCardIDs adds the "cards" edge to the Card entity by IDs.
+func (uuo *UserUpdateOne) AddCardIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddCardIDs(ids...)
+	return uuo
+}
+
+// AddCards adds the "cards" edges to the Card entity.
+func (uuo *UserUpdateOne) AddCards(c ...*Card) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uuo.AddCardIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
+}
+
+// ClearCards clears all "cards" edges to the Card entity.
+func (uuo *UserUpdateOne) ClearCards() *UserUpdateOne {
+	uuo.mutation.ClearCards()
+	return uuo
+}
+
+// RemoveCardIDs removes the "cards" edge to Card entities by IDs.
+func (uuo *UserUpdateOne) RemoveCardIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveCardIDs(ids...)
+	return uuo
+}
+
+// RemoveCards removes "cards" edges to Card entities.
+func (uuo *UserUpdateOne) RemoveCards(c ...*Card) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uuo.RemoveCardIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -264,6 +479,11 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := uuo.mutation.Level(); ok {
+		if err := user.LevelValidator(v); err != nil {
+			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "User.level": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -305,8 +525,76 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if value, ok := uuo.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
 	}
+	if value, ok := uuo.mutation.PendingActions(); ok {
+		_spec.SetField(user.FieldPendingActions, field.TypeJSON, value)
+	}
+	if value, ok := uuo.mutation.AppendedPendingActions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, user.FieldPendingActions, value)
+		})
+	}
 	if value, ok := uuo.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.Level(); ok {
+		_spec.SetField(user.FieldLevel, field.TypeInt32, value)
+	}
+	if value, ok := uuo.mutation.AddedLevel(); ok {
+		_spec.AddField(user.FieldLevel, field.TypeInt32, value)
+	}
+	if uuo.mutation.CardsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CardsTable,
+			Columns: []string{user.CardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: card.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedCardsIDs(); len(nodes) > 0 && !uuo.mutation.CardsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CardsTable,
+			Columns: []string{user.CardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: card.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.CardsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.CardsTable,
+			Columns: []string{user.CardsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: card.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

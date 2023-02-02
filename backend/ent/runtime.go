@@ -6,9 +6,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"sixels.io/manekani/ent/card"
 	"sixels.io/manekani/ent/kanji"
 	"sixels.io/manekani/ent/radical"
+	"sixels.io/manekani/ent/review"
 	"sixels.io/manekani/ent/schema"
+	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
 	"sixels.io/manekani/ent/vocabulary"
 )
@@ -17,6 +20,33 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	cardMixin := schema.Card{}.Mixin()
+	cardMixinFields0 := cardMixin[0].Fields()
+	_ = cardMixinFields0
+	cardFields := schema.Card{}.Fields()
+	_ = cardFields
+	// cardDescCreatedAt is the schema descriptor for created_at field.
+	cardDescCreatedAt := cardMixinFields0[0].Descriptor()
+	// card.DefaultCreatedAt holds the default value on creation for the created_at field.
+	card.DefaultCreatedAt = cardDescCreatedAt.Default.(func() time.Time)
+	// cardDescUpdatedAt is the schema descriptor for updated_at field.
+	cardDescUpdatedAt := cardMixinFields0[1].Descriptor()
+	// card.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	card.DefaultUpdatedAt = cardDescUpdatedAt.Default.(func() time.Time)
+	// card.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	card.UpdateDefaultUpdatedAt = cardDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// cardDescProgress is the schema descriptor for progress field.
+	cardDescProgress := cardFields[1].Descriptor()
+	// card.DefaultProgress holds the default value on creation for the progress field.
+	card.DefaultProgress = cardDescProgress.Default.(uint8)
+	// cardDescTotalErrors is the schema descriptor for total_errors field.
+	cardDescTotalErrors := cardFields[2].Descriptor()
+	// card.DefaultTotalErrors holds the default value on creation for the total_errors field.
+	card.DefaultTotalErrors = cardDescTotalErrors.Default.(int32)
+	// cardDescID is the schema descriptor for id field.
+	cardDescID := cardFields[0].Descriptor()
+	// card.DefaultID holds the default value on creation for the id field.
+	card.DefaultID = cardDescID.Default.(func() uuid.UUID)
 	kanjiMixin := schema.Kanji{}.Mixin()
 	kanjiMixinFields0 := kanjiMixin[0].Fields()
 	_ = kanjiMixinFields0
@@ -55,19 +85,19 @@ func init() {
 	// kanji.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	kanji.NameValidator = kanjiDescName.Validators[0].(func(string) error)
 	// kanjiDescLevel is the schema descriptor for level field.
-	kanjiDescLevel := kanjiFields[5].Descriptor()
+	kanjiDescLevel := kanjiFields[4].Descriptor()
 	// kanji.LevelValidator is a validator for the "level" field. It is called by the builders before save.
 	kanji.LevelValidator = kanjiDescLevel.Validators[0].(func(int32) error)
 	// kanjiDescReading is the schema descriptor for reading field.
-	kanjiDescReading := kanjiFields[6].Descriptor()
+	kanjiDescReading := kanjiFields[5].Descriptor()
 	// kanji.ReadingValidator is a validator for the "reading" field. It is called by the builders before save.
 	kanji.ReadingValidator = kanjiDescReading.Validators[0].(func(string) error)
 	// kanjiDescMeaningMnemonic is the schema descriptor for meaning_mnemonic field.
-	kanjiDescMeaningMnemonic := kanjiFields[10].Descriptor()
+	kanjiDescMeaningMnemonic := kanjiFields[9].Descriptor()
 	// kanji.MeaningMnemonicValidator is a validator for the "meaning_mnemonic" field. It is called by the builders before save.
 	kanji.MeaningMnemonicValidator = kanjiDescMeaningMnemonic.Validators[0].(func(string) error)
 	// kanjiDescReadingMnemonic is the schema descriptor for reading_mnemonic field.
-	kanjiDescReadingMnemonic := kanjiFields[11].Descriptor()
+	kanjiDescReadingMnemonic := kanjiFields[10].Descriptor()
 	// kanji.ReadingMnemonicValidator is a validator for the "reading_mnemonic" field. It is called by the builders before save.
 	kanji.ReadingMnemonicValidator = kanjiDescReadingMnemonic.Validators[0].(func(string) error)
 	// kanjiDescID is the schema descriptor for id field.
@@ -109,6 +139,30 @@ func init() {
 	radicalDescID := radicalFields[0].Descriptor()
 	// radical.DefaultID holds the default value on creation for the id field.
 	radical.DefaultID = radicalDescID.Default.(func() uuid.UUID)
+	reviewFields := schema.Review{}.Fields()
+	_ = reviewFields
+	// reviewDescCreatedAt is the schema descriptor for created_at field.
+	reviewDescCreatedAt := reviewFields[1].Descriptor()
+	// review.DefaultCreatedAt holds the default value on creation for the created_at field.
+	review.DefaultCreatedAt = reviewDescCreatedAt.Default.(func() time.Time)
+	// reviewDescMeaningErrors is the schema descriptor for meaning_errors field.
+	reviewDescMeaningErrors := reviewFields[2].Descriptor()
+	// review.DefaultMeaningErrors holds the default value on creation for the meaning_errors field.
+	review.DefaultMeaningErrors = reviewDescMeaningErrors.Default.(int)
+	// reviewDescReadingErrors is the schema descriptor for reading_errors field.
+	reviewDescReadingErrors := reviewFields[3].Descriptor()
+	// review.DefaultReadingErrors holds the default value on creation for the reading_errors field.
+	review.DefaultReadingErrors = reviewDescReadingErrors.Default.(int)
+	// reviewDescID is the schema descriptor for id field.
+	reviewDescID := reviewFields[0].Descriptor()
+	// review.DefaultID holds the default value on creation for the id field.
+	review.DefaultID = reviewDescID.Default.(func() uuid.UUID)
+	subjectFields := schema.Subject{}.Fields()
+	_ = subjectFields
+	// subjectDescLevel is the schema descriptor for level field.
+	subjectDescLevel := subjectFields[2].Descriptor()
+	// subject.LevelValidator is a validator for the "level" field. It is called by the builders before save.
+	subject.LevelValidator = subjectDescLevel.Validators[0].(func(int32) error)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescUsername is the schema descriptor for username field.
@@ -130,7 +184,7 @@ func init() {
 		}
 	}()
 	// userDescEmail is the schema descriptor for email field.
-	userDescEmail := userFields[2].Descriptor()
+	userDescEmail := userFields[3].Descriptor()
 	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	user.EmailValidator = func() func(string) error {
 		validators := userDescEmail.Validators
@@ -147,6 +201,12 @@ func init() {
 			return nil
 		}
 	}()
+	// userDescLevel is the schema descriptor for level field.
+	userDescLevel := userFields[4].Descriptor()
+	// user.DefaultLevel holds the default value on creation for the level field.
+	user.DefaultLevel = userDescLevel.Default.(int32)
+	// user.LevelValidator is a validator for the "level" field. It is called by the builders before save.
+	user.LevelValidator = userDescLevel.Validators[0].(func(int32) error)
 	vocabularyMixin := schema.Vocabulary{}.Mixin()
 	vocabularyMixinFields0 := vocabularyMixin[0].Fields()
 	_ = vocabularyMixinFields0

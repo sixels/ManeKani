@@ -78,20 +78,6 @@ func (kc *KanjiCreate) SetNillableAltNames(pa *pgtype.TextArray) *KanjiCreate {
 	return kc
 }
 
-// SetSimilar sets the "similar" field.
-func (kc *KanjiCreate) SetSimilar(pa pgtype.TextArray) *KanjiCreate {
-	kc.mutation.SetSimilar(pa)
-	return kc
-}
-
-// SetNillableSimilar sets the "similar" field if the given value is not nil.
-func (kc *KanjiCreate) SetNillableSimilar(pa *pgtype.TextArray) *KanjiCreate {
-	if pa != nil {
-		kc.SetSimilar(*pa)
-	}
-	return kc
-}
-
 // SetLevel sets the "level" field.
 func (kc *KanjiCreate) SetLevel(i int32) *KanjiCreate {
 	kc.mutation.SetLevel(i)
@@ -176,6 +162,21 @@ func (kc *KanjiCreate) AddRadicals(r ...*Radical) *KanjiCreate {
 		ids[i] = r[i].ID
 	}
 	return kc.AddRadicalIDs(ids...)
+}
+
+// AddVisuallySimilarIDs adds the "visuallySimilar" edge to the Kanji entity by IDs.
+func (kc *KanjiCreate) AddVisuallySimilarIDs(ids ...uuid.UUID) *KanjiCreate {
+	kc.mutation.AddVisuallySimilarIDs(ids...)
+	return kc
+}
+
+// AddVisuallySimilar adds the "visuallySimilar" edges to the Kanji entity.
+func (kc *KanjiCreate) AddVisuallySimilar(k ...*Kanji) *KanjiCreate {
+	ids := make([]uuid.UUID, len(k))
+	for i := range k {
+		ids[i] = k[i].ID
+	}
+	return kc.AddVisuallySimilarIDs(ids...)
 }
 
 // Mutation returns the KanjiMutation object of the builder.
@@ -390,10 +391,6 @@ func (kc *KanjiCreate) createSpec() (*Kanji, *sqlgraph.CreateSpec) {
 		_spec.SetField(kanji.FieldAltNames, field.TypeOther, value)
 		_node.AltNames = value
 	}
-	if value, ok := kc.mutation.Similar(); ok {
-		_spec.SetField(kanji.FieldSimilar, field.TypeOther, value)
-		_node.Similar = value
-	}
 	if value, ok := kc.mutation.Level(); ok {
 		_spec.SetField(kanji.FieldLevel, field.TypeInt32, value)
 		_node.Level = value
@@ -452,6 +449,25 @@ func (kc *KanjiCreate) createSpec() (*Kanji, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: radical.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := kc.mutation.VisuallySimilarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   kanji.VisuallySimilarTable,
+			Columns: kanji.VisuallySimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: kanji.FieldID,
 				},
 			},
 		}

@@ -64,26 +64,6 @@ func (ku *KanjiUpdate) ClearAltNames() *KanjiUpdate {
 	return ku
 }
 
-// SetSimilar sets the "similar" field.
-func (ku *KanjiUpdate) SetSimilar(pa pgtype.TextArray) *KanjiUpdate {
-	ku.mutation.SetSimilar(pa)
-	return ku
-}
-
-// SetNillableSimilar sets the "similar" field if the given value is not nil.
-func (ku *KanjiUpdate) SetNillableSimilar(pa *pgtype.TextArray) *KanjiUpdate {
-	if pa != nil {
-		ku.SetSimilar(*pa)
-	}
-	return ku
-}
-
-// ClearSimilar clears the value of the "similar" field.
-func (ku *KanjiUpdate) ClearSimilar() *KanjiUpdate {
-	ku.mutation.ClearSimilar()
-	return ku
-}
-
 // SetLevel sets the "level" field.
 func (ku *KanjiUpdate) SetLevel(i int32) *KanjiUpdate {
 	ku.mutation.ResetLevel()
@@ -163,6 +143,21 @@ func (ku *KanjiUpdate) AddRadicals(r ...*Radical) *KanjiUpdate {
 	return ku.AddRadicalIDs(ids...)
 }
 
+// AddVisuallySimilarIDs adds the "visuallySimilar" edge to the Kanji entity by IDs.
+func (ku *KanjiUpdate) AddVisuallySimilarIDs(ids ...uuid.UUID) *KanjiUpdate {
+	ku.mutation.AddVisuallySimilarIDs(ids...)
+	return ku
+}
+
+// AddVisuallySimilar adds the "visuallySimilar" edges to the Kanji entity.
+func (ku *KanjiUpdate) AddVisuallySimilar(k ...*Kanji) *KanjiUpdate {
+	ids := make([]uuid.UUID, len(k))
+	for i := range k {
+		ids[i] = k[i].ID
+	}
+	return ku.AddVisuallySimilarIDs(ids...)
+}
+
 // Mutation returns the KanjiMutation object of the builder.
 func (ku *KanjiUpdate) Mutation() *KanjiMutation {
 	return ku.mutation
@@ -208,6 +203,27 @@ func (ku *KanjiUpdate) RemoveRadicals(r ...*Radical) *KanjiUpdate {
 		ids[i] = r[i].ID
 	}
 	return ku.RemoveRadicalIDs(ids...)
+}
+
+// ClearVisuallySimilar clears all "visuallySimilar" edges to the Kanji entity.
+func (ku *KanjiUpdate) ClearVisuallySimilar() *KanjiUpdate {
+	ku.mutation.ClearVisuallySimilar()
+	return ku
+}
+
+// RemoveVisuallySimilarIDs removes the "visuallySimilar" edge to Kanji entities by IDs.
+func (ku *KanjiUpdate) RemoveVisuallySimilarIDs(ids ...uuid.UUID) *KanjiUpdate {
+	ku.mutation.RemoveVisuallySimilarIDs(ids...)
+	return ku
+}
+
+// RemoveVisuallySimilar removes "visuallySimilar" edges to Kanji entities.
+func (ku *KanjiUpdate) RemoveVisuallySimilar(k ...*Kanji) *KanjiUpdate {
+	ids := make([]uuid.UUID, len(k))
+	for i := range k {
+		ids[i] = k[i].ID
+	}
+	return ku.RemoveVisuallySimilarIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -338,12 +354,6 @@ func (ku *KanjiUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if ku.mutation.AltNamesCleared() {
 		_spec.ClearField(kanji.FieldAltNames, field.TypeOther)
-	}
-	if value, ok := ku.mutation.Similar(); ok {
-		_spec.SetField(kanji.FieldSimilar, field.TypeOther, value)
-	}
-	if ku.mutation.SimilarCleared() {
-		_spec.ClearField(kanji.FieldSimilar, field.TypeOther)
 	}
 	if value, ok := ku.mutation.Level(); ok {
 		_spec.SetField(kanji.FieldLevel, field.TypeInt32, value)
@@ -477,6 +487,60 @@ func (ku *KanjiUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ku.mutation.VisuallySimilarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   kanji.VisuallySimilarTable,
+			Columns: kanji.VisuallySimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: kanji.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ku.mutation.RemovedVisuallySimilarIDs(); len(nodes) > 0 && !ku.mutation.VisuallySimilarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   kanji.VisuallySimilarTable,
+			Columns: kanji.VisuallySimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: kanji.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ku.mutation.VisuallySimilarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   kanji.VisuallySimilarTable,
+			Columns: kanji.VisuallySimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: kanji.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ku.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{kanji.Label}
@@ -525,26 +589,6 @@ func (kuo *KanjiUpdateOne) SetNillableAltNames(pa *pgtype.TextArray) *KanjiUpdat
 // ClearAltNames clears the value of the "alt_names" field.
 func (kuo *KanjiUpdateOne) ClearAltNames() *KanjiUpdateOne {
 	kuo.mutation.ClearAltNames()
-	return kuo
-}
-
-// SetSimilar sets the "similar" field.
-func (kuo *KanjiUpdateOne) SetSimilar(pa pgtype.TextArray) *KanjiUpdateOne {
-	kuo.mutation.SetSimilar(pa)
-	return kuo
-}
-
-// SetNillableSimilar sets the "similar" field if the given value is not nil.
-func (kuo *KanjiUpdateOne) SetNillableSimilar(pa *pgtype.TextArray) *KanjiUpdateOne {
-	if pa != nil {
-		kuo.SetSimilar(*pa)
-	}
-	return kuo
-}
-
-// ClearSimilar clears the value of the "similar" field.
-func (kuo *KanjiUpdateOne) ClearSimilar() *KanjiUpdateOne {
-	kuo.mutation.ClearSimilar()
 	return kuo
 }
 
@@ -627,6 +671,21 @@ func (kuo *KanjiUpdateOne) AddRadicals(r ...*Radical) *KanjiUpdateOne {
 	return kuo.AddRadicalIDs(ids...)
 }
 
+// AddVisuallySimilarIDs adds the "visuallySimilar" edge to the Kanji entity by IDs.
+func (kuo *KanjiUpdateOne) AddVisuallySimilarIDs(ids ...uuid.UUID) *KanjiUpdateOne {
+	kuo.mutation.AddVisuallySimilarIDs(ids...)
+	return kuo
+}
+
+// AddVisuallySimilar adds the "visuallySimilar" edges to the Kanji entity.
+func (kuo *KanjiUpdateOne) AddVisuallySimilar(k ...*Kanji) *KanjiUpdateOne {
+	ids := make([]uuid.UUID, len(k))
+	for i := range k {
+		ids[i] = k[i].ID
+	}
+	return kuo.AddVisuallySimilarIDs(ids...)
+}
+
 // Mutation returns the KanjiMutation object of the builder.
 func (kuo *KanjiUpdateOne) Mutation() *KanjiMutation {
 	return kuo.mutation
@@ -672,6 +731,27 @@ func (kuo *KanjiUpdateOne) RemoveRadicals(r ...*Radical) *KanjiUpdateOne {
 		ids[i] = r[i].ID
 	}
 	return kuo.RemoveRadicalIDs(ids...)
+}
+
+// ClearVisuallySimilar clears all "visuallySimilar" edges to the Kanji entity.
+func (kuo *KanjiUpdateOne) ClearVisuallySimilar() *KanjiUpdateOne {
+	kuo.mutation.ClearVisuallySimilar()
+	return kuo
+}
+
+// RemoveVisuallySimilarIDs removes the "visuallySimilar" edge to Kanji entities by IDs.
+func (kuo *KanjiUpdateOne) RemoveVisuallySimilarIDs(ids ...uuid.UUID) *KanjiUpdateOne {
+	kuo.mutation.RemoveVisuallySimilarIDs(ids...)
+	return kuo
+}
+
+// RemoveVisuallySimilar removes "visuallySimilar" edges to Kanji entities.
+func (kuo *KanjiUpdateOne) RemoveVisuallySimilar(k ...*Kanji) *KanjiUpdateOne {
+	ids := make([]uuid.UUID, len(k))
+	for i := range k {
+		ids[i] = k[i].ID
+	}
+	return kuo.RemoveVisuallySimilarIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -833,12 +913,6 @@ func (kuo *KanjiUpdateOne) sqlSave(ctx context.Context) (_node *Kanji, err error
 	if kuo.mutation.AltNamesCleared() {
 		_spec.ClearField(kanji.FieldAltNames, field.TypeOther)
 	}
-	if value, ok := kuo.mutation.Similar(); ok {
-		_spec.SetField(kanji.FieldSimilar, field.TypeOther, value)
-	}
-	if kuo.mutation.SimilarCleared() {
-		_spec.ClearField(kanji.FieldSimilar, field.TypeOther)
-	}
 	if value, ok := kuo.mutation.Level(); ok {
 		_spec.SetField(kanji.FieldLevel, field.TypeInt32, value)
 	}
@@ -963,6 +1037,60 @@ func (kuo *KanjiUpdateOne) sqlSave(ctx context.Context) (_node *Kanji, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: radical.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if kuo.mutation.VisuallySimilarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   kanji.VisuallySimilarTable,
+			Columns: kanji.VisuallySimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: kanji.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := kuo.mutation.RemovedVisuallySimilarIDs(); len(nodes) > 0 && !kuo.mutation.VisuallySimilarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   kanji.VisuallySimilarTable,
+			Columns: kanji.VisuallySimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: kanji.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := kuo.mutation.VisuallySimilarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   kanji.VisuallySimilarTable,
+			Columns: kanji.VisuallySimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: kanji.FieldID,
 				},
 			},
 		}
