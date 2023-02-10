@@ -21,7 +21,7 @@ func (repo FilesRepository) CreateFile(ctx context.Context, req files.CreateFile
 		req.Handle,
 		req.Size,
 		minio.PutObjectOptions{
-			ContentType: "image/png",
+			ContentType: req.ContentType,
 		})
 
 	if err != nil {
@@ -63,5 +63,5 @@ func (repo FilesRepository) DeleteFile(ctx context.Context, name string) error {
 }
 
 func objectNameFromFile(f files.FileInfo) string {
-	return f.Kind + "/" + f.Namespace + "/" + f.Name
+	return f.Namespace + "/" + f.Kind + "/" + f.Name
 }

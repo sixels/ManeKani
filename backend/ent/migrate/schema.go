@@ -8,6 +8,26 @@ import (
 )
 
 var (
+	// APITokensColumns holds the columns for the "api_tokens" table.
+	APITokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "token", Type: field.TypeBytes},
+		{Name: "user_api_tokens", Type: field.TypeString},
+	}
+	// APITokensTable holds the schema information for the "api_tokens" table.
+	APITokensTable = &schema.Table{
+		Name:       "api_tokens",
+		Columns:    APITokensColumns,
+		PrimaryKey: []*schema.Column{APITokensColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "api_tokens_users_api_tokens",
+				Columns:    []*schema.Column{APITokensColumns[2]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// CardsColumns holds the columns for the "cards" table.
 	CardsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -20,8 +40,8 @@ var (
 		{Name: "passed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "available_at", Type: field.TypeTime, Nullable: true},
 		{Name: "burned_at", Type: field.TypeTime, Nullable: true},
+		{Name: "deck_progress_cards", Type: field.TypeInt},
 		{Name: "subject_cards", Type: field.TypeUUID},
-		{Name: "user_cards", Type: field.TypeString},
 	}
 	// CardsTable holds the schema information for the "cards" table.
 	CardsTable = &schema.Table{
@@ -30,56 +50,68 @@ var (
 		PrimaryKey: []*schema.Column{CardsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "cards_subjects_cards",
+				Symbol:     "cards_deck_progresses_cards",
 				Columns:    []*schema.Column{CardsColumns[10]},
-				RefColumns: []*schema.Column{SubjectsColumns[0]},
+				RefColumns: []*schema.Column{DeckProgressesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "cards_users_cards",
+				Symbol:     "cards_subjects_cards",
 				Columns:    []*schema.Column{CardsColumns[11]},
+				RefColumns: []*schema.Column{SubjectsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// DecksColumns holds the columns for the "decks" table.
+	DecksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Size: 50},
+		{Name: "description", Type: field.TypeString, Size: 300},
+		{Name: "user_decks", Type: field.TypeString},
+	}
+	// DecksTable holds the schema information for the "decks" table.
+	DecksTable = &schema.Table{
+		Name:       "decks",
+		Columns:    DecksColumns,
+		PrimaryKey: []*schema.Column{DecksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "decks_users_decks",
+				Columns:    []*schema.Column{DecksColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 	}
-	// KanjisColumns holds the columns for the "kanjis" table.
-	KanjisColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "symbol", Type: field.TypeString, Unique: true, Size: 5},
-		{Name: "name", Type: field.TypeString, Size: 2147483647},
-		{Name: "alt_names", Type: field.TypeOther, Nullable: true, SchemaType: map[string]string{"postgres": "TEXT[]"}},
-		{Name: "level", Type: field.TypeInt32},
-		{Name: "reading", Type: field.TypeString, Size: 2147483647},
-		{Name: "onyomi", Type: field.TypeOther, SchemaType: map[string]string{"postgres": "TEXT[]"}},
-		{Name: "kunyomi", Type: field.TypeOther, SchemaType: map[string]string{"postgres": "TEXT[]"}},
-		{Name: "nanori", Type: field.TypeOther, SchemaType: map[string]string{"postgres": "TEXT[]"}},
-		{Name: "meaning_mnemonic", Type: field.TypeString, Size: 2147483647},
-		{Name: "reading_mnemonic", Type: field.TypeString, Size: 2147483647},
+	// DeckProgressesColumns holds the columns for the "deck_progresses" table.
+	DeckProgressesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "level", Type: field.TypeUint32},
+		{Name: "deck_users_progress", Type: field.TypeUUID},
+		{Name: "user_decks_progress", Type: field.TypeString},
 	}
-	// KanjisTable holds the schema information for the "kanjis" table.
-	KanjisTable = &schema.Table{
-		Name:       "kanjis",
-		Columns:    KanjisColumns,
-		PrimaryKey: []*schema.Column{KanjisColumns[0]},
-	}
-	// RadicalsColumns holds the columns for the "radicals" table.
-	RadicalsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString, Unique: true, Size: 2147483647},
-		{Name: "level", Type: field.TypeInt32},
-		{Name: "symbol", Type: field.TypeString, Size: 2147483647},
-		{Name: "meaning_mnemonic", Type: field.TypeString, Size: 2147483647},
-	}
-	// RadicalsTable holds the schema information for the "radicals" table.
-	RadicalsTable = &schema.Table{
-		Name:       "radicals",
-		Columns:    RadicalsColumns,
-		PrimaryKey: []*schema.Column{RadicalsColumns[0]},
+	// DeckProgressesTable holds the schema information for the "deck_progresses" table.
+	DeckProgressesTable = &schema.Table{
+		Name:       "deck_progresses",
+		Columns:    DeckProgressesColumns,
+		PrimaryKey: []*schema.Column{DeckProgressesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "deck_progresses_decks_users_progress",
+				Columns:    []*schema.Column{DeckProgressesColumns[2]},
+				RefColumns: []*schema.Column{DecksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "deck_progresses_users_decks_progress",
+				Columns:    []*schema.Column{DeckProgressesColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// ReviewsColumns holds the columns for the "reviews" table.
 	ReviewsColumns = []*schema.Column{
@@ -89,7 +121,7 @@ var (
 		{Name: "reading_errors", Type: field.TypeInt, Default: 0},
 		{Name: "start_progress", Type: field.TypeUint8},
 		{Name: "end_progress", Type: field.TypeUint8},
-		{Name: "card_reviews", Type: field.TypeUUID, Nullable: true},
+		{Name: "card_reviews", Type: field.TypeUUID},
 	}
 	// ReviewsTable holds the schema information for the "reviews" table.
 	ReviewsTable = &schema.Table{
@@ -101,21 +133,39 @@ var (
 				Symbol:     "reviews_cards_reviews",
 				Columns:    []*schema.Column{ReviewsColumns[6]},
 				RefColumns: []*schema.Column{CardsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
 	// SubjectsColumns holds the columns for the "subjects" table.
 	SubjectsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"radical", "kanji", "vocabulary"}, SchemaType: map[string]string{"postgres": "TEXT"}},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "kind", Type: field.TypeString, Size: 2147483647},
 		{Name: "level", Type: field.TypeInt32},
+		{Name: "name", Type: field.TypeString, Size: 2147483647},
+		{Name: "value", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "value_image", Type: field.TypeJSON, Nullable: true},
+		{Name: "slug", Type: field.TypeString, Size: 36},
+		{Name: "priority", Type: field.TypeUint8},
+		{Name: "resources", Type: field.TypeJSON, Nullable: true},
+		{Name: "study_data", Type: field.TypeJSON},
+		{Name: "user_subjects", Type: field.TypeString},
 	}
 	// SubjectsTable holds the schema information for the "subjects" table.
 	SubjectsTable = &schema.Table{
 		Name:       "subjects",
 		Columns:    SubjectsColumns,
 		PrimaryKey: []*schema.Column{SubjectsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "subjects_users_subjects",
+				Columns:    []*schema.Column{SubjectsColumns[12]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -123,7 +173,6 @@ var (
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "pending_actions", Type: field.TypeJSON},
 		{Name: "email", Type: field.TypeString, Unique: true, Size: 255},
-		{Name: "level", Type: field.TypeInt32, Default: 1},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -131,127 +180,137 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
-	// VocabulariesColumns holds the columns for the "vocabularies" table.
-	VocabulariesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString, Size: 2147483647},
-		{Name: "alt_names", Type: field.TypeOther, Nullable: true, SchemaType: map[string]string{"postgres": "TEXT[]"}},
-		{Name: "level", Type: field.TypeInt32},
-		{Name: "word", Type: field.TypeString, Unique: true, Size: 2147483647},
-		{Name: "word_type", Type: field.TypeOther, SchemaType: map[string]string{"postgres": "TEXT[]"}},
-		{Name: "reading", Type: field.TypeString, Size: 2147483647},
-		{Name: "alt_readings", Type: field.TypeOther, Nullable: true, SchemaType: map[string]string{"postgres": "TEXT[]"}},
-		{Name: "patterns", Type: field.TypeJSON},
-		{Name: "sentences", Type: field.TypeJSON},
-		{Name: "meaning_mnemonic", Type: field.TypeString, Size: 2147483647},
-		{Name: "reading_mnemonic", Type: field.TypeString, Size: 2147483647},
+	// DeckSubscribersColumns holds the columns for the "deck_subscribers" table.
+	DeckSubscribersColumns = []*schema.Column{
+		{Name: "deck_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeString, Size: 36},
 	}
-	// VocabulariesTable holds the schema information for the "vocabularies" table.
-	VocabulariesTable = &schema.Table{
-		Name:       "vocabularies",
-		Columns:    VocabulariesColumns,
-		PrimaryKey: []*schema.Column{VocabulariesColumns[0]},
-	}
-	// KanjiRadicalsColumns holds the columns for the "kanji_radicals" table.
-	KanjiRadicalsColumns = []*schema.Column{
-		{Name: "kanji_id", Type: field.TypeUUID},
-		{Name: "radical_id", Type: field.TypeUUID},
-	}
-	// KanjiRadicalsTable holds the schema information for the "kanji_radicals" table.
-	KanjiRadicalsTable = &schema.Table{
-		Name:       "kanji_radicals",
-		Columns:    KanjiRadicalsColumns,
-		PrimaryKey: []*schema.Column{KanjiRadicalsColumns[0], KanjiRadicalsColumns[1]},
+	// DeckSubscribersTable holds the schema information for the "deck_subscribers" table.
+	DeckSubscribersTable = &schema.Table{
+		Name:       "deck_subscribers",
+		Columns:    DeckSubscribersColumns,
+		PrimaryKey: []*schema.Column{DeckSubscribersColumns[0], DeckSubscribersColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "kanji_radicals_kanji_id",
-				Columns:    []*schema.Column{KanjiRadicalsColumns[0]},
-				RefColumns: []*schema.Column{KanjisColumns[0]},
+				Symbol:     "deck_subscribers_deck_id",
+				Columns:    []*schema.Column{DeckSubscribersColumns[0]},
+				RefColumns: []*schema.Column{DecksColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "kanji_radicals_radical_id",
-				Columns:    []*schema.Column{KanjiRadicalsColumns[1]},
-				RefColumns: []*schema.Column{RadicalsColumns[0]},
+				Symbol:     "deck_subscribers_user_id",
+				Columns:    []*schema.Column{DeckSubscribersColumns[1]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 	}
-	// KanjiVisuallySimilarColumns holds the columns for the "kanji_visuallySimilar" table.
-	KanjiVisuallySimilarColumns = []*schema.Column{
-		{Name: "kanji_id", Type: field.TypeUUID},
-		{Name: "visuallySimilar_id", Type: field.TypeUUID},
+	// DeckSubjectsColumns holds the columns for the "deck_subjects" table.
+	DeckSubjectsColumns = []*schema.Column{
+		{Name: "deck_id", Type: field.TypeUUID},
+		{Name: "subject_id", Type: field.TypeUUID},
 	}
-	// KanjiVisuallySimilarTable holds the schema information for the "kanji_visuallySimilar" table.
-	KanjiVisuallySimilarTable = &schema.Table{
-		Name:       "kanji_visuallySimilar",
-		Columns:    KanjiVisuallySimilarColumns,
-		PrimaryKey: []*schema.Column{KanjiVisuallySimilarColumns[0], KanjiVisuallySimilarColumns[1]},
+	// DeckSubjectsTable holds the schema information for the "deck_subjects" table.
+	DeckSubjectsTable = &schema.Table{
+		Name:       "deck_subjects",
+		Columns:    DeckSubjectsColumns,
+		PrimaryKey: []*schema.Column{DeckSubjectsColumns[0], DeckSubjectsColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "kanji_visuallySimilar_kanji_id",
-				Columns:    []*schema.Column{KanjiVisuallySimilarColumns[0]},
-				RefColumns: []*schema.Column{KanjisColumns[0]},
+				Symbol:     "deck_subjects_deck_id",
+				Columns:    []*schema.Column{DeckSubjectsColumns[0]},
+				RefColumns: []*schema.Column{DecksColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "kanji_visuallySimilar_visuallySimilar_id",
-				Columns:    []*schema.Column{KanjiVisuallySimilarColumns[1]},
-				RefColumns: []*schema.Column{KanjisColumns[0]},
+				Symbol:     "deck_subjects_subject_id",
+				Columns:    []*schema.Column{DeckSubjectsColumns[1]},
+				RefColumns: []*schema.Column{SubjectsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 	}
-	// VocabularyKanjisColumns holds the columns for the "vocabulary_kanjis" table.
-	VocabularyKanjisColumns = []*schema.Column{
-		{Name: "vocabulary_id", Type: field.TypeUUID},
-		{Name: "kanji_id", Type: field.TypeUUID},
+	// SubjectSimilarColumns holds the columns for the "subject_similar" table.
+	SubjectSimilarColumns = []*schema.Column{
+		{Name: "subject_id", Type: field.TypeUUID},
+		{Name: "similar_id", Type: field.TypeUUID},
 	}
-	// VocabularyKanjisTable holds the schema information for the "vocabulary_kanjis" table.
-	VocabularyKanjisTable = &schema.Table{
-		Name:       "vocabulary_kanjis",
-		Columns:    VocabularyKanjisColumns,
-		PrimaryKey: []*schema.Column{VocabularyKanjisColumns[0], VocabularyKanjisColumns[1]},
+	// SubjectSimilarTable holds the schema information for the "subject_similar" table.
+	SubjectSimilarTable = &schema.Table{
+		Name:       "subject_similar",
+		Columns:    SubjectSimilarColumns,
+		PrimaryKey: []*schema.Column{SubjectSimilarColumns[0], SubjectSimilarColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "vocabulary_kanjis_vocabulary_id",
-				Columns:    []*schema.Column{VocabularyKanjisColumns[0]},
-				RefColumns: []*schema.Column{VocabulariesColumns[0]},
+				Symbol:     "subject_similar_subject_id",
+				Columns:    []*schema.Column{SubjectSimilarColumns[0]},
+				RefColumns: []*schema.Column{SubjectsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "vocabulary_kanjis_kanji_id",
-				Columns:    []*schema.Column{VocabularyKanjisColumns[1]},
-				RefColumns: []*schema.Column{KanjisColumns[0]},
+				Symbol:     "subject_similar_similar_id",
+				Columns:    []*schema.Column{SubjectSimilarColumns[1]},
+				RefColumns: []*schema.Column{SubjectsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// SubjectDependentsColumns holds the columns for the "subject_dependents" table.
+	SubjectDependentsColumns = []*schema.Column{
+		{Name: "subject_id", Type: field.TypeUUID},
+		{Name: "dependency_id", Type: field.TypeUUID},
+	}
+	// SubjectDependentsTable holds the schema information for the "subject_dependents" table.
+	SubjectDependentsTable = &schema.Table{
+		Name:       "subject_dependents",
+		Columns:    SubjectDependentsColumns,
+		PrimaryKey: []*schema.Column{SubjectDependentsColumns[0], SubjectDependentsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "subject_dependents_subject_id",
+				Columns:    []*schema.Column{SubjectDependentsColumns[0]},
+				RefColumns: []*schema.Column{SubjectsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "subject_dependents_dependency_id",
+				Columns:    []*schema.Column{SubjectDependentsColumns[1]},
+				RefColumns: []*schema.Column{SubjectsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		APITokensTable,
 		CardsTable,
-		KanjisTable,
-		RadicalsTable,
+		DecksTable,
+		DeckProgressesTable,
 		ReviewsTable,
 		SubjectsTable,
 		UsersTable,
-		VocabulariesTable,
-		KanjiRadicalsTable,
-		KanjiVisuallySimilarTable,
-		VocabularyKanjisTable,
+		DeckSubscribersTable,
+		DeckSubjectsTable,
+		SubjectSimilarTable,
+		SubjectDependentsTable,
 	}
 )
 
 func init() {
-	CardsTable.ForeignKeys[0].RefTable = SubjectsTable
-	CardsTable.ForeignKeys[1].RefTable = UsersTable
+	APITokensTable.ForeignKeys[0].RefTable = UsersTable
+	CardsTable.ForeignKeys[0].RefTable = DeckProgressesTable
+	CardsTable.ForeignKeys[1].RefTable = SubjectsTable
+	DecksTable.ForeignKeys[0].RefTable = UsersTable
+	DeckProgressesTable.ForeignKeys[0].RefTable = DecksTable
+	DeckProgressesTable.ForeignKeys[1].RefTable = UsersTable
 	ReviewsTable.ForeignKeys[0].RefTable = CardsTable
-	KanjiRadicalsTable.ForeignKeys[0].RefTable = KanjisTable
-	KanjiRadicalsTable.ForeignKeys[1].RefTable = RadicalsTable
-	KanjiVisuallySimilarTable.ForeignKeys[0].RefTable = KanjisTable
-	KanjiVisuallySimilarTable.ForeignKeys[1].RefTable = KanjisTable
-	VocabularyKanjisTable.ForeignKeys[0].RefTable = VocabulariesTable
-	VocabularyKanjisTable.ForeignKeys[1].RefTable = KanjisTable
+	SubjectsTable.ForeignKeys[0].RefTable = UsersTable
+	DeckSubscribersTable.ForeignKeys[0].RefTable = DecksTable
+	DeckSubscribersTable.ForeignKeys[1].RefTable = UsersTable
+	DeckSubjectsTable.ForeignKeys[0].RefTable = DecksTable
+	DeckSubjectsTable.ForeignKeys[1].RefTable = SubjectsTable
+	SubjectSimilarTable.ForeignKeys[0].RefTable = SubjectsTable
+	SubjectSimilarTable.ForeignKeys[1].RefTable = SubjectsTable
+	SubjectDependentsTable.ForeignKeys[0].RefTable = SubjectsTable
+	SubjectDependentsTable.ForeignKeys[1].RefTable = SubjectsTable
 }

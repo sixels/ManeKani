@@ -22,9 +22,10 @@ type (
 	}
 
 	FileInfo struct {
-		Size      int64
-		Name      string
-		Kind      string
-		Namespace string
+		Size        int64
+		Name        string
+		Kind        string
+		Namespace   string
+		ContentType string
 	}
 )

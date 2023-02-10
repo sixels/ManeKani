@@ -13,25 +13,25 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/predicate"
 	"sixels.io/manekani/ent/review"
 	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
 )
 
 // CardQuery is the builder for querying Card entities.
 type CardQuery struct {
 	config
-	limit       *int
-	offset      *int
-	unique      *bool
-	order       []OrderFunc
-	fields      []string
-	predicates  []predicate.Card
-	withUser    *UserQuery
-	withSubject *SubjectQuery
-	withReviews *ReviewQuery
-	withFKs     bool
+	limit            *int
+	offset           *int
+	unique           *bool
+	order            []OrderFunc
+	fields           []string
+	predicates       []predicate.Card
+	withDeckProgress *DeckProgressQuery
+	withSubject      *SubjectQuery
+	withReviews      *ReviewQuery
+	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -68,9 +68,9 @@ func (cq *CardQuery) Order(o ...OrderFunc) *CardQuery {
 	return cq
 }
 
-// QueryUser chains the current query on the "user" edge.
-func (cq *CardQuery) QueryUser() *UserQuery {
-	query := &UserQuery{config: cq.config}
+// QueryDeckProgress chains the current query on the "deck_progress" edge.
+func (cq *CardQuery) QueryDeckProgress() *DeckProgressQuery {
+	query := &DeckProgressQuery{config: cq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -81,8 +81,8 @@ func (cq *CardQuery) QueryUser() *UserQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(card.Table, card.FieldID, selector),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, card.UserTable, card.UserColumn),
+			sqlgraph.To(deckprogress.Table, deckprogress.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, card.DeckProgressTable, card.DeckProgressColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -310,14 +310,14 @@ func (cq *CardQuery) Clone() *CardQuery {
 		return nil
 	}
 	return &CardQuery{
-		config:      cq.config,
-		limit:       cq.limit,
-		offset:      cq.offset,
-		order:       append([]OrderFunc{}, cq.order...),
-		predicates:  append([]predicate.Card{}, cq.predicates...),
-		withUser:    cq.withUser.Clone(),
-		withSubject: cq.withSubject.Clone(),
-		withReviews: cq.withReviews.Clone(),
+		config:           cq.config,
+		limit:            cq.limit,
+		offset:           cq.offset,
+		order:            append([]OrderFunc{}, cq.order...),
+		predicates:       append([]predicate.Card{}, cq.predicates...),
+		withDeckProgress: cq.withDeckProgress.Clone(),
+		withSubject:      cq.withSubject.Clone(),
+		withReviews:      cq.withReviews.Clone(),
 		// clone intermediate query.
 		sql:    cq.sql.Clone(),
 		path:   cq.path,
@@ -325,14 +325,14 @@ func (cq *CardQuery) Clone() *CardQuery {
 	}
 }
 
-// WithUser tells the query-builder to eager-load the nodes that are connected to
-// the "user" edge. The optional arguments are used to configure the query builder of the edge.
-func (cq *CardQuery) WithUser(opts ...func(*UserQuery)) *CardQuery {
-	query := &UserQuery{config: cq.config}
+// WithDeckProgress tells the query-builder to eager-load the nodes that are connected to
+// the "deck_progress" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CardQuery) WithDeckProgress(opts ...func(*DeckProgressQuery)) *CardQuery {
+	query := &DeckProgressQuery{config: cq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	cq.withUser = query
+	cq.withDeckProgress = query
 	return cq
 }
 
@@ -433,12 +433,12 @@ func (cq *CardQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Card, e
 		withFKs     = cq.withFKs
 		_spec       = cq.querySpec()
 		loadedTypes = [3]bool{
-			cq.withUser != nil,
+			cq.withDeckProgress != nil,
 			cq.withSubject != nil,
 			cq.withReviews != nil,
 		}
 	)
-	if cq.withUser != nil || cq.withSubject != nil {
+	if cq.withDeckProgress != nil || cq.withSubject != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -462,9 +462,9 @@ func (cq *CardQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Card, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := cq.withUser; query != nil {
-		if err := cq.loadUser(ctx, query, nodes, nil,
-			func(n *Card, e *User) { n.Edges.User = e }); err != nil {
+	if query := cq.withDeckProgress; query != nil {
+		if err := cq.loadDeckProgress(ctx, query, nodes, nil,
+			func(n *Card, e *DeckProgress) { n.Edges.DeckProgress = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -484,20 +484,20 @@ func (cq *CardQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Card, e
 	return nodes, nil
 }
 
-func (cq *CardQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Card, init func(*Card), assign func(*Card, *User)) error {
-	ids := make([]string, 0, len(nodes))
-	nodeids := make(map[string][]*Card)
+func (cq *CardQuery) loadDeckProgress(ctx context.Context, query *DeckProgressQuery, nodes []*Card, init func(*Card), assign func(*Card, *DeckProgress)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Card)
 	for i := range nodes {
-		if nodes[i].user_cards == nil {
+		if nodes[i].deck_progress_cards == nil {
 			continue
 		}
-		fk := *nodes[i].user_cards
+		fk := *nodes[i].deck_progress_cards
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(user.IDIn(ids...))
+	query.Where(deckprogress.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -505,7 +505,7 @@ func (cq *CardQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Ca
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_cards" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "deck_progress_cards" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

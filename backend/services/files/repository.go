@@ -12,8 +12,16 @@ import (
 
 const BUCKET_NAME = "manekani"
 
+type FilesRepositoryOptions struct {
+	BucketName      string
+	S3Endpoint      string
+	AccessKeyID     string
+	SecretAccessKey string
+}
+
 type FilesRepository struct {
 	minio_client *minio.Client
+	FilesRepositoryOptions
 }
 
 func NewRepository(ctx context.Context) (*FilesRepository, error) {

@@ -32,6 +32,9 @@ func (Review) Fields() []ent.Field {
 // Edges of the Review.
 func (Review) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("card", Card.Type).Ref("reviews").Unique(),
+		edge.From("card", Card.Type).
+			Ref("reviews").
+			Unique().
+			Required(),
 	}
 }

@@ -11,10 +11,10 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"github.com/supertokens/supertokens-golang/supertokens"
 	"sixels.io/manekani/core/domain/user"
-	"sixels.io/manekani/services/users"
+	"sixels.io/manekani/core/ports"
 )
 
-func StartAuthenticator(users *users.UsersRepository) error {
+func StartAuthenticator(users ports.UserRepository) error {
 	var (
 		// TODO: get these values from env var
 		supertokensURL    string = "http://localhost:3567"
@@ -105,7 +105,7 @@ func StartAuthenticator(users *users.UsersRepository) error {
 
 func signUpHook(
 	ctx context.Context,
-	users *users.UsersRepository,
+	users ports.UserRepository,
 	userObject epmodels.User,
 	formFields []epmodels.TypeFormField,
 ) (*user.User, error) {
@@ -118,7 +118,7 @@ func signUpHook(
 	}
 
 	created, err := users.CreateUser(ctx, user.CreateUserRequest{
-		Id:       userObject.ID,
+		ID:       userObject.ID,
 		Email:    userObject.Email,
 		Username: username,
 	})

@@ -13,19 +13,51 @@ const (
 	FieldPendingActions = "pending_actions"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
-	// FieldLevel holds the string denoting the level field in the database.
-	FieldLevel = "level"
-	// EdgeCards holds the string denoting the cards edge name in mutations.
-	EdgeCards = "cards"
+	// EdgeDecks holds the string denoting the decks edge name in mutations.
+	EdgeDecks = "decks"
+	// EdgeSubjects holds the string denoting the subjects edge name in mutations.
+	EdgeSubjects = "subjects"
+	// EdgeSubscribedDecks holds the string denoting the subscribed_decks edge name in mutations.
+	EdgeSubscribedDecks = "subscribed_decks"
+	// EdgeAPITokens holds the string denoting the api_tokens edge name in mutations.
+	EdgeAPITokens = "api_tokens"
+	// EdgeDecksProgress holds the string denoting the decks_progress edge name in mutations.
+	EdgeDecksProgress = "decks_progress"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// CardsTable is the table that holds the cards relation/edge.
-	CardsTable = "cards"
-	// CardsInverseTable is the table name for the Card entity.
-	// It exists in this package in order to avoid circular dependency with the "card" package.
-	CardsInverseTable = "cards"
-	// CardsColumn is the table column denoting the cards relation/edge.
-	CardsColumn = "user_cards"
+	// DecksTable is the table that holds the decks relation/edge.
+	DecksTable = "decks"
+	// DecksInverseTable is the table name for the Deck entity.
+	// It exists in this package in order to avoid circular dependency with the "deck" package.
+	DecksInverseTable = "decks"
+	// DecksColumn is the table column denoting the decks relation/edge.
+	DecksColumn = "user_decks"
+	// SubjectsTable is the table that holds the subjects relation/edge.
+	SubjectsTable = "subjects"
+	// SubjectsInverseTable is the table name for the Subject entity.
+	// It exists in this package in order to avoid circular dependency with the "subject" package.
+	SubjectsInverseTable = "subjects"
+	// SubjectsColumn is the table column denoting the subjects relation/edge.
+	SubjectsColumn = "user_subjects"
+	// SubscribedDecksTable is the table that holds the subscribed_decks relation/edge. The primary key declared below.
+	SubscribedDecksTable = "deck_subscribers"
+	// SubscribedDecksInverseTable is the table name for the Deck entity.
+	// It exists in this package in order to avoid circular dependency with the "deck" package.
+	SubscribedDecksInverseTable = "decks"
+	// APITokensTable is the table that holds the api_tokens relation/edge.
+	APITokensTable = "api_tokens"
+	// APITokensInverseTable is the table name for the ApiToken entity.
+	// It exists in this package in order to avoid circular dependency with the "apitoken" package.
+	APITokensInverseTable = "api_tokens"
+	// APITokensColumn is the table column denoting the api_tokens relation/edge.
+	APITokensColumn = "user_api_tokens"
+	// DecksProgressTable is the table that holds the decks_progress relation/edge.
+	DecksProgressTable = "deck_progresses"
+	// DecksProgressInverseTable is the table name for the DeckProgress entity.
+	// It exists in this package in order to avoid circular dependency with the "deckprogress" package.
+	DecksProgressInverseTable = "deck_progresses"
+	// DecksProgressColumn is the table column denoting the decks_progress relation/edge.
+	DecksProgressColumn = "user_decks_progress"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -34,8 +66,13 @@ var Columns = []string{
 	FieldUsername,
 	FieldPendingActions,
 	FieldEmail,
-	FieldLevel,
 }
+
+var (
+	// SubscribedDecksPrimaryKey and SubscribedDecksColumn2 are the table columns denoting the
+	// primary key for the subscribed_decks relation (M2M).
+	SubscribedDecksPrimaryKey = []string{"deck_id", "user_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -52,8 +89,6 @@ var (
 	UsernameValidator func(string) error
 	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	EmailValidator func(string) error
-	// DefaultLevel holds the default value on creation for the "level" field.
-	DefaultLevel int32
-	// LevelValidator is a validator for the "level" field. It is called by the builders before save.
-	LevelValidator func(int32) error
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() string
 )

@@ -39,7 +39,7 @@ func (Card) Fields() []ent.Field {
 // Edges of the Card.
 func (Card) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", User.Type).
+		edge.From("deck_progress", DeckProgress.Type).
 			Ref("cards").
 			Required().
 			Unique(),

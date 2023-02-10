@@ -13,10 +13,10 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/predicate"
 	"sixels.io/manekani/ent/review"
 	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
 )
 
 // CardUpdate is the builder for updating Card entities.
@@ -180,15 +180,15 @@ func (cu *CardUpdate) ClearBurnedAt() *CardUpdate {
 	return cu
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (cu *CardUpdate) SetUserID(id string) *CardUpdate {
-	cu.mutation.SetUserID(id)
+// SetDeckProgressID sets the "deck_progress" edge to the DeckProgress entity by ID.
+func (cu *CardUpdate) SetDeckProgressID(id int) *CardUpdate {
+	cu.mutation.SetDeckProgressID(id)
 	return cu
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (cu *CardUpdate) SetUser(u *User) *CardUpdate {
-	return cu.SetUserID(u.ID)
+// SetDeckProgress sets the "deck_progress" edge to the DeckProgress entity.
+func (cu *CardUpdate) SetDeckProgress(d *DeckProgress) *CardUpdate {
+	return cu.SetDeckProgressID(d.ID)
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
@@ -222,9 +222,9 @@ func (cu *CardUpdate) Mutation() *CardMutation {
 	return cu.mutation
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (cu *CardUpdate) ClearUser() *CardUpdate {
-	cu.mutation.ClearUser()
+// ClearDeckProgress clears the "deck_progress" edge to the DeckProgress entity.
+func (cu *CardUpdate) ClearDeckProgress() *CardUpdate {
+	cu.mutation.ClearDeckProgress()
 	return cu
 }
 
@@ -326,8 +326,8 @@ func (cu *CardUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cu *CardUpdate) check() error {
-	if _, ok := cu.mutation.UserID(); cu.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Card.user"`)
+	if _, ok := cu.mutation.DeckProgressID(); cu.mutation.DeckProgressCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Card.deck_progress"`)
 	}
 	if _, ok := cu.mutation.SubjectID(); cu.mutation.SubjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Card.subject"`)
@@ -398,33 +398,33 @@ func (cu *CardUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if cu.mutation.BurnedAtCleared() {
 		_spec.ClearField(card.FieldBurnedAt, field.TypeTime)
 	}
-	if cu.mutation.UserCleared() {
+	if cu.mutation.DeckProgressCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   card.UserTable,
-			Columns: []string{card.UserColumn},
+			Table:   card.DeckProgressTable,
+			Columns: []string{card.DeckProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := cu.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := cu.mutation.DeckProgressIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   card.UserTable,
-			Columns: []string{card.UserColumn},
+			Table:   card.DeckProgressTable,
+			Columns: []string{card.DeckProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
 				},
 			},
 		}
@@ -689,15 +689,15 @@ func (cuo *CardUpdateOne) ClearBurnedAt() *CardUpdateOne {
 	return cuo
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (cuo *CardUpdateOne) SetUserID(id string) *CardUpdateOne {
-	cuo.mutation.SetUserID(id)
+// SetDeckProgressID sets the "deck_progress" edge to the DeckProgress entity by ID.
+func (cuo *CardUpdateOne) SetDeckProgressID(id int) *CardUpdateOne {
+	cuo.mutation.SetDeckProgressID(id)
 	return cuo
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (cuo *CardUpdateOne) SetUser(u *User) *CardUpdateOne {
-	return cuo.SetUserID(u.ID)
+// SetDeckProgress sets the "deck_progress" edge to the DeckProgress entity.
+func (cuo *CardUpdateOne) SetDeckProgress(d *DeckProgress) *CardUpdateOne {
+	return cuo.SetDeckProgressID(d.ID)
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
@@ -731,9 +731,9 @@ func (cuo *CardUpdateOne) Mutation() *CardMutation {
 	return cuo.mutation
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (cuo *CardUpdateOne) ClearUser() *CardUpdateOne {
-	cuo.mutation.ClearUser()
+// ClearDeckProgress clears the "deck_progress" edge to the DeckProgress entity.
+func (cuo *CardUpdateOne) ClearDeckProgress() *CardUpdateOne {
+	cuo.mutation.ClearDeckProgress()
 	return cuo
 }
 
@@ -848,8 +848,8 @@ func (cuo *CardUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cuo *CardUpdateOne) check() error {
-	if _, ok := cuo.mutation.UserID(); cuo.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Card.user"`)
+	if _, ok := cuo.mutation.DeckProgressID(); cuo.mutation.DeckProgressCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Card.deck_progress"`)
 	}
 	if _, ok := cuo.mutation.SubjectID(); cuo.mutation.SubjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Card.subject"`)
@@ -937,33 +937,33 @@ func (cuo *CardUpdateOne) sqlSave(ctx context.Context) (_node *Card, err error) 
 	if cuo.mutation.BurnedAtCleared() {
 		_spec.ClearField(card.FieldBurnedAt, field.TypeTime)
 	}
-	if cuo.mutation.UserCleared() {
+	if cuo.mutation.DeckProgressCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   card.UserTable,
-			Columns: []string{card.UserColumn},
+			Table:   card.DeckProgressTable,
+			Columns: []string{card.DeckProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := cuo.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := cuo.mutation.DeckProgressIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   card.UserTable,
-			Columns: []string{card.UserColumn},
+			Table:   card.DeckProgressTable,
+			Columns: []string{card.DeckProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
 				},
 			},
 		}

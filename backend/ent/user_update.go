@@ -12,9 +12,12 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/apitoken"
+	"sixels.io/manekani/ent/deck"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/predicate"
 	"sixels.io/manekani/ent/schema"
+	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
 )
 
@@ -55,40 +58,79 @@ func (uu *UserUpdate) SetEmail(s string) *UserUpdate {
 	return uu
 }
 
-// SetLevel sets the "level" field.
-func (uu *UserUpdate) SetLevel(i int32) *UserUpdate {
-	uu.mutation.ResetLevel()
-	uu.mutation.SetLevel(i)
+// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
+func (uu *UserUpdate) AddDeckIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddDeckIDs(ids...)
 	return uu
 }
 
-// SetNillableLevel sets the "level" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableLevel(i *int32) *UserUpdate {
-	if i != nil {
-		uu.SetLevel(*i)
+// AddDecks adds the "decks" edges to the Deck entity.
+func (uu *UserUpdate) AddDecks(d ...*Deck) *UserUpdate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
 	}
+	return uu.AddDeckIDs(ids...)
+}
+
+// AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
+func (uu *UserUpdate) AddSubjectIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddSubjectIDs(ids...)
 	return uu
 }
 
-// AddLevel adds i to the "level" field.
-func (uu *UserUpdate) AddLevel(i int32) *UserUpdate {
-	uu.mutation.AddLevel(i)
-	return uu
-}
-
-// AddCardIDs adds the "cards" edge to the Card entity by IDs.
-func (uu *UserUpdate) AddCardIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.AddCardIDs(ids...)
-	return uu
-}
-
-// AddCards adds the "cards" edges to the Card entity.
-func (uu *UserUpdate) AddCards(c ...*Card) *UserUpdate {
-	ids := make([]uuid.UUID, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
+// AddSubjects adds the "subjects" edges to the Subject entity.
+func (uu *UserUpdate) AddSubjects(s ...*Subject) *UserUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return uu.AddCardIDs(ids...)
+	return uu.AddSubjectIDs(ids...)
+}
+
+// AddSubscribedDeckIDs adds the "subscribed_decks" edge to the Deck entity by IDs.
+func (uu *UserUpdate) AddSubscribedDeckIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddSubscribedDeckIDs(ids...)
+	return uu
+}
+
+// AddSubscribedDecks adds the "subscribed_decks" edges to the Deck entity.
+func (uu *UserUpdate) AddSubscribedDecks(d ...*Deck) *UserUpdate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uu.AddSubscribedDeckIDs(ids...)
+}
+
+// AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
+func (uu *UserUpdate) AddAPITokenIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddAPITokenIDs(ids...)
+	return uu
+}
+
+// AddAPITokens adds the "api_tokens" edges to the ApiToken entity.
+func (uu *UserUpdate) AddAPITokens(a ...*ApiToken) *UserUpdate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uu.AddAPITokenIDs(ids...)
+}
+
+// AddDecksProgresIDs adds the "decks_progress" edge to the DeckProgress entity by IDs.
+func (uu *UserUpdate) AddDecksProgresIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddDecksProgresIDs(ids...)
+	return uu
+}
+
+// AddDecksProgress adds the "decks_progress" edges to the DeckProgress entity.
+func (uu *UserUpdate) AddDecksProgress(d ...*DeckProgress) *UserUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uu.AddDecksProgresIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -96,25 +138,109 @@ func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
 }
 
-// ClearCards clears all "cards" edges to the Card entity.
-func (uu *UserUpdate) ClearCards() *UserUpdate {
-	uu.mutation.ClearCards()
+// ClearDecks clears all "decks" edges to the Deck entity.
+func (uu *UserUpdate) ClearDecks() *UserUpdate {
+	uu.mutation.ClearDecks()
 	return uu
 }
 
-// RemoveCardIDs removes the "cards" edge to Card entities by IDs.
-func (uu *UserUpdate) RemoveCardIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.RemoveCardIDs(ids...)
+// RemoveDeckIDs removes the "decks" edge to Deck entities by IDs.
+func (uu *UserUpdate) RemoveDeckIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveDeckIDs(ids...)
 	return uu
 }
 
-// RemoveCards removes "cards" edges to Card entities.
-func (uu *UserUpdate) RemoveCards(c ...*Card) *UserUpdate {
-	ids := make([]uuid.UUID, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
+// RemoveDecks removes "decks" edges to Deck entities.
+func (uu *UserUpdate) RemoveDecks(d ...*Deck) *UserUpdate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
 	}
-	return uu.RemoveCardIDs(ids...)
+	return uu.RemoveDeckIDs(ids...)
+}
+
+// ClearSubjects clears all "subjects" edges to the Subject entity.
+func (uu *UserUpdate) ClearSubjects() *UserUpdate {
+	uu.mutation.ClearSubjects()
+	return uu
+}
+
+// RemoveSubjectIDs removes the "subjects" edge to Subject entities by IDs.
+func (uu *UserUpdate) RemoveSubjectIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveSubjectIDs(ids...)
+	return uu
+}
+
+// RemoveSubjects removes "subjects" edges to Subject entities.
+func (uu *UserUpdate) RemoveSubjects(s ...*Subject) *UserUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uu.RemoveSubjectIDs(ids...)
+}
+
+// ClearSubscribedDecks clears all "subscribed_decks" edges to the Deck entity.
+func (uu *UserUpdate) ClearSubscribedDecks() *UserUpdate {
+	uu.mutation.ClearSubscribedDecks()
+	return uu
+}
+
+// RemoveSubscribedDeckIDs removes the "subscribed_decks" edge to Deck entities by IDs.
+func (uu *UserUpdate) RemoveSubscribedDeckIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveSubscribedDeckIDs(ids...)
+	return uu
+}
+
+// RemoveSubscribedDecks removes "subscribed_decks" edges to Deck entities.
+func (uu *UserUpdate) RemoveSubscribedDecks(d ...*Deck) *UserUpdate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uu.RemoveSubscribedDeckIDs(ids...)
+}
+
+// ClearAPITokens clears all "api_tokens" edges to the ApiToken entity.
+func (uu *UserUpdate) ClearAPITokens() *UserUpdate {
+	uu.mutation.ClearAPITokens()
+	return uu
+}
+
+// RemoveAPITokenIDs removes the "api_tokens" edge to ApiToken entities by IDs.
+func (uu *UserUpdate) RemoveAPITokenIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveAPITokenIDs(ids...)
+	return uu
+}
+
+// RemoveAPITokens removes "api_tokens" edges to ApiToken entities.
+func (uu *UserUpdate) RemoveAPITokens(a ...*ApiToken) *UserUpdate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uu.RemoveAPITokenIDs(ids...)
+}
+
+// ClearDecksProgress clears all "decks_progress" edges to the DeckProgress entity.
+func (uu *UserUpdate) ClearDecksProgress() *UserUpdate {
+	uu.mutation.ClearDecksProgress()
+	return uu
+}
+
+// RemoveDecksProgresIDs removes the "decks_progress" edge to DeckProgress entities by IDs.
+func (uu *UserUpdate) RemoveDecksProgresIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveDecksProgresIDs(ids...)
+	return uu
+}
+
+// RemoveDecksProgress removes "decks_progress" edges to DeckProgress entities.
+func (uu *UserUpdate) RemoveDecksProgress(d ...*DeckProgress) *UserUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uu.RemoveDecksProgresIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -189,11 +315,6 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
-	if v, ok := uu.mutation.Level(); ok {
-		if err := user.LevelValidator(v); err != nil {
-			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "User.level": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -229,39 +350,33 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 	}
-	if value, ok := uu.mutation.Level(); ok {
-		_spec.SetField(user.FieldLevel, field.TypeInt32, value)
-	}
-	if value, ok := uu.mutation.AddedLevel(); ok {
-		_spec.AddField(user.FieldLevel, field.TypeInt32, value)
-	}
-	if uu.mutation.CardsCleared() {
+	if uu.mutation.DecksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.CardsTable,
-			Columns: []string{user.CardsColumn},
+			Table:   user.DecksTable,
+			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: card.FieldID,
+					Column: deck.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedCardsIDs(); len(nodes) > 0 && !uu.mutation.CardsCleared() {
+	if nodes := uu.mutation.RemovedDecksIDs(); len(nodes) > 0 && !uu.mutation.DecksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.CardsTable,
-			Columns: []string{user.CardsColumn},
+			Table:   user.DecksTable,
+			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: card.FieldID,
+					Column: deck.FieldID,
 				},
 			},
 		}
@@ -270,17 +385,233 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.CardsIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.DecksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.CardsTable,
-			Columns: []string{user.CardsColumn},
+			Table:   user.DecksTable,
+			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: card.FieldID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.SubjectsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubjectsTable,
+			Columns: []string{user.SubjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedSubjectsIDs(); len(nodes) > 0 && !uu.mutation.SubjectsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubjectsTable,
+			Columns: []string{user.SubjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.SubjectsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubjectsTable,
+			Columns: []string{user.SubjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.SubscribedDecksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.SubscribedDecksTable,
+			Columns: user.SubscribedDecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedSubscribedDecksIDs(); len(nodes) > 0 && !uu.mutation.SubscribedDecksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.SubscribedDecksTable,
+			Columns: user.SubscribedDecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.SubscribedDecksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.SubscribedDecksTable,
+			Columns: user.SubscribedDecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.APITokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.APITokensTable,
+			Columns: []string{user.APITokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: apitoken.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedAPITokensIDs(); len(nodes) > 0 && !uu.mutation.APITokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.APITokensTable,
+			Columns: []string{user.APITokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: apitoken.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.APITokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.APITokensTable,
+			Columns: []string{user.APITokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: apitoken.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.DecksProgressCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.DecksProgressTable,
+			Columns: []string{user.DecksProgressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedDecksProgressIDs(); len(nodes) > 0 && !uu.mutation.DecksProgressCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.DecksProgressTable,
+			Columns: []string{user.DecksProgressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.DecksProgressIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.DecksProgressTable,
+			Columns: []string{user.DecksProgressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
 				},
 			},
 		}
@@ -332,40 +663,79 @@ func (uuo *UserUpdateOne) SetEmail(s string) *UserUpdateOne {
 	return uuo
 }
 
-// SetLevel sets the "level" field.
-func (uuo *UserUpdateOne) SetLevel(i int32) *UserUpdateOne {
-	uuo.mutation.ResetLevel()
-	uuo.mutation.SetLevel(i)
+// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
+func (uuo *UserUpdateOne) AddDeckIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddDeckIDs(ids...)
 	return uuo
 }
 
-// SetNillableLevel sets the "level" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableLevel(i *int32) *UserUpdateOne {
-	if i != nil {
-		uuo.SetLevel(*i)
+// AddDecks adds the "decks" edges to the Deck entity.
+func (uuo *UserUpdateOne) AddDecks(d ...*Deck) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
 	}
+	return uuo.AddDeckIDs(ids...)
+}
+
+// AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
+func (uuo *UserUpdateOne) AddSubjectIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddSubjectIDs(ids...)
 	return uuo
 }
 
-// AddLevel adds i to the "level" field.
-func (uuo *UserUpdateOne) AddLevel(i int32) *UserUpdateOne {
-	uuo.mutation.AddLevel(i)
-	return uuo
-}
-
-// AddCardIDs adds the "cards" edge to the Card entity by IDs.
-func (uuo *UserUpdateOne) AddCardIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.AddCardIDs(ids...)
-	return uuo
-}
-
-// AddCards adds the "cards" edges to the Card entity.
-func (uuo *UserUpdateOne) AddCards(c ...*Card) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
+// AddSubjects adds the "subjects" edges to the Subject entity.
+func (uuo *UserUpdateOne) AddSubjects(s ...*Subject) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return uuo.AddCardIDs(ids...)
+	return uuo.AddSubjectIDs(ids...)
+}
+
+// AddSubscribedDeckIDs adds the "subscribed_decks" edge to the Deck entity by IDs.
+func (uuo *UserUpdateOne) AddSubscribedDeckIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddSubscribedDeckIDs(ids...)
+	return uuo
+}
+
+// AddSubscribedDecks adds the "subscribed_decks" edges to the Deck entity.
+func (uuo *UserUpdateOne) AddSubscribedDecks(d ...*Deck) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uuo.AddSubscribedDeckIDs(ids...)
+}
+
+// AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
+func (uuo *UserUpdateOne) AddAPITokenIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddAPITokenIDs(ids...)
+	return uuo
+}
+
+// AddAPITokens adds the "api_tokens" edges to the ApiToken entity.
+func (uuo *UserUpdateOne) AddAPITokens(a ...*ApiToken) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uuo.AddAPITokenIDs(ids...)
+}
+
+// AddDecksProgresIDs adds the "decks_progress" edge to the DeckProgress entity by IDs.
+func (uuo *UserUpdateOne) AddDecksProgresIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddDecksProgresIDs(ids...)
+	return uuo
+}
+
+// AddDecksProgress adds the "decks_progress" edges to the DeckProgress entity.
+func (uuo *UserUpdateOne) AddDecksProgress(d ...*DeckProgress) *UserUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uuo.AddDecksProgresIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -373,25 +743,109 @@ func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
 }
 
-// ClearCards clears all "cards" edges to the Card entity.
-func (uuo *UserUpdateOne) ClearCards() *UserUpdateOne {
-	uuo.mutation.ClearCards()
+// ClearDecks clears all "decks" edges to the Deck entity.
+func (uuo *UserUpdateOne) ClearDecks() *UserUpdateOne {
+	uuo.mutation.ClearDecks()
 	return uuo
 }
 
-// RemoveCardIDs removes the "cards" edge to Card entities by IDs.
-func (uuo *UserUpdateOne) RemoveCardIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.RemoveCardIDs(ids...)
+// RemoveDeckIDs removes the "decks" edge to Deck entities by IDs.
+func (uuo *UserUpdateOne) RemoveDeckIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveDeckIDs(ids...)
 	return uuo
 }
 
-// RemoveCards removes "cards" edges to Card entities.
-func (uuo *UserUpdateOne) RemoveCards(c ...*Card) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
+// RemoveDecks removes "decks" edges to Deck entities.
+func (uuo *UserUpdateOne) RemoveDecks(d ...*Deck) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
 	}
-	return uuo.RemoveCardIDs(ids...)
+	return uuo.RemoveDeckIDs(ids...)
+}
+
+// ClearSubjects clears all "subjects" edges to the Subject entity.
+func (uuo *UserUpdateOne) ClearSubjects() *UserUpdateOne {
+	uuo.mutation.ClearSubjects()
+	return uuo
+}
+
+// RemoveSubjectIDs removes the "subjects" edge to Subject entities by IDs.
+func (uuo *UserUpdateOne) RemoveSubjectIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveSubjectIDs(ids...)
+	return uuo
+}
+
+// RemoveSubjects removes "subjects" edges to Subject entities.
+func (uuo *UserUpdateOne) RemoveSubjects(s ...*Subject) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uuo.RemoveSubjectIDs(ids...)
+}
+
+// ClearSubscribedDecks clears all "subscribed_decks" edges to the Deck entity.
+func (uuo *UserUpdateOne) ClearSubscribedDecks() *UserUpdateOne {
+	uuo.mutation.ClearSubscribedDecks()
+	return uuo
+}
+
+// RemoveSubscribedDeckIDs removes the "subscribed_decks" edge to Deck entities by IDs.
+func (uuo *UserUpdateOne) RemoveSubscribedDeckIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveSubscribedDeckIDs(ids...)
+	return uuo
+}
+
+// RemoveSubscribedDecks removes "subscribed_decks" edges to Deck entities.
+func (uuo *UserUpdateOne) RemoveSubscribedDecks(d ...*Deck) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uuo.RemoveSubscribedDeckIDs(ids...)
+}
+
+// ClearAPITokens clears all "api_tokens" edges to the ApiToken entity.
+func (uuo *UserUpdateOne) ClearAPITokens() *UserUpdateOne {
+	uuo.mutation.ClearAPITokens()
+	return uuo
+}
+
+// RemoveAPITokenIDs removes the "api_tokens" edge to ApiToken entities by IDs.
+func (uuo *UserUpdateOne) RemoveAPITokenIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveAPITokenIDs(ids...)
+	return uuo
+}
+
+// RemoveAPITokens removes "api_tokens" edges to ApiToken entities.
+func (uuo *UserUpdateOne) RemoveAPITokens(a ...*ApiToken) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uuo.RemoveAPITokenIDs(ids...)
+}
+
+// ClearDecksProgress clears all "decks_progress" edges to the DeckProgress entity.
+func (uuo *UserUpdateOne) ClearDecksProgress() *UserUpdateOne {
+	uuo.mutation.ClearDecksProgress()
+	return uuo
+}
+
+// RemoveDecksProgresIDs removes the "decks_progress" edge to DeckProgress entities by IDs.
+func (uuo *UserUpdateOne) RemoveDecksProgresIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveDecksProgresIDs(ids...)
+	return uuo
+}
+
+// RemoveDecksProgress removes "decks_progress" edges to DeckProgress entities.
+func (uuo *UserUpdateOne) RemoveDecksProgress(d ...*DeckProgress) *UserUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uuo.RemoveDecksProgresIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -479,11 +933,6 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
-	if v, ok := uuo.mutation.Level(); ok {
-		if err := user.LevelValidator(v); err != nil {
-			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "User.level": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -536,39 +985,33 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if value, ok := uuo.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 	}
-	if value, ok := uuo.mutation.Level(); ok {
-		_spec.SetField(user.FieldLevel, field.TypeInt32, value)
-	}
-	if value, ok := uuo.mutation.AddedLevel(); ok {
-		_spec.AddField(user.FieldLevel, field.TypeInt32, value)
-	}
-	if uuo.mutation.CardsCleared() {
+	if uuo.mutation.DecksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.CardsTable,
-			Columns: []string{user.CardsColumn},
+			Table:   user.DecksTable,
+			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: card.FieldID,
+					Column: deck.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedCardsIDs(); len(nodes) > 0 && !uuo.mutation.CardsCleared() {
+	if nodes := uuo.mutation.RemovedDecksIDs(); len(nodes) > 0 && !uuo.mutation.DecksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.CardsTable,
-			Columns: []string{user.CardsColumn},
+			Table:   user.DecksTable,
+			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: card.FieldID,
+					Column: deck.FieldID,
 				},
 			},
 		}
@@ -577,17 +1020,233 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.CardsIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.DecksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.CardsTable,
-			Columns: []string{user.CardsColumn},
+			Table:   user.DecksTable,
+			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: card.FieldID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.SubjectsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubjectsTable,
+			Columns: []string{user.SubjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedSubjectsIDs(); len(nodes) > 0 && !uuo.mutation.SubjectsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubjectsTable,
+			Columns: []string{user.SubjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.SubjectsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubjectsTable,
+			Columns: []string{user.SubjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.SubscribedDecksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.SubscribedDecksTable,
+			Columns: user.SubscribedDecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedSubscribedDecksIDs(); len(nodes) > 0 && !uuo.mutation.SubscribedDecksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.SubscribedDecksTable,
+			Columns: user.SubscribedDecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.SubscribedDecksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.SubscribedDecksTable,
+			Columns: user.SubscribedDecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.APITokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.APITokensTable,
+			Columns: []string{user.APITokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: apitoken.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedAPITokensIDs(); len(nodes) > 0 && !uuo.mutation.APITokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.APITokensTable,
+			Columns: []string{user.APITokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: apitoken.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.APITokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.APITokensTable,
+			Columns: []string{user.APITokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: apitoken.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.DecksProgressCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.DecksProgressTable,
+			Columns: []string{user.DecksProgressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedDecksProgressIDs(); len(nodes) > 0 && !uuo.mutation.DecksProgressCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.DecksProgressTable,
+			Columns: []string{user.DecksProgressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.DecksProgressIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.DecksProgressTable,
+			Columns: []string{user.DecksProgressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
 				},
 			},
 		}

@@ -3,6 +3,8 @@
 package subject
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
@@ -80,6 +82,27 @@ func IDLTE(id uuid.UUID) predicate.Subject {
 	})
 }
 
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
+	})
+}
+
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// Kind applies equality check predicate on the "kind" field. It's identical to KindEQ.
+func Kind(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldKind), v))
+	})
+}
+
 // Level applies equality check predicate on the "level" field. It's identical to LevelEQ.
 func Level(v int32) predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
@@ -87,22 +110,178 @@ func Level(v int32) predicate.Subject {
 	})
 }
 
+// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
+func Name(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldName), v))
+	})
+}
+
+// Value applies equality check predicate on the "value" field. It's identical to ValueEQ.
+func Value(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldValue), v))
+	})
+}
+
+// Slug applies equality check predicate on the "slug" field. It's identical to SlugEQ.
+func Slug(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSlug), v))
+	})
+}
+
+// Priority applies equality check predicate on the "priority" field. It's identical to PriorityEQ.
+func Priority(v uint8) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPriority), v))
+	})
+}
+
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldCreatedAt), v...))
+	})
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
+	})
+}
+
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldCreatedAt), v))
+	})
+}
+
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
+	})
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldUpdatedAt), v...))
+	})
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldUpdatedAt), v...))
+	})
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
+	})
+}
+
 // KindEQ applies the EQ predicate on the "kind" field.
-func KindEQ(v Kind) predicate.Subject {
+func KindEQ(v string) predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldKind), v))
 	})
 }
 
 // KindNEQ applies the NEQ predicate on the "kind" field.
-func KindNEQ(v Kind) predicate.Subject {
+func KindNEQ(v string) predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldKind), v))
 	})
 }
 
 // KindIn applies the In predicate on the "kind" field.
-func KindIn(vs ...Kind) predicate.Subject {
+func KindIn(vs ...string) predicate.Subject {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -113,13 +292,76 @@ func KindIn(vs ...Kind) predicate.Subject {
 }
 
 // KindNotIn applies the NotIn predicate on the "kind" field.
-func KindNotIn(vs ...Kind) predicate.Subject {
+func KindNotIn(vs ...string) predicate.Subject {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Subject(func(s *sql.Selector) {
 		s.Where(sql.NotIn(s.C(FieldKind), v...))
+	})
+}
+
+// KindGT applies the GT predicate on the "kind" field.
+func KindGT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldKind), v))
+	})
+}
+
+// KindGTE applies the GTE predicate on the "kind" field.
+func KindGTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldKind), v))
+	})
+}
+
+// KindLT applies the LT predicate on the "kind" field.
+func KindLT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldKind), v))
+	})
+}
+
+// KindLTE applies the LTE predicate on the "kind" field.
+func KindLTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldKind), v))
+	})
+}
+
+// KindContains applies the Contains predicate on the "kind" field.
+func KindContains(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldKind), v))
+	})
+}
+
+// KindHasPrefix applies the HasPrefix predicate on the "kind" field.
+func KindHasPrefix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldKind), v))
+	})
+}
+
+// KindHasSuffix applies the HasSuffix predicate on the "kind" field.
+func KindHasSuffix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldKind), v))
+	})
+}
+
+// KindEqualFold applies the EqualFold predicate on the "kind" field.
+func KindEqualFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldKind), v))
+	})
+}
+
+// KindContainsFold applies the ContainsFold predicate on the "kind" field.
+func KindContainsFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldKind), v))
 	})
 }
 
@@ -187,6 +429,409 @@ func LevelLTE(v int32) predicate.Subject {
 	})
 }
 
+// NameEQ applies the EQ predicate on the "name" field.
+func NameEQ(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldName), v))
+	})
+}
+
+// NameNEQ applies the NEQ predicate on the "name" field.
+func NameNEQ(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldName), v))
+	})
+}
+
+// NameIn applies the In predicate on the "name" field.
+func NameIn(vs ...string) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldName), v...))
+	})
+}
+
+// NameNotIn applies the NotIn predicate on the "name" field.
+func NameNotIn(vs ...string) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldName), v...))
+	})
+}
+
+// NameGT applies the GT predicate on the "name" field.
+func NameGT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldName), v))
+	})
+}
+
+// NameGTE applies the GTE predicate on the "name" field.
+func NameGTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldName), v))
+	})
+}
+
+// NameLT applies the LT predicate on the "name" field.
+func NameLT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldName), v))
+	})
+}
+
+// NameLTE applies the LTE predicate on the "name" field.
+func NameLTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldName), v))
+	})
+}
+
+// NameContains applies the Contains predicate on the "name" field.
+func NameContains(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldName), v))
+	})
+}
+
+// NameHasPrefix applies the HasPrefix predicate on the "name" field.
+func NameHasPrefix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldName), v))
+	})
+}
+
+// NameHasSuffix applies the HasSuffix predicate on the "name" field.
+func NameHasSuffix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldName), v))
+	})
+}
+
+// NameEqualFold applies the EqualFold predicate on the "name" field.
+func NameEqualFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldName), v))
+	})
+}
+
+// NameContainsFold applies the ContainsFold predicate on the "name" field.
+func NameContainsFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldName), v))
+	})
+}
+
+// ValueEQ applies the EQ predicate on the "value" field.
+func ValueEQ(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldValue), v))
+	})
+}
+
+// ValueNEQ applies the NEQ predicate on the "value" field.
+func ValueNEQ(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldValue), v))
+	})
+}
+
+// ValueIn applies the In predicate on the "value" field.
+func ValueIn(vs ...string) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldValue), v...))
+	})
+}
+
+// ValueNotIn applies the NotIn predicate on the "value" field.
+func ValueNotIn(vs ...string) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldValue), v...))
+	})
+}
+
+// ValueGT applies the GT predicate on the "value" field.
+func ValueGT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldValue), v))
+	})
+}
+
+// ValueGTE applies the GTE predicate on the "value" field.
+func ValueGTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldValue), v))
+	})
+}
+
+// ValueLT applies the LT predicate on the "value" field.
+func ValueLT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldValue), v))
+	})
+}
+
+// ValueLTE applies the LTE predicate on the "value" field.
+func ValueLTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldValue), v))
+	})
+}
+
+// ValueContains applies the Contains predicate on the "value" field.
+func ValueContains(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldValue), v))
+	})
+}
+
+// ValueHasPrefix applies the HasPrefix predicate on the "value" field.
+func ValueHasPrefix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldValue), v))
+	})
+}
+
+// ValueHasSuffix applies the HasSuffix predicate on the "value" field.
+func ValueHasSuffix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldValue), v))
+	})
+}
+
+// ValueIsNil applies the IsNil predicate on the "value" field.
+func ValueIsNil() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldValue)))
+	})
+}
+
+// ValueNotNil applies the NotNil predicate on the "value" field.
+func ValueNotNil() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldValue)))
+	})
+}
+
+// ValueEqualFold applies the EqualFold predicate on the "value" field.
+func ValueEqualFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldValue), v))
+	})
+}
+
+// ValueContainsFold applies the ContainsFold predicate on the "value" field.
+func ValueContainsFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldValue), v))
+	})
+}
+
+// ValueImageIsNil applies the IsNil predicate on the "value_image" field.
+func ValueImageIsNil() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldValueImage)))
+	})
+}
+
+// ValueImageNotNil applies the NotNil predicate on the "value_image" field.
+func ValueImageNotNil() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldValueImage)))
+	})
+}
+
+// SlugEQ applies the EQ predicate on the "slug" field.
+func SlugEQ(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSlug), v))
+	})
+}
+
+// SlugNEQ applies the NEQ predicate on the "slug" field.
+func SlugNEQ(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldSlug), v))
+	})
+}
+
+// SlugIn applies the In predicate on the "slug" field.
+func SlugIn(vs ...string) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldSlug), v...))
+	})
+}
+
+// SlugNotIn applies the NotIn predicate on the "slug" field.
+func SlugNotIn(vs ...string) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldSlug), v...))
+	})
+}
+
+// SlugGT applies the GT predicate on the "slug" field.
+func SlugGT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldSlug), v))
+	})
+}
+
+// SlugGTE applies the GTE predicate on the "slug" field.
+func SlugGTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldSlug), v))
+	})
+}
+
+// SlugLT applies the LT predicate on the "slug" field.
+func SlugLT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldSlug), v))
+	})
+}
+
+// SlugLTE applies the LTE predicate on the "slug" field.
+func SlugLTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldSlug), v))
+	})
+}
+
+// SlugContains applies the Contains predicate on the "slug" field.
+func SlugContains(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldSlug), v))
+	})
+}
+
+// SlugHasPrefix applies the HasPrefix predicate on the "slug" field.
+func SlugHasPrefix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldSlug), v))
+	})
+}
+
+// SlugHasSuffix applies the HasSuffix predicate on the "slug" field.
+func SlugHasSuffix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldSlug), v))
+	})
+}
+
+// SlugEqualFold applies the EqualFold predicate on the "slug" field.
+func SlugEqualFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldSlug), v))
+	})
+}
+
+// SlugContainsFold applies the ContainsFold predicate on the "slug" field.
+func SlugContainsFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldSlug), v))
+	})
+}
+
+// PriorityEQ applies the EQ predicate on the "priority" field.
+func PriorityEQ(v uint8) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPriority), v))
+	})
+}
+
+// PriorityNEQ applies the NEQ predicate on the "priority" field.
+func PriorityNEQ(v uint8) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldPriority), v))
+	})
+}
+
+// PriorityIn applies the In predicate on the "priority" field.
+func PriorityIn(vs ...uint8) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldPriority), v...))
+	})
+}
+
+// PriorityNotIn applies the NotIn predicate on the "priority" field.
+func PriorityNotIn(vs ...uint8) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldPriority), v...))
+	})
+}
+
+// PriorityGT applies the GT predicate on the "priority" field.
+func PriorityGT(v uint8) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldPriority), v))
+	})
+}
+
+// PriorityGTE applies the GTE predicate on the "priority" field.
+func PriorityGTE(v uint8) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldPriority), v))
+	})
+}
+
+// PriorityLT applies the LT predicate on the "priority" field.
+func PriorityLT(v uint8) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldPriority), v))
+	})
+}
+
+// PriorityLTE applies the LTE predicate on the "priority" field.
+func PriorityLTE(v uint8) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldPriority), v))
+	})
+}
+
+// ResourcesIsNil applies the IsNil predicate on the "resources" field.
+func ResourcesIsNil() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldResources)))
+	})
+}
+
+// ResourcesNotNil applies the NotNil predicate on the "resources" field.
+func ResourcesNotNil() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldResources)))
+	})
+}
+
 // HasCards applies the HasEdge predicate on the "cards" edge.
 func HasCards() predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
@@ -206,6 +851,146 @@ func HasCardsWith(preds ...predicate.Card) predicate.Subject {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(CardsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, CardsTable, CardsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSimilar applies the HasEdge predicate on the "similar" edge.
+func HasSimilar() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(SimilarTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, SimilarTable, SimilarPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSimilarWith applies the HasEdge predicate on the "similar" edge with a given conditions (other predicates).
+func HasSimilarWith(preds ...predicate.Subject) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, SimilarTable, SimilarPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasDependencies applies the HasEdge predicate on the "dependencies" edge.
+func HasDependencies() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DependenciesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, DependenciesTable, DependenciesPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDependenciesWith applies the HasEdge predicate on the "dependencies" edge with a given conditions (other predicates).
+func HasDependenciesWith(preds ...predicate.Subject) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, DependenciesTable, DependenciesPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasDependents applies the HasEdge predicate on the "dependents" edge.
+func HasDependents() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DependentsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, DependentsTable, DependentsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDependentsWith applies the HasEdge predicate on the "dependents" edge with a given conditions (other predicates).
+func HasDependentsWith(preds ...predicate.Subject) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, DependentsTable, DependentsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasDecks applies the HasEdge predicate on the "decks" edge.
+func HasDecks() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DecksTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, DecksTable, DecksPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDecksWith applies the HasEdge predicate on the "decks" edge with a given conditions (other predicates).
+func HasDecksWith(preds ...predicate.Deck) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DecksInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, DecksTable, DecksPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOwner applies the HasEdge predicate on the "owner" edge.
+func HasOwner() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OwnerTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOwnerWith applies the HasEdge predicate on the "owner" edge with a given conditions (other predicates).
+func HasOwnerWith(preds ...predicate.User) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OwnerInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

@@ -6,12 +6,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/deck"
 	"sixels.io/manekani/ent/subject"
+	"sixels.io/manekani/ent/user"
 )
 
 // SubjectCreate is the builder for creating a Subject entity.
@@ -21,8 +25,36 @@ type SubjectCreate struct {
 	hooks    []Hook
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (sc *SubjectCreate) SetCreatedAt(t time.Time) *SubjectCreate {
+	sc.mutation.SetCreatedAt(t)
+	return sc
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (sc *SubjectCreate) SetNillableCreatedAt(t *time.Time) *SubjectCreate {
+	if t != nil {
+		sc.SetCreatedAt(*t)
+	}
+	return sc
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (sc *SubjectCreate) SetUpdatedAt(t time.Time) *SubjectCreate {
+	sc.mutation.SetUpdatedAt(t)
+	return sc
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (sc *SubjectCreate) SetNillableUpdatedAt(t *time.Time) *SubjectCreate {
+	if t != nil {
+		sc.SetUpdatedAt(*t)
+	}
+	return sc
+}
+
 // SetKind sets the "kind" field.
-func (sc *SubjectCreate) SetKind(s subject.Kind) *SubjectCreate {
+func (sc *SubjectCreate) SetKind(s string) *SubjectCreate {
 	sc.mutation.SetKind(s)
 	return sc
 }
@@ -30,6 +62,56 @@ func (sc *SubjectCreate) SetKind(s subject.Kind) *SubjectCreate {
 // SetLevel sets the "level" field.
 func (sc *SubjectCreate) SetLevel(i int32) *SubjectCreate {
 	sc.mutation.SetLevel(i)
+	return sc
+}
+
+// SetName sets the "name" field.
+func (sc *SubjectCreate) SetName(s string) *SubjectCreate {
+	sc.mutation.SetName(s)
+	return sc
+}
+
+// SetValue sets the "value" field.
+func (sc *SubjectCreate) SetValue(s string) *SubjectCreate {
+	sc.mutation.SetValue(s)
+	return sc
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (sc *SubjectCreate) SetNillableValue(s *string) *SubjectCreate {
+	if s != nil {
+		sc.SetValue(*s)
+	}
+	return sc
+}
+
+// SetValueImage sets the "value_image" field.
+func (sc *SubjectCreate) SetValueImage(cc *cards.RemoteContent) *SubjectCreate {
+	sc.mutation.SetValueImage(cc)
+	return sc
+}
+
+// SetSlug sets the "slug" field.
+func (sc *SubjectCreate) SetSlug(s string) *SubjectCreate {
+	sc.mutation.SetSlug(s)
+	return sc
+}
+
+// SetPriority sets the "priority" field.
+func (sc *SubjectCreate) SetPriority(u uint8) *SubjectCreate {
+	sc.mutation.SetPriority(u)
+	return sc
+}
+
+// SetResources sets the "resources" field.
+func (sc *SubjectCreate) SetResources(mc *map[string][]cards.RemoteContent) *SubjectCreate {
+	sc.mutation.SetResources(mc)
+	return sc
+}
+
+// SetStudyData sets the "study_data" field.
+func (sc *SubjectCreate) SetStudyData(cd []cards.StudyData) *SubjectCreate {
+	sc.mutation.SetStudyData(cd)
 	return sc
 }
 
@@ -54,6 +136,77 @@ func (sc *SubjectCreate) AddCards(c ...*Card) *SubjectCreate {
 	return sc.AddCardIDs(ids...)
 }
 
+// AddSimilarIDs adds the "similar" edge to the Subject entity by IDs.
+func (sc *SubjectCreate) AddSimilarIDs(ids ...uuid.UUID) *SubjectCreate {
+	sc.mutation.AddSimilarIDs(ids...)
+	return sc
+}
+
+// AddSimilar adds the "similar" edges to the Subject entity.
+func (sc *SubjectCreate) AddSimilar(s ...*Subject) *SubjectCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return sc.AddSimilarIDs(ids...)
+}
+
+// AddDependencyIDs adds the "dependencies" edge to the Subject entity by IDs.
+func (sc *SubjectCreate) AddDependencyIDs(ids ...uuid.UUID) *SubjectCreate {
+	sc.mutation.AddDependencyIDs(ids...)
+	return sc
+}
+
+// AddDependencies adds the "dependencies" edges to the Subject entity.
+func (sc *SubjectCreate) AddDependencies(s ...*Subject) *SubjectCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return sc.AddDependencyIDs(ids...)
+}
+
+// AddDependentIDs adds the "dependents" edge to the Subject entity by IDs.
+func (sc *SubjectCreate) AddDependentIDs(ids ...uuid.UUID) *SubjectCreate {
+	sc.mutation.AddDependentIDs(ids...)
+	return sc
+}
+
+// AddDependents adds the "dependents" edges to the Subject entity.
+func (sc *SubjectCreate) AddDependents(s ...*Subject) *SubjectCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return sc.AddDependentIDs(ids...)
+}
+
+// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
+func (sc *SubjectCreate) AddDeckIDs(ids ...uuid.UUID) *SubjectCreate {
+	sc.mutation.AddDeckIDs(ids...)
+	return sc
+}
+
+// AddDecks adds the "decks" edges to the Deck entity.
+func (sc *SubjectCreate) AddDecks(d ...*Deck) *SubjectCreate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return sc.AddDeckIDs(ids...)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (sc *SubjectCreate) SetOwnerID(id string) *SubjectCreate {
+	sc.mutation.SetOwnerID(id)
+	return sc
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (sc *SubjectCreate) SetOwner(u *User) *SubjectCreate {
+	return sc.SetOwnerID(u.ID)
+}
+
 // Mutation returns the SubjectMutation object of the builder.
 func (sc *SubjectCreate) Mutation() *SubjectMutation {
 	return sc.mutation
@@ -65,6 +218,7 @@ func (sc *SubjectCreate) Save(ctx context.Context) (*Subject, error) {
 		err  error
 		node *Subject
 	)
+	sc.defaults()
 	if len(sc.hooks) == 0 {
 		if err = sc.check(); err != nil {
 			return nil, err
@@ -128,15 +282,28 @@ func (sc *SubjectCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (sc *SubjectCreate) defaults() {
+	if _, ok := sc.mutation.CreatedAt(); !ok {
+		v := subject.DefaultCreatedAt()
+		sc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := sc.mutation.UpdatedAt(); !ok {
+		v := subject.DefaultUpdatedAt()
+		sc.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (sc *SubjectCreate) check() error {
+	if _, ok := sc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Subject.created_at"`)}
+	}
+	if _, ok := sc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Subject.updated_at"`)}
+	}
 	if _, ok := sc.mutation.Kind(); !ok {
 		return &ValidationError{Name: "kind", err: errors.New(`ent: missing required field "Subject.kind"`)}
-	}
-	if v, ok := sc.mutation.Kind(); ok {
-		if err := subject.KindValidator(v); err != nil {
-			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Subject.kind": %w`, err)}
-		}
 	}
 	if _, ok := sc.mutation.Level(); !ok {
 		return &ValidationError{Name: "level", err: errors.New(`ent: missing required field "Subject.level"`)}
@@ -145,6 +312,36 @@ func (sc *SubjectCreate) check() error {
 		if err := subject.LevelValidator(v); err != nil {
 			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "Subject.level": %w`, err)}
 		}
+	}
+	if _, ok := sc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Subject.name"`)}
+	}
+	if v, ok := sc.mutation.Name(); ok {
+		if err := subject.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Subject.name": %w`, err)}
+		}
+	}
+	if v, ok := sc.mutation.Value(); ok {
+		if err := subject.ValueValidator(v); err != nil {
+			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "Subject.value": %w`, err)}
+		}
+	}
+	if _, ok := sc.mutation.Slug(); !ok {
+		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "Subject.slug"`)}
+	}
+	if v, ok := sc.mutation.Slug(); ok {
+		if err := subject.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Subject.slug": %w`, err)}
+		}
+	}
+	if _, ok := sc.mutation.Priority(); !ok {
+		return &ValidationError{Name: "priority", err: errors.New(`ent: missing required field "Subject.priority"`)}
+	}
+	if _, ok := sc.mutation.StudyData(); !ok {
+		return &ValidationError{Name: "study_data", err: errors.New(`ent: missing required field "Subject.study_data"`)}
+	}
+	if _, ok := sc.mutation.OwnerID(); !ok {
+		return &ValidationError{Name: "owner", err: errors.New(`ent: missing required edge "Subject.owner"`)}
 	}
 	return nil
 }
@@ -182,13 +379,49 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
+	if value, ok := sc.mutation.CreatedAt(); ok {
+		_spec.SetField(subject.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := sc.mutation.UpdatedAt(); ok {
+		_spec.SetField(subject.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
 	if value, ok := sc.mutation.Kind(); ok {
-		_spec.SetField(subject.FieldKind, field.TypeEnum, value)
+		_spec.SetField(subject.FieldKind, field.TypeString, value)
 		_node.Kind = value
 	}
 	if value, ok := sc.mutation.Level(); ok {
 		_spec.SetField(subject.FieldLevel, field.TypeInt32, value)
 		_node.Level = value
+	}
+	if value, ok := sc.mutation.Name(); ok {
+		_spec.SetField(subject.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
+	if value, ok := sc.mutation.Value(); ok {
+		_spec.SetField(subject.FieldValue, field.TypeString, value)
+		_node.Value = &value
+	}
+	if value, ok := sc.mutation.ValueImage(); ok {
+		_spec.SetField(subject.FieldValueImage, field.TypeJSON, value)
+		_node.ValueImage = value
+	}
+	if value, ok := sc.mutation.Slug(); ok {
+		_spec.SetField(subject.FieldSlug, field.TypeString, value)
+		_node.Slug = value
+	}
+	if value, ok := sc.mutation.Priority(); ok {
+		_spec.SetField(subject.FieldPriority, field.TypeUint8, value)
+		_node.Priority = value
+	}
+	if value, ok := sc.mutation.Resources(); ok {
+		_spec.SetField(subject.FieldResources, field.TypeJSON, value)
+		_node.Resources = value
+	}
+	if value, ok := sc.mutation.StudyData(); ok {
+		_spec.SetField(subject.FieldStudyData, field.TypeJSON, value)
+		_node.StudyData = value
 	}
 	if nodes := sc.mutation.CardsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -209,6 +442,102 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := sc.mutation.SimilarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.SimilarTable,
+			Columns: subject.SimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.DependenciesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DependenciesTable,
+			Columns: subject.DependenciesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.DependentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.DependentsTable,
+			Columns: subject.DependentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.DecksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DecksTable,
+			Columns: subject.DecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   subject.OwnerTable,
+			Columns: []string{subject.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_subjects = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -226,6 +555,7 @@ func (scb *SubjectCreateBulk) Save(ctx context.Context) ([]*Subject, error) {
 	for i := range scb.builders {
 		func(i int, root context.Context) {
 			builder := scb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*SubjectMutation)
 				if !ok {

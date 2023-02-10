@@ -6,14 +6,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/deck"
 	"sixels.io/manekani/ent/predicate"
 	"sixels.io/manekani/ent/subject"
+	"sixels.io/manekani/ent/user"
 )
 
 // SubjectUpdate is the builder for updating Subject entities.
@@ -29,8 +34,14 @@ func (su *SubjectUpdate) Where(ps ...predicate.Subject) *SubjectUpdate {
 	return su
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (su *SubjectUpdate) SetUpdatedAt(t time.Time) *SubjectUpdate {
+	su.mutation.SetUpdatedAt(t)
+	return su
+}
+
 // SetKind sets the "kind" field.
-func (su *SubjectUpdate) SetKind(s subject.Kind) *SubjectUpdate {
+func (su *SubjectUpdate) SetKind(s string) *SubjectUpdate {
 	su.mutation.SetKind(s)
 	return su
 }
@@ -48,6 +59,87 @@ func (su *SubjectUpdate) AddLevel(i int32) *SubjectUpdate {
 	return su
 }
 
+// SetName sets the "name" field.
+func (su *SubjectUpdate) SetName(s string) *SubjectUpdate {
+	su.mutation.SetName(s)
+	return su
+}
+
+// SetValue sets the "value" field.
+func (su *SubjectUpdate) SetValue(s string) *SubjectUpdate {
+	su.mutation.SetValue(s)
+	return su
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (su *SubjectUpdate) SetNillableValue(s *string) *SubjectUpdate {
+	if s != nil {
+		su.SetValue(*s)
+	}
+	return su
+}
+
+// ClearValue clears the value of the "value" field.
+func (su *SubjectUpdate) ClearValue() *SubjectUpdate {
+	su.mutation.ClearValue()
+	return su
+}
+
+// SetValueImage sets the "value_image" field.
+func (su *SubjectUpdate) SetValueImage(cc *cards.RemoteContent) *SubjectUpdate {
+	su.mutation.SetValueImage(cc)
+	return su
+}
+
+// ClearValueImage clears the value of the "value_image" field.
+func (su *SubjectUpdate) ClearValueImage() *SubjectUpdate {
+	su.mutation.ClearValueImage()
+	return su
+}
+
+// SetSlug sets the "slug" field.
+func (su *SubjectUpdate) SetSlug(s string) *SubjectUpdate {
+	su.mutation.SetSlug(s)
+	return su
+}
+
+// SetPriority sets the "priority" field.
+func (su *SubjectUpdate) SetPriority(u uint8) *SubjectUpdate {
+	su.mutation.ResetPriority()
+	su.mutation.SetPriority(u)
+	return su
+}
+
+// AddPriority adds u to the "priority" field.
+func (su *SubjectUpdate) AddPriority(u int8) *SubjectUpdate {
+	su.mutation.AddPriority(u)
+	return su
+}
+
+// SetResources sets the "resources" field.
+func (su *SubjectUpdate) SetResources(mc *map[string][]cards.RemoteContent) *SubjectUpdate {
+	su.mutation.SetResources(mc)
+	return su
+}
+
+// ClearResources clears the value of the "resources" field.
+func (su *SubjectUpdate) ClearResources() *SubjectUpdate {
+	su.mutation.ClearResources()
+	return su
+}
+
+// SetStudyData sets the "study_data" field.
+func (su *SubjectUpdate) SetStudyData(cd []cards.StudyData) *SubjectUpdate {
+	su.mutation.SetStudyData(cd)
+	return su
+}
+
+// AppendStudyData appends cd to the "study_data" field.
+func (su *SubjectUpdate) AppendStudyData(cd []cards.StudyData) *SubjectUpdate {
+	su.mutation.AppendStudyData(cd)
+	return su
+}
+
 // AddCardIDs adds the "cards" edge to the Card entity by IDs.
 func (su *SubjectUpdate) AddCardIDs(ids ...uuid.UUID) *SubjectUpdate {
 	su.mutation.AddCardIDs(ids...)
@@ -61,6 +153,77 @@ func (su *SubjectUpdate) AddCards(c ...*Card) *SubjectUpdate {
 		ids[i] = c[i].ID
 	}
 	return su.AddCardIDs(ids...)
+}
+
+// AddSimilarIDs adds the "similar" edge to the Subject entity by IDs.
+func (su *SubjectUpdate) AddSimilarIDs(ids ...uuid.UUID) *SubjectUpdate {
+	su.mutation.AddSimilarIDs(ids...)
+	return su
+}
+
+// AddSimilar adds the "similar" edges to the Subject entity.
+func (su *SubjectUpdate) AddSimilar(s ...*Subject) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.AddSimilarIDs(ids...)
+}
+
+// AddDependencyIDs adds the "dependencies" edge to the Subject entity by IDs.
+func (su *SubjectUpdate) AddDependencyIDs(ids ...uuid.UUID) *SubjectUpdate {
+	su.mutation.AddDependencyIDs(ids...)
+	return su
+}
+
+// AddDependencies adds the "dependencies" edges to the Subject entity.
+func (su *SubjectUpdate) AddDependencies(s ...*Subject) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.AddDependencyIDs(ids...)
+}
+
+// AddDependentIDs adds the "dependents" edge to the Subject entity by IDs.
+func (su *SubjectUpdate) AddDependentIDs(ids ...uuid.UUID) *SubjectUpdate {
+	su.mutation.AddDependentIDs(ids...)
+	return su
+}
+
+// AddDependents adds the "dependents" edges to the Subject entity.
+func (su *SubjectUpdate) AddDependents(s ...*Subject) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.AddDependentIDs(ids...)
+}
+
+// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
+func (su *SubjectUpdate) AddDeckIDs(ids ...uuid.UUID) *SubjectUpdate {
+	su.mutation.AddDeckIDs(ids...)
+	return su
+}
+
+// AddDecks adds the "decks" edges to the Deck entity.
+func (su *SubjectUpdate) AddDecks(d ...*Deck) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return su.AddDeckIDs(ids...)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (su *SubjectUpdate) SetOwnerID(id string) *SubjectUpdate {
+	su.mutation.SetOwnerID(id)
+	return su
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (su *SubjectUpdate) SetOwner(u *User) *SubjectUpdate {
+	return su.SetOwnerID(u.ID)
 }
 
 // Mutation returns the SubjectMutation object of the builder.
@@ -89,12 +252,103 @@ func (su *SubjectUpdate) RemoveCards(c ...*Card) *SubjectUpdate {
 	return su.RemoveCardIDs(ids...)
 }
 
+// ClearSimilar clears all "similar" edges to the Subject entity.
+func (su *SubjectUpdate) ClearSimilar() *SubjectUpdate {
+	su.mutation.ClearSimilar()
+	return su
+}
+
+// RemoveSimilarIDs removes the "similar" edge to Subject entities by IDs.
+func (su *SubjectUpdate) RemoveSimilarIDs(ids ...uuid.UUID) *SubjectUpdate {
+	su.mutation.RemoveSimilarIDs(ids...)
+	return su
+}
+
+// RemoveSimilar removes "similar" edges to Subject entities.
+func (su *SubjectUpdate) RemoveSimilar(s ...*Subject) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.RemoveSimilarIDs(ids...)
+}
+
+// ClearDependencies clears all "dependencies" edges to the Subject entity.
+func (su *SubjectUpdate) ClearDependencies() *SubjectUpdate {
+	su.mutation.ClearDependencies()
+	return su
+}
+
+// RemoveDependencyIDs removes the "dependencies" edge to Subject entities by IDs.
+func (su *SubjectUpdate) RemoveDependencyIDs(ids ...uuid.UUID) *SubjectUpdate {
+	su.mutation.RemoveDependencyIDs(ids...)
+	return su
+}
+
+// RemoveDependencies removes "dependencies" edges to Subject entities.
+func (su *SubjectUpdate) RemoveDependencies(s ...*Subject) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.RemoveDependencyIDs(ids...)
+}
+
+// ClearDependents clears all "dependents" edges to the Subject entity.
+func (su *SubjectUpdate) ClearDependents() *SubjectUpdate {
+	su.mutation.ClearDependents()
+	return su
+}
+
+// RemoveDependentIDs removes the "dependents" edge to Subject entities by IDs.
+func (su *SubjectUpdate) RemoveDependentIDs(ids ...uuid.UUID) *SubjectUpdate {
+	su.mutation.RemoveDependentIDs(ids...)
+	return su
+}
+
+// RemoveDependents removes "dependents" edges to Subject entities.
+func (su *SubjectUpdate) RemoveDependents(s ...*Subject) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.RemoveDependentIDs(ids...)
+}
+
+// ClearDecks clears all "decks" edges to the Deck entity.
+func (su *SubjectUpdate) ClearDecks() *SubjectUpdate {
+	su.mutation.ClearDecks()
+	return su
+}
+
+// RemoveDeckIDs removes the "decks" edge to Deck entities by IDs.
+func (su *SubjectUpdate) RemoveDeckIDs(ids ...uuid.UUID) *SubjectUpdate {
+	su.mutation.RemoveDeckIDs(ids...)
+	return su
+}
+
+// RemoveDecks removes "decks" edges to Deck entities.
+func (su *SubjectUpdate) RemoveDecks(d ...*Deck) *SubjectUpdate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return su.RemoveDeckIDs(ids...)
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (su *SubjectUpdate) ClearOwner() *SubjectUpdate {
+	su.mutation.ClearOwner()
+	return su
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (su *SubjectUpdate) Save(ctx context.Context) (int, error) {
 	var (
 		err      error
 		affected int
 	)
+	su.defaults()
 	if len(su.hooks) == 0 {
 		if err = su.check(); err != nil {
 			return 0, err
@@ -149,17 +403,38 @@ func (su *SubjectUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (su *SubjectUpdate) defaults() {
+	if _, ok := su.mutation.UpdatedAt(); !ok {
+		v := subject.UpdateDefaultUpdatedAt()
+		su.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (su *SubjectUpdate) check() error {
-	if v, ok := su.mutation.Kind(); ok {
-		if err := subject.KindValidator(v); err != nil {
-			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Subject.kind": %w`, err)}
-		}
-	}
 	if v, ok := su.mutation.Level(); ok {
 		if err := subject.LevelValidator(v); err != nil {
 			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "Subject.level": %w`, err)}
 		}
+	}
+	if v, ok := su.mutation.Name(); ok {
+		if err := subject.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Subject.name": %w`, err)}
+		}
+	}
+	if v, ok := su.mutation.Value(); ok {
+		if err := subject.ValueValidator(v); err != nil {
+			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "Subject.value": %w`, err)}
+		}
+	}
+	if v, ok := su.mutation.Slug(); ok {
+		if err := subject.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Subject.slug": %w`, err)}
+		}
+	}
+	if _, ok := su.mutation.OwnerID(); su.mutation.OwnerCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Subject.owner"`)
 	}
 	return nil
 }
@@ -182,14 +457,55 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := su.mutation.UpdatedAt(); ok {
+		_spec.SetField(subject.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := su.mutation.Kind(); ok {
-		_spec.SetField(subject.FieldKind, field.TypeEnum, value)
+		_spec.SetField(subject.FieldKind, field.TypeString, value)
 	}
 	if value, ok := su.mutation.Level(); ok {
 		_spec.SetField(subject.FieldLevel, field.TypeInt32, value)
 	}
 	if value, ok := su.mutation.AddedLevel(); ok {
 		_spec.AddField(subject.FieldLevel, field.TypeInt32, value)
+	}
+	if value, ok := su.mutation.Name(); ok {
+		_spec.SetField(subject.FieldName, field.TypeString, value)
+	}
+	if value, ok := su.mutation.Value(); ok {
+		_spec.SetField(subject.FieldValue, field.TypeString, value)
+	}
+	if su.mutation.ValueCleared() {
+		_spec.ClearField(subject.FieldValue, field.TypeString)
+	}
+	if value, ok := su.mutation.ValueImage(); ok {
+		_spec.SetField(subject.FieldValueImage, field.TypeJSON, value)
+	}
+	if su.mutation.ValueImageCleared() {
+		_spec.ClearField(subject.FieldValueImage, field.TypeJSON)
+	}
+	if value, ok := su.mutation.Slug(); ok {
+		_spec.SetField(subject.FieldSlug, field.TypeString, value)
+	}
+	if value, ok := su.mutation.Priority(); ok {
+		_spec.SetField(subject.FieldPriority, field.TypeUint8, value)
+	}
+	if value, ok := su.mutation.AddedPriority(); ok {
+		_spec.AddField(subject.FieldPriority, field.TypeUint8, value)
+	}
+	if value, ok := su.mutation.Resources(); ok {
+		_spec.SetField(subject.FieldResources, field.TypeJSON, value)
+	}
+	if su.mutation.ResourcesCleared() {
+		_spec.ClearField(subject.FieldResources, field.TypeJSON)
+	}
+	if value, ok := su.mutation.StudyData(); ok {
+		_spec.SetField(subject.FieldStudyData, field.TypeJSON, value)
+	}
+	if value, ok := su.mutation.AppendedStudyData(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, subject.FieldStudyData, value)
+		})
 	}
 	if su.mutation.CardsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -245,6 +561,257 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.SimilarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.SimilarTable,
+			Columns: subject.SimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedSimilarIDs(); len(nodes) > 0 && !su.mutation.SimilarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.SimilarTable,
+			Columns: subject.SimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.SimilarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.SimilarTable,
+			Columns: subject.SimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.DependenciesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DependenciesTable,
+			Columns: subject.DependenciesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedDependenciesIDs(); len(nodes) > 0 && !su.mutation.DependenciesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DependenciesTable,
+			Columns: subject.DependenciesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.DependenciesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DependenciesTable,
+			Columns: subject.DependenciesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.DependentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.DependentsTable,
+			Columns: subject.DependentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedDependentsIDs(); len(nodes) > 0 && !su.mutation.DependentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.DependentsTable,
+			Columns: subject.DependentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.DependentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.DependentsTable,
+			Columns: subject.DependentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.DecksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DecksTable,
+			Columns: subject.DecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedDecksIDs(); len(nodes) > 0 && !su.mutation.DecksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DecksTable,
+			Columns: subject.DecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.DecksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DecksTable,
+			Columns: subject.DecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   subject.OwnerTable,
+			Columns: []string{subject.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: user.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   subject.OwnerTable,
+			Columns: []string{subject.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{subject.Label}
@@ -264,8 +831,14 @@ type SubjectUpdateOne struct {
 	mutation *SubjectMutation
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (suo *SubjectUpdateOne) SetUpdatedAt(t time.Time) *SubjectUpdateOne {
+	suo.mutation.SetUpdatedAt(t)
+	return suo
+}
+
 // SetKind sets the "kind" field.
-func (suo *SubjectUpdateOne) SetKind(s subject.Kind) *SubjectUpdateOne {
+func (suo *SubjectUpdateOne) SetKind(s string) *SubjectUpdateOne {
 	suo.mutation.SetKind(s)
 	return suo
 }
@@ -283,6 +856,87 @@ func (suo *SubjectUpdateOne) AddLevel(i int32) *SubjectUpdateOne {
 	return suo
 }
 
+// SetName sets the "name" field.
+func (suo *SubjectUpdateOne) SetName(s string) *SubjectUpdateOne {
+	suo.mutation.SetName(s)
+	return suo
+}
+
+// SetValue sets the "value" field.
+func (suo *SubjectUpdateOne) SetValue(s string) *SubjectUpdateOne {
+	suo.mutation.SetValue(s)
+	return suo
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (suo *SubjectUpdateOne) SetNillableValue(s *string) *SubjectUpdateOne {
+	if s != nil {
+		suo.SetValue(*s)
+	}
+	return suo
+}
+
+// ClearValue clears the value of the "value" field.
+func (suo *SubjectUpdateOne) ClearValue() *SubjectUpdateOne {
+	suo.mutation.ClearValue()
+	return suo
+}
+
+// SetValueImage sets the "value_image" field.
+func (suo *SubjectUpdateOne) SetValueImage(cc *cards.RemoteContent) *SubjectUpdateOne {
+	suo.mutation.SetValueImage(cc)
+	return suo
+}
+
+// ClearValueImage clears the value of the "value_image" field.
+func (suo *SubjectUpdateOne) ClearValueImage() *SubjectUpdateOne {
+	suo.mutation.ClearValueImage()
+	return suo
+}
+
+// SetSlug sets the "slug" field.
+func (suo *SubjectUpdateOne) SetSlug(s string) *SubjectUpdateOne {
+	suo.mutation.SetSlug(s)
+	return suo
+}
+
+// SetPriority sets the "priority" field.
+func (suo *SubjectUpdateOne) SetPriority(u uint8) *SubjectUpdateOne {
+	suo.mutation.ResetPriority()
+	suo.mutation.SetPriority(u)
+	return suo
+}
+
+// AddPriority adds u to the "priority" field.
+func (suo *SubjectUpdateOne) AddPriority(u int8) *SubjectUpdateOne {
+	suo.mutation.AddPriority(u)
+	return suo
+}
+
+// SetResources sets the "resources" field.
+func (suo *SubjectUpdateOne) SetResources(mc *map[string][]cards.RemoteContent) *SubjectUpdateOne {
+	suo.mutation.SetResources(mc)
+	return suo
+}
+
+// ClearResources clears the value of the "resources" field.
+func (suo *SubjectUpdateOne) ClearResources() *SubjectUpdateOne {
+	suo.mutation.ClearResources()
+	return suo
+}
+
+// SetStudyData sets the "study_data" field.
+func (suo *SubjectUpdateOne) SetStudyData(cd []cards.StudyData) *SubjectUpdateOne {
+	suo.mutation.SetStudyData(cd)
+	return suo
+}
+
+// AppendStudyData appends cd to the "study_data" field.
+func (suo *SubjectUpdateOne) AppendStudyData(cd []cards.StudyData) *SubjectUpdateOne {
+	suo.mutation.AppendStudyData(cd)
+	return suo
+}
+
 // AddCardIDs adds the "cards" edge to the Card entity by IDs.
 func (suo *SubjectUpdateOne) AddCardIDs(ids ...uuid.UUID) *SubjectUpdateOne {
 	suo.mutation.AddCardIDs(ids...)
@@ -296,6 +950,77 @@ func (suo *SubjectUpdateOne) AddCards(c ...*Card) *SubjectUpdateOne {
 		ids[i] = c[i].ID
 	}
 	return suo.AddCardIDs(ids...)
+}
+
+// AddSimilarIDs adds the "similar" edge to the Subject entity by IDs.
+func (suo *SubjectUpdateOne) AddSimilarIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.AddSimilarIDs(ids...)
+	return suo
+}
+
+// AddSimilar adds the "similar" edges to the Subject entity.
+func (suo *SubjectUpdateOne) AddSimilar(s ...*Subject) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.AddSimilarIDs(ids...)
+}
+
+// AddDependencyIDs adds the "dependencies" edge to the Subject entity by IDs.
+func (suo *SubjectUpdateOne) AddDependencyIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.AddDependencyIDs(ids...)
+	return suo
+}
+
+// AddDependencies adds the "dependencies" edges to the Subject entity.
+func (suo *SubjectUpdateOne) AddDependencies(s ...*Subject) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.AddDependencyIDs(ids...)
+}
+
+// AddDependentIDs adds the "dependents" edge to the Subject entity by IDs.
+func (suo *SubjectUpdateOne) AddDependentIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.AddDependentIDs(ids...)
+	return suo
+}
+
+// AddDependents adds the "dependents" edges to the Subject entity.
+func (suo *SubjectUpdateOne) AddDependents(s ...*Subject) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.AddDependentIDs(ids...)
+}
+
+// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
+func (suo *SubjectUpdateOne) AddDeckIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.AddDeckIDs(ids...)
+	return suo
+}
+
+// AddDecks adds the "decks" edges to the Deck entity.
+func (suo *SubjectUpdateOne) AddDecks(d ...*Deck) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return suo.AddDeckIDs(ids...)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (suo *SubjectUpdateOne) SetOwnerID(id string) *SubjectUpdateOne {
+	suo.mutation.SetOwnerID(id)
+	return suo
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (suo *SubjectUpdateOne) SetOwner(u *User) *SubjectUpdateOne {
+	return suo.SetOwnerID(u.ID)
 }
 
 // Mutation returns the SubjectMutation object of the builder.
@@ -324,6 +1049,96 @@ func (suo *SubjectUpdateOne) RemoveCards(c ...*Card) *SubjectUpdateOne {
 	return suo.RemoveCardIDs(ids...)
 }
 
+// ClearSimilar clears all "similar" edges to the Subject entity.
+func (suo *SubjectUpdateOne) ClearSimilar() *SubjectUpdateOne {
+	suo.mutation.ClearSimilar()
+	return suo
+}
+
+// RemoveSimilarIDs removes the "similar" edge to Subject entities by IDs.
+func (suo *SubjectUpdateOne) RemoveSimilarIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.RemoveSimilarIDs(ids...)
+	return suo
+}
+
+// RemoveSimilar removes "similar" edges to Subject entities.
+func (suo *SubjectUpdateOne) RemoveSimilar(s ...*Subject) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.RemoveSimilarIDs(ids...)
+}
+
+// ClearDependencies clears all "dependencies" edges to the Subject entity.
+func (suo *SubjectUpdateOne) ClearDependencies() *SubjectUpdateOne {
+	suo.mutation.ClearDependencies()
+	return suo
+}
+
+// RemoveDependencyIDs removes the "dependencies" edge to Subject entities by IDs.
+func (suo *SubjectUpdateOne) RemoveDependencyIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.RemoveDependencyIDs(ids...)
+	return suo
+}
+
+// RemoveDependencies removes "dependencies" edges to Subject entities.
+func (suo *SubjectUpdateOne) RemoveDependencies(s ...*Subject) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.RemoveDependencyIDs(ids...)
+}
+
+// ClearDependents clears all "dependents" edges to the Subject entity.
+func (suo *SubjectUpdateOne) ClearDependents() *SubjectUpdateOne {
+	suo.mutation.ClearDependents()
+	return suo
+}
+
+// RemoveDependentIDs removes the "dependents" edge to Subject entities by IDs.
+func (suo *SubjectUpdateOne) RemoveDependentIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.RemoveDependentIDs(ids...)
+	return suo
+}
+
+// RemoveDependents removes "dependents" edges to Subject entities.
+func (suo *SubjectUpdateOne) RemoveDependents(s ...*Subject) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.RemoveDependentIDs(ids...)
+}
+
+// ClearDecks clears all "decks" edges to the Deck entity.
+func (suo *SubjectUpdateOne) ClearDecks() *SubjectUpdateOne {
+	suo.mutation.ClearDecks()
+	return suo
+}
+
+// RemoveDeckIDs removes the "decks" edge to Deck entities by IDs.
+func (suo *SubjectUpdateOne) RemoveDeckIDs(ids ...uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.RemoveDeckIDs(ids...)
+	return suo
+}
+
+// RemoveDecks removes "decks" edges to Deck entities.
+func (suo *SubjectUpdateOne) RemoveDecks(d ...*Deck) *SubjectUpdateOne {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return suo.RemoveDeckIDs(ids...)
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (suo *SubjectUpdateOne) ClearOwner() *SubjectUpdateOne {
+	suo.mutation.ClearOwner()
+	return suo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (suo *SubjectUpdateOne) Select(field string, fields ...string) *SubjectUpdateOne {
@@ -337,6 +1152,7 @@ func (suo *SubjectUpdateOne) Save(ctx context.Context) (*Subject, error) {
 		err  error
 		node *Subject
 	)
+	suo.defaults()
 	if len(suo.hooks) == 0 {
 		if err = suo.check(); err != nil {
 			return nil, err
@@ -397,17 +1213,38 @@ func (suo *SubjectUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (suo *SubjectUpdateOne) defaults() {
+	if _, ok := suo.mutation.UpdatedAt(); !ok {
+		v := subject.UpdateDefaultUpdatedAt()
+		suo.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (suo *SubjectUpdateOne) check() error {
-	if v, ok := suo.mutation.Kind(); ok {
-		if err := subject.KindValidator(v); err != nil {
-			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Subject.kind": %w`, err)}
-		}
-	}
 	if v, ok := suo.mutation.Level(); ok {
 		if err := subject.LevelValidator(v); err != nil {
 			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "Subject.level": %w`, err)}
 		}
+	}
+	if v, ok := suo.mutation.Name(); ok {
+		if err := subject.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Subject.name": %w`, err)}
+		}
+	}
+	if v, ok := suo.mutation.Value(); ok {
+		if err := subject.ValueValidator(v); err != nil {
+			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "Subject.value": %w`, err)}
+		}
+	}
+	if v, ok := suo.mutation.Slug(); ok {
+		if err := subject.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Subject.slug": %w`, err)}
+		}
+	}
+	if _, ok := suo.mutation.OwnerID(); suo.mutation.OwnerCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Subject.owner"`)
 	}
 	return nil
 }
@@ -447,14 +1284,55 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 			}
 		}
 	}
+	if value, ok := suo.mutation.UpdatedAt(); ok {
+		_spec.SetField(subject.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := suo.mutation.Kind(); ok {
-		_spec.SetField(subject.FieldKind, field.TypeEnum, value)
+		_spec.SetField(subject.FieldKind, field.TypeString, value)
 	}
 	if value, ok := suo.mutation.Level(); ok {
 		_spec.SetField(subject.FieldLevel, field.TypeInt32, value)
 	}
 	if value, ok := suo.mutation.AddedLevel(); ok {
 		_spec.AddField(subject.FieldLevel, field.TypeInt32, value)
+	}
+	if value, ok := suo.mutation.Name(); ok {
+		_spec.SetField(subject.FieldName, field.TypeString, value)
+	}
+	if value, ok := suo.mutation.Value(); ok {
+		_spec.SetField(subject.FieldValue, field.TypeString, value)
+	}
+	if suo.mutation.ValueCleared() {
+		_spec.ClearField(subject.FieldValue, field.TypeString)
+	}
+	if value, ok := suo.mutation.ValueImage(); ok {
+		_spec.SetField(subject.FieldValueImage, field.TypeJSON, value)
+	}
+	if suo.mutation.ValueImageCleared() {
+		_spec.ClearField(subject.FieldValueImage, field.TypeJSON)
+	}
+	if value, ok := suo.mutation.Slug(); ok {
+		_spec.SetField(subject.FieldSlug, field.TypeString, value)
+	}
+	if value, ok := suo.mutation.Priority(); ok {
+		_spec.SetField(subject.FieldPriority, field.TypeUint8, value)
+	}
+	if value, ok := suo.mutation.AddedPriority(); ok {
+		_spec.AddField(subject.FieldPriority, field.TypeUint8, value)
+	}
+	if value, ok := suo.mutation.Resources(); ok {
+		_spec.SetField(subject.FieldResources, field.TypeJSON, value)
+	}
+	if suo.mutation.ResourcesCleared() {
+		_spec.ClearField(subject.FieldResources, field.TypeJSON)
+	}
+	if value, ok := suo.mutation.StudyData(); ok {
+		_spec.SetField(subject.FieldStudyData, field.TypeJSON, value)
+	}
+	if value, ok := suo.mutation.AppendedStudyData(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, subject.FieldStudyData, value)
+		})
 	}
 	if suo.mutation.CardsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -502,6 +1380,257 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: card.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.SimilarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.SimilarTable,
+			Columns: subject.SimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedSimilarIDs(); len(nodes) > 0 && !suo.mutation.SimilarCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.SimilarTable,
+			Columns: subject.SimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.SimilarIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.SimilarTable,
+			Columns: subject.SimilarPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.DependenciesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DependenciesTable,
+			Columns: subject.DependenciesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedDependenciesIDs(); len(nodes) > 0 && !suo.mutation.DependenciesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DependenciesTable,
+			Columns: subject.DependenciesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.DependenciesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DependenciesTable,
+			Columns: subject.DependenciesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.DependentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.DependentsTable,
+			Columns: subject.DependentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedDependentsIDs(); len(nodes) > 0 && !suo.mutation.DependentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.DependentsTable,
+			Columns: subject.DependentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.DependentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   subject.DependentsTable,
+			Columns: subject.DependentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.DecksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DecksTable,
+			Columns: subject.DecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedDecksIDs(); len(nodes) > 0 && !suo.mutation.DecksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DecksTable,
+			Columns: subject.DecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.DecksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   subject.DecksTable,
+			Columns: subject.DecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   subject.OwnerTable,
+			Columns: []string{subject.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: user.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   subject.OwnerTable,
+			Columns: []string{subject.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: user.FieldID,
 				},
 			},
 		}

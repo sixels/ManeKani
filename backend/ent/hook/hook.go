@@ -9,6 +9,19 @@ import (
 	"sixels.io/manekani/ent"
 )
 
+// The ApiTokenFunc type is an adapter to allow the use of ordinary
+// function as ApiToken mutator.
+type ApiTokenFunc func(context.Context, *ent.ApiTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ApiTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ApiTokenMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ApiTokenMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The CardFunc type is an adapter to allow the use of ordinary
 // function as Card mutator.
 type CardFunc func(context.Context, *ent.CardMutation) (ent.Value, error)
@@ -22,28 +35,28 @@ func (f CardFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return f(ctx, mv)
 }
 
-// The KanjiFunc type is an adapter to allow the use of ordinary
-// function as Kanji mutator.
-type KanjiFunc func(context.Context, *ent.KanjiMutation) (ent.Value, error)
+// The DeckFunc type is an adapter to allow the use of ordinary
+// function as Deck mutator.
+type DeckFunc func(context.Context, *ent.DeckMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f KanjiFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.KanjiMutation)
+func (f DeckFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.DeckMutation)
 	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.KanjiMutation", m)
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DeckMutation", m)
 	}
 	return f(ctx, mv)
 }
 
-// The RadicalFunc type is an adapter to allow the use of ordinary
-// function as Radical mutator.
-type RadicalFunc func(context.Context, *ent.RadicalMutation) (ent.Value, error)
+// The DeckProgressFunc type is an adapter to allow the use of ordinary
+// function as DeckProgress mutator.
+type DeckProgressFunc func(context.Context, *ent.DeckProgressMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f RadicalFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.RadicalMutation)
+func (f DeckProgressFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.DeckProgressMutation)
 	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RadicalMutation", m)
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DeckProgressMutation", m)
 	}
 	return f(ctx, mv)
 }
@@ -83,19 +96,6 @@ func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	mv, ok := m.(*ent.UserMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
-	}
-	return f(ctx, mv)
-}
-
-// The VocabularyFunc type is an adapter to allow the use of ordinary
-// function as Vocabulary mutator.
-type VocabularyFunc func(context.Context, *ent.VocabularyMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f VocabularyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.VocabularyMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.VocabularyMutation", m)
 	}
 	return f(ctx, mv)
 }

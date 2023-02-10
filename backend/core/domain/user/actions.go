@@ -1,13 +1,16 @@
 package user
 
-import "sixels.io/manekani/ent/schema"
+import (
+	"github.com/google/uuid"
+	"sixels.io/manekani/ent/schema"
+)
 
 const (
-	CREATE_LEVEL_CARDS schema.Action = iota
+	SUBSCRIBE_TO_DECK schema.Action = iota
 )
 
 type (
 	CreateLevelCardsMeta struct {
-		Level int32
+		Deck uuid.UUID
 	}
 )

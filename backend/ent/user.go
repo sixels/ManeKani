@@ -23,8 +23,6 @@ type User struct {
 	PendingActions []schema.PendingAction `json:"pending_actions,omitempty"`
 	// Email holds the value of the "email" field.
 	Email string `json:"email,omitempty"`
-	// Level holds the value of the "level" field.
-	Level int32 `json:"level,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges UserEdges `json:"edges"`
@@ -32,20 +30,64 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
-	// Cards holds the value of the cards edge.
-	Cards []*Card `json:"cards,omitempty"`
+	// Decks holds the value of the decks edge.
+	Decks []*Deck `json:"decks,omitempty"`
+	// Subjects holds the value of the subjects edge.
+	Subjects []*Subject `json:"subjects,omitempty"`
+	// SubscribedDecks holds the value of the subscribed_decks edge.
+	SubscribedDecks []*Deck `json:"subscribed_decks,omitempty"`
+	// APITokens holds the value of the api_tokens edge.
+	APITokens []*ApiToken `json:"api_tokens,omitempty"`
+	// DecksProgress holds the value of the decks_progress edge.
+	DecksProgress []*DeckProgress `json:"decks_progress,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [5]bool
 }
 
-// CardsOrErr returns the Cards value or an error if the edge
+// DecksOrErr returns the Decks value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) CardsOrErr() ([]*Card, error) {
+func (e UserEdges) DecksOrErr() ([]*Deck, error) {
 	if e.loadedTypes[0] {
-		return e.Cards, nil
+		return e.Decks, nil
 	}
-	return nil, &NotLoadedError{edge: "cards"}
+	return nil, &NotLoadedError{edge: "decks"}
+}
+
+// SubjectsOrErr returns the Subjects value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) SubjectsOrErr() ([]*Subject, error) {
+	if e.loadedTypes[1] {
+		return e.Subjects, nil
+	}
+	return nil, &NotLoadedError{edge: "subjects"}
+}
+
+// SubscribedDecksOrErr returns the SubscribedDecks value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) SubscribedDecksOrErr() ([]*Deck, error) {
+	if e.loadedTypes[2] {
+		return e.SubscribedDecks, nil
+	}
+	return nil, &NotLoadedError{edge: "subscribed_decks"}
+}
+
+// APITokensOrErr returns the APITokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) APITokensOrErr() ([]*ApiToken, error) {
+	if e.loadedTypes[3] {
+		return e.APITokens, nil
+	}
+	return nil, &NotLoadedError{edge: "api_tokens"}
+}
+
+// DecksProgressOrErr returns the DecksProgress value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) DecksProgressOrErr() ([]*DeckProgress, error) {
+	if e.loadedTypes[4] {
+		return e.DecksProgress, nil
+	}
+	return nil, &NotLoadedError{edge: "decks_progress"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -55,8 +97,6 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldPendingActions:
 			values[i] = new([]byte)
-		case user.FieldLevel:
-			values[i] = new(sql.NullInt64)
 		case user.FieldID, user.FieldUsername, user.FieldEmail:
 			values[i] = new(sql.NullString)
 		default:
@@ -100,20 +140,34 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.Email = value.String
 			}
-		case user.FieldLevel:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field level", values[i])
-			} else if value.Valid {
-				u.Level = int32(value.Int64)
-			}
 		}
 	}
 	return nil
 }
 
-// QueryCards queries the "cards" edge of the User entity.
-func (u *User) QueryCards() *CardQuery {
-	return (&UserClient{config: u.config}).QueryCards(u)
+// QueryDecks queries the "decks" edge of the User entity.
+func (u *User) QueryDecks() *DeckQuery {
+	return (&UserClient{config: u.config}).QueryDecks(u)
+}
+
+// QuerySubjects queries the "subjects" edge of the User entity.
+func (u *User) QuerySubjects() *SubjectQuery {
+	return (&UserClient{config: u.config}).QuerySubjects(u)
+}
+
+// QuerySubscribedDecks queries the "subscribed_decks" edge of the User entity.
+func (u *User) QuerySubscribedDecks() *DeckQuery {
+	return (&UserClient{config: u.config}).QuerySubscribedDecks(u)
+}
+
+// QueryAPITokens queries the "api_tokens" edge of the User entity.
+func (u *User) QueryAPITokens() *ApiTokenQuery {
+	return (&UserClient{config: u.config}).QueryAPITokens(u)
+}
+
+// QueryDecksProgress queries the "decks_progress" edge of the User entity.
+func (u *User) QueryDecksProgress() *DeckProgressQuery {
+	return (&UserClient{config: u.config}).QueryDecksProgress(u)
 }
 
 // Update returns a builder for updating this User.
@@ -147,9 +201,6 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("email=")
 	builder.WriteString(u.Email)
-	builder.WriteString(", ")
-	builder.WriteString("level=")
-	builder.WriteString(fmt.Sprintf("%v", u.Level))
 	builder.WriteByte(')')
 	return builder.String()
 }

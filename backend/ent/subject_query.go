@@ -13,20 +13,28 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/deck"
 	"sixels.io/manekani/ent/predicate"
 	"sixels.io/manekani/ent/subject"
+	"sixels.io/manekani/ent/user"
 )
 
 // SubjectQuery is the builder for querying Subject entities.
 type SubjectQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.Subject
-	withCards  *CardQuery
+	limit            *int
+	offset           *int
+	unique           *bool
+	order            []OrderFunc
+	fields           []string
+	predicates       []predicate.Subject
+	withCards        *CardQuery
+	withSimilar      *SubjectQuery
+	withDependencies *SubjectQuery
+	withDependents   *SubjectQuery
+	withDecks        *DeckQuery
+	withOwner        *UserQuery
+	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,6 +86,116 @@ func (sq *SubjectQuery) QueryCards() *CardQuery {
 			sqlgraph.From(subject.Table, subject.FieldID, selector),
 			sqlgraph.To(card.Table, card.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, subject.CardsTable, subject.CardsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySimilar chains the current query on the "similar" edge.
+func (sq *SubjectQuery) QuerySimilar() *SubjectQuery {
+	query := &SubjectQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, selector),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, subject.SimilarTable, subject.SimilarPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDependencies chains the current query on the "dependencies" edge.
+func (sq *SubjectQuery) QueryDependencies() *SubjectQuery {
+	query := &SubjectQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, selector),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, subject.DependenciesTable, subject.DependenciesPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDependents chains the current query on the "dependents" edge.
+func (sq *SubjectQuery) QueryDependents() *SubjectQuery {
+	query := &SubjectQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, selector),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, subject.DependentsTable, subject.DependentsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDecks chains the current query on the "decks" edge.
+func (sq *SubjectQuery) QueryDecks() *DeckQuery {
+	query := &DeckQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, selector),
+			sqlgraph.To(deck.Table, deck.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, subject.DecksTable, subject.DecksPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOwner chains the current query on the "owner" edge.
+func (sq *SubjectQuery) QueryOwner() *UserQuery {
+	query := &UserQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, subject.OwnerTable, subject.OwnerColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -261,12 +379,17 @@ func (sq *SubjectQuery) Clone() *SubjectQuery {
 		return nil
 	}
 	return &SubjectQuery{
-		config:     sq.config,
-		limit:      sq.limit,
-		offset:     sq.offset,
-		order:      append([]OrderFunc{}, sq.order...),
-		predicates: append([]predicate.Subject{}, sq.predicates...),
-		withCards:  sq.withCards.Clone(),
+		config:           sq.config,
+		limit:            sq.limit,
+		offset:           sq.offset,
+		order:            append([]OrderFunc{}, sq.order...),
+		predicates:       append([]predicate.Subject{}, sq.predicates...),
+		withCards:        sq.withCards.Clone(),
+		withSimilar:      sq.withSimilar.Clone(),
+		withDependencies: sq.withDependencies.Clone(),
+		withDependents:   sq.withDependents.Clone(),
+		withDecks:        sq.withDecks.Clone(),
+		withOwner:        sq.withOwner.Clone(),
 		// clone intermediate query.
 		sql:    sq.sql.Clone(),
 		path:   sq.path,
@@ -285,18 +408,73 @@ func (sq *SubjectQuery) WithCards(opts ...func(*CardQuery)) *SubjectQuery {
 	return sq
 }
 
+// WithSimilar tells the query-builder to eager-load the nodes that are connected to
+// the "similar" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubjectQuery) WithSimilar(opts ...func(*SubjectQuery)) *SubjectQuery {
+	query := &SubjectQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withSimilar = query
+	return sq
+}
+
+// WithDependencies tells the query-builder to eager-load the nodes that are connected to
+// the "dependencies" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubjectQuery) WithDependencies(opts ...func(*SubjectQuery)) *SubjectQuery {
+	query := &SubjectQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withDependencies = query
+	return sq
+}
+
+// WithDependents tells the query-builder to eager-load the nodes that are connected to
+// the "dependents" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubjectQuery) WithDependents(opts ...func(*SubjectQuery)) *SubjectQuery {
+	query := &SubjectQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withDependents = query
+	return sq
+}
+
+// WithDecks tells the query-builder to eager-load the nodes that are connected to
+// the "decks" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubjectQuery) WithDecks(opts ...func(*DeckQuery)) *SubjectQuery {
+	query := &DeckQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withDecks = query
+	return sq
+}
+
+// WithOwner tells the query-builder to eager-load the nodes that are connected to
+// the "owner" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubjectQuery) WithOwner(opts ...func(*UserQuery)) *SubjectQuery {
+	query := &UserQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withOwner = query
+	return sq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
 // Example:
 //
 //	var v []struct {
-//		Kind subject.Kind `json:"kind,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Subject.Query().
-//		GroupBy(subject.FieldKind).
+//		GroupBy(subject.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (sq *SubjectQuery) GroupBy(field string, fields ...string) *SubjectGroupBy {
@@ -319,11 +497,11 @@ func (sq *SubjectQuery) GroupBy(field string, fields ...string) *SubjectGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Kind subject.Kind `json:"kind,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Subject.Query().
-//		Select(subject.FieldKind).
+//		Select(subject.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (sq *SubjectQuery) Select(fields ...string) *SubjectSelect {
 	sq.fields = append(sq.fields, fields...)
@@ -357,11 +535,23 @@ func (sq *SubjectQuery) prepareQuery(ctx context.Context) error {
 func (sq *SubjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Subject, error) {
 	var (
 		nodes       = []*Subject{}
+		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [6]bool{
 			sq.withCards != nil,
+			sq.withSimilar != nil,
+			sq.withDependencies != nil,
+			sq.withDependents != nil,
+			sq.withDecks != nil,
+			sq.withOwner != nil,
 		}
 	)
+	if sq.withOwner != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, subject.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Subject).scanValues(nil, columns)
 	}
@@ -384,6 +574,40 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Subj
 		if err := sq.loadCards(ctx, query, nodes,
 			func(n *Subject) { n.Edges.Cards = []*Card{} },
 			func(n *Subject, e *Card) { n.Edges.Cards = append(n.Edges.Cards, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withSimilar; query != nil {
+		if err := sq.loadSimilar(ctx, query, nodes,
+			func(n *Subject) { n.Edges.Similar = []*Subject{} },
+			func(n *Subject, e *Subject) { n.Edges.Similar = append(n.Edges.Similar, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withDependencies; query != nil {
+		if err := sq.loadDependencies(ctx, query, nodes,
+			func(n *Subject) { n.Edges.Dependencies = []*Subject{} },
+			func(n *Subject, e *Subject) { n.Edges.Dependencies = append(n.Edges.Dependencies, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withDependents; query != nil {
+		if err := sq.loadDependents(ctx, query, nodes,
+			func(n *Subject) { n.Edges.Dependents = []*Subject{} },
+			func(n *Subject, e *Subject) { n.Edges.Dependents = append(n.Edges.Dependents, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withDecks; query != nil {
+		if err := sq.loadDecks(ctx, query, nodes,
+			func(n *Subject) { n.Edges.Decks = []*Deck{} },
+			func(n *Subject, e *Deck) { n.Edges.Decks = append(n.Edges.Decks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withOwner; query != nil {
+		if err := sq.loadOwner(ctx, query, nodes, nil,
+			func(n *Subject, e *User) { n.Edges.Owner = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -418,6 +642,267 @@ func (sq *SubjectQuery) loadCards(ctx context.Context, query *CardQuery, nodes [
 			return fmt.Errorf(`unexpected foreign-key "subject_cards" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (sq *SubjectQuery) loadSimilar(ctx context.Context, query *SubjectQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *Subject)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Subject)
+	nids := make(map[uuid.UUID]map[*Subject]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(subject.SimilarTable)
+		s.Join(joinT).On(s.C(subject.FieldID), joinT.C(subject.SimilarPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(subject.SimilarPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(subject.SimilarPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(uuid.UUID)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := *values[0].(*uuid.UUID)
+			inValue := *values[1].(*uuid.UUID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Subject]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "similar" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (sq *SubjectQuery) loadDependencies(ctx context.Context, query *SubjectQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *Subject)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Subject)
+	nids := make(map[uuid.UUID]map[*Subject]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(subject.DependenciesTable)
+		s.Join(joinT).On(s.C(subject.FieldID), joinT.C(subject.DependenciesPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(subject.DependenciesPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(subject.DependenciesPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(uuid.UUID)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := *values[0].(*uuid.UUID)
+			inValue := *values[1].(*uuid.UUID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Subject]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "dependencies" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (sq *SubjectQuery) loadDependents(ctx context.Context, query *SubjectQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *Subject)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Subject)
+	nids := make(map[uuid.UUID]map[*Subject]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(subject.DependentsTable)
+		s.Join(joinT).On(s.C(subject.FieldID), joinT.C(subject.DependentsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(subject.DependentsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(subject.DependentsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(uuid.UUID)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := *values[0].(*uuid.UUID)
+			inValue := *values[1].(*uuid.UUID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Subject]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "dependents" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (sq *SubjectQuery) loadDecks(ctx context.Context, query *DeckQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *Deck)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Subject)
+	nids := make(map[uuid.UUID]map[*Subject]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(subject.DecksTable)
+		s.Join(joinT).On(s.C(deck.FieldID), joinT.C(subject.DecksPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(subject.DecksPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(subject.DecksPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(uuid.UUID)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := *values[0].(*uuid.UUID)
+			inValue := *values[1].(*uuid.UUID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Subject]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "decks" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (sq *SubjectQuery) loadOwner(ctx context.Context, query *UserQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *User)) error {
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*Subject)
+	for i := range nodes {
+		if nodes[i].user_subjects == nil {
+			continue
+		}
+		fk := *nodes[i].user_subjects
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_subjects" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }

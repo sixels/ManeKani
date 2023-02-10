@@ -6,12 +6,13 @@ require (
 	entgo.io/ent v0.11.4
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.2
-	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/golang-jwt/jwt/v4 v4.1.0
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgtype v1.12.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/joho/godotenv v1.4.0
 	github.com/minio/minio-go/v7 v7.0.45
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/stretchr/testify v1.8.1
 	github.com/supertokens/supertokens-golang v0.9.14
 	github.com/swaggo/files v0.0.0-20220728132757-551d4a08d97a
@@ -40,7 +41,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
-	github.com/golang-jwt/jwt/v4 v4.1.0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.0 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect

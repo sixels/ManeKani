@@ -1,25 +1,140 @@
 package cards
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"sixels.io/manekani/core/domain/cards/filters"
+)
 
 type (
 	Subject struct {
-		Id uuid.UUID `json:"id"`
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
 
 		Kind  string `json:"kind"`
 		Level int32  `json:"level"`
 
-		RadicalData    *PartialRadicalResponse    `json:"radical,omitempty"`
-		KanjiData      *PartialKanjiResponse      `json:"kanji,omitempty"`
-		VocabularyData *PartialVocabularyResponse `json:"vocabulary,omitempty"`
+		// e.g. "ground", "一", nil, "一", 2
+		Name       string         `json:"name"`
+		Value      *string        `json:"value"`
+		ValueImage *RemoteContent `json:"value_image"`
+		Slug       string         `json:"slug"`
+		Priority   uint8          `json:"priority"`
+
+		Resources *map[string][]RemoteContent `json:"resources"`
+		StudyData []StudyData                 `json:"study_data"`
+
+		Dependencies []uuid.UUID `json:"dependencies"`
+		Dependents   []uuid.UUID `json:"dependents"`
+		Similars     []uuid.UUID `json:"similars"`
+		Decks        []uuid.UUID `json:"decks"`
+
+		Owner string `json:"Owner"`
 	}
-	QueryAllSubjectsRequest struct {
-		FilterLevel
-	}
-	PartialSubjectResponse struct {
-		Id uuid.UUID `json:"id"`
+
+	PartialSubject struct {
+		ID uuid.UUID `json:"id"`
 
 		Kind  string `json:"kind"`
 		Level int32  `json:"level"`
+
+		Name       string         `json:"name"`
+		Value      *string        `json:"value"`
+		ValueImage *RemoteContent `json:"value_image"`
+		Slug       string         `json:"slug"`
+		Priority   uint8          `json:"priority"`
+
+		StudyData []StudyData `json:"study_data"`
+
+		Owner string `json:"Owner"`
+	}
+
+	CreateSubjectRequest struct {
+		Kind  string `json:"kind,omitempty" form:"kind"`
+		Level int32  `json:"level,omitempty" form:"level" binding:"required"`
+
+		Name       string         `json:"name" form:"name" binding:"required"`
+		Value      *string        `json:"value,omitempty" form:"value" binding:"-"`
+		ValueImage *RemoteContent `json:"value_image,omitempty" form:"value_image" binding:"-"`
+		Slug       string         `json:"slug" form:"slug" binding:"required"`
+		Priority   uint8          `json:"priority" form:"priority"`
+
+		StudyData []StudyData                 `json:"study_data,omitempty" form:"study_data" binding:"-"`
+		Resources *map[string][]RemoteContent `json:"resources,omitempty" form:"resources" binding:"-"`
+
+		Dependencies []uuid.UUID `json:"dependencies,omitempty" form:"dependencies"`
+		Dependents   []uuid.UUID `json:"dependents,omitempty" form:"dependents"`
+		Similars     []uuid.UUID `json:"similars,omitempty" form:"similars"`
+
+		Deck uuid.UUID `json:"deck" form:"deck"`
+	}
+
+	UpdateSubjectRequest struct {
+		Kind  *string `json:"kind,omitempty" form:"kind"`
+		Level *int32  `json:"level,omitempty" form:"level"`
+
+		Name       *string        `json:"name,omitempty" form:"name"`
+		Value      *string        `json:"value,omitempty" form:"value"`
+		ValueImage *RemoteContent `json:"value_image,omitempty" form:"value_image"`
+		Slug       *string        `json:"slug,omitempty" form:"slug"`
+		Priority   *uint8         `json:"priority,omitempty" form:"priority"`
+
+		StudyData *[]StudyData                `json:"study_data,omitempty" form:"study_data"`
+		Resources *map[string][]RemoteContent `json:"resources,omitempty" form:"resources"`
+
+		Dependencies *[]uuid.UUID `json:"dependencies,omitempty" form:"dependencies"`
+		Dependents   *[]uuid.UUID `json:"dependents,omitempty" form:"dependents"`
+		Similars     *[]uuid.UUID `json:"similars,omitempty" form:"similars"`
+	}
+
+	QueryManySubjectsRequest struct {
+		filters.FilterPagination
+		filters.FilterIDs
+		filters.FilterKinds
+		filters.FilterLevels
+		filters.FilterSlugs
+		filters.FilterDecks
+		filters.FilterOwners
+	}
+)
+
+type (
+	RemoteContent struct {
+		URL         string          `json:"url"`
+		ContentType string          `json:"content_type"`
+		Metadata    *map[string]any `json:"metadata"`
+	}
+	ContentMeta struct {
+		Attachment *int            `json:"attachment,omitempty"`
+		Group      *string         `json:"group,omitempty"`
+		Metadata   *map[string]any `json:"metadata,omitempty"`
+	}
+
+	StudyData struct {
+		Kind     string      `json:"kind"`
+		Items    []StudyItem `json:"items"`
+		Mnemonic string      `json:"mnemonic,omitempty"`
+	}
+
+	StudyItem struct {
+		Value         string  `json:"value"`
+		IsPrimary     bool    `json:"is_primary"`
+		IsValidAnswer bool    `json:"is_valid_answer"`
+		IsHidden      bool    `json:"is_hidden"`
+		Category      *string `json:"category"`
+	}
+)
+
+type (
+	VocabularySentence struct {
+		Sentence string `json:"sentence"`
+		Meaning  string `json:"meaning"`
+	}
+
+	VocabularyPattern struct {
+		Name      string               `json:"name"`
+		Sentences []VocabularySentence `json:"sentences"`
 	}
 )

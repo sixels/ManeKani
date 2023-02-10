@@ -35,14 +35,6 @@ func (ru *ReviewUpdate) SetCardID(id uuid.UUID) *ReviewUpdate {
 	return ru
 }
 
-// SetNillableCardID sets the "card" edge to the Card entity by ID if the given value is not nil.
-func (ru *ReviewUpdate) SetNillableCardID(id *uuid.UUID) *ReviewUpdate {
-	if id != nil {
-		ru = ru.SetCardID(*id)
-	}
-	return ru
-}
-
 // SetCard sets the "card" edge to the Card entity.
 func (ru *ReviewUpdate) SetCard(c *Card) *ReviewUpdate {
 	return ru.SetCardID(c.ID)
@@ -66,12 +58,18 @@ func (ru *ReviewUpdate) Save(ctx context.Context) (int, error) {
 		affected int
 	)
 	if len(ru.hooks) == 0 {
+		if err = ru.check(); err != nil {
+			return 0, err
+		}
 		affected, err = ru.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*ReviewMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = ru.check(); err != nil {
+				return 0, err
 			}
 			ru.mutation = mutation
 			affected, err = ru.sqlSave(ctx)
@@ -111,6 +109,14 @@ func (ru *ReviewUpdate) ExecX(ctx context.Context) {
 	if err := ru.Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (ru *ReviewUpdate) check() error {
+	if _, ok := ru.mutation.CardID(); ru.mutation.CardCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Review.card"`)
+	}
+	return nil
 }
 
 func (ru *ReviewUpdate) sqlSave(ctx context.Context) (n int, err error) {
@@ -191,14 +197,6 @@ func (ruo *ReviewUpdateOne) SetCardID(id uuid.UUID) *ReviewUpdateOne {
 	return ruo
 }
 
-// SetNillableCardID sets the "card" edge to the Card entity by ID if the given value is not nil.
-func (ruo *ReviewUpdateOne) SetNillableCardID(id *uuid.UUID) *ReviewUpdateOne {
-	if id != nil {
-		ruo = ruo.SetCardID(*id)
-	}
-	return ruo
-}
-
 // SetCard sets the "card" edge to the Card entity.
 func (ruo *ReviewUpdateOne) SetCard(c *Card) *ReviewUpdateOne {
 	return ruo.SetCardID(c.ID)
@@ -229,12 +227,18 @@ func (ruo *ReviewUpdateOne) Save(ctx context.Context) (*Review, error) {
 		node *Review
 	)
 	if len(ruo.hooks) == 0 {
+		if err = ruo.check(); err != nil {
+			return nil, err
+		}
 		node, err = ruo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*ReviewMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = ruo.check(); err != nil {
+				return nil, err
 			}
 			ruo.mutation = mutation
 			node, err = ruo.sqlSave(ctx)
@@ -280,6 +284,14 @@ func (ruo *ReviewUpdateOne) ExecX(ctx context.Context) {
 	if err := ruo.Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (ruo *ReviewUpdateOne) check() error {
+	if _, ok := ruo.mutation.CardID(); ruo.mutation.CardCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Review.card"`)
+	}
+	return nil
 }
 
 func (ruo *ReviewUpdateOne) sqlSave(ctx context.Context) (_node *Review, err error) {

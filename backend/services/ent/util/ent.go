@@ -16,6 +16,12 @@ func UpdateValue[T any, U any](value *T, setter func(T) U) {
 	}
 }
 
+func UpdateValues[T any, U any](value *[]T, setter func(...T) U) {
+	if value != nil {
+		setter((*value)...)
+	}
+}
+
 func UpdateTextArray[U any](value *[]string, setter func(pgtype.TextArray) U) {
 	if value != nil {
 		setter(ToPgTextArray(*value))

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"sixels.io/manekani/core/domain/cards"
+	"sixels.io/manekani/core/domain/cards/filters"
 )
 
 type (
@@ -40,4 +41,15 @@ type (
 		AvailableAt *time.Time `json:"available_at,omitempty"`
 		BurnedAt    *time.Time `json:"burned_at,omitempty"`
 	}
+
+	QueryManyCardsRequest struct {
+		filters.FilterIDs
+		filters.FilterLevels
+		FilterUser
+	}
 )
+
+type FilterUser struct {
+	userID   []string
+	username []string
+}

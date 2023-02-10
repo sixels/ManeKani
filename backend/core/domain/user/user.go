@@ -1,13 +1,15 @@
 package user
 
-import "sixels.io/manekani/ent/schema"
+import (
+	"github.com/google/uuid"
+	"sixels.io/manekani/ent/schema"
+)
 
 type User struct {
-	Id       string `json:"-"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-
-	Level int32 `json:"level"`
+	ID       string      `json:"-"`
+	Username string      `json:"username"`
+	Email    string      `json:"email"`
+	Decks    []uuid.UUID `json:"decks"`
 
 	PendingActions []schema.PendingAction `json:"-"`
 }
@@ -15,11 +17,10 @@ type User struct {
 type UserBasic struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
-	Level    int32  `json:"level"`
 }
 
 type CreateUserRequest struct {
-	Id       string `json:"id" form:"id"`
+	ID       string `json:"id" form:"id"`
 	Email    string `json:"email" form:"email"`
 	Username string `json:"username" form:"username"`
 }

@@ -10,13 +10,13 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sixels.io/manekani/ent/apitoken"
 	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/kanji"
-	"sixels.io/manekani/ent/radical"
+	"sixels.io/manekani/ent/deck"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/review"
 	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
-	"sixels.io/manekani/ent/vocabulary"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -37,13 +37,13 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		card.Table:       card.ValidColumn,
-		kanji.Table:      kanji.ValidColumn,
-		radical.Table:    radical.ValidColumn,
-		review.Table:     review.ValidColumn,
-		subject.Table:    subject.ValidColumn,
-		user.Table:       user.ValidColumn,
-		vocabulary.Table: vocabulary.ValidColumn,
+		apitoken.Table:     apitoken.ValidColumn,
+		card.Table:         card.ValidColumn,
+		deck.Table:         deck.ValidColumn,
+		deckprogress.Table: deckprogress.ValidColumn,
+		review.Table:       review.ValidColumn,
+		subject.Table:      subject.ValidColumn,
+		user.Table:         user.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

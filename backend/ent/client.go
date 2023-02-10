@@ -11,13 +11,13 @@ import (
 	"github.com/google/uuid"
 	"sixels.io/manekani/ent/migrate"
 
+	"sixels.io/manekani/ent/apitoken"
 	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/kanji"
-	"sixels.io/manekani/ent/radical"
+	"sixels.io/manekani/ent/deck"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/review"
 	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
-	"sixels.io/manekani/ent/vocabulary"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -29,20 +29,20 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// ApiToken is the client for interacting with the ApiToken builders.
+	ApiToken *ApiTokenClient
 	// Card is the client for interacting with the Card builders.
 	Card *CardClient
-	// Kanji is the client for interacting with the Kanji builders.
-	Kanji *KanjiClient
-	// Radical is the client for interacting with the Radical builders.
-	Radical *RadicalClient
+	// Deck is the client for interacting with the Deck builders.
+	Deck *DeckClient
+	// DeckProgress is the client for interacting with the DeckProgress builders.
+	DeckProgress *DeckProgressClient
 	// Review is the client for interacting with the Review builders.
 	Review *ReviewClient
 	// Subject is the client for interacting with the Subject builders.
 	Subject *SubjectClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
-	// Vocabulary is the client for interacting with the Vocabulary builders.
-	Vocabulary *VocabularyClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -56,13 +56,13 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.ApiToken = NewApiTokenClient(c.config)
 	c.Card = NewCardClient(c.config)
-	c.Kanji = NewKanjiClient(c.config)
-	c.Radical = NewRadicalClient(c.config)
+	c.Deck = NewDeckClient(c.config)
+	c.DeckProgress = NewDeckProgressClient(c.config)
 	c.Review = NewReviewClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
 	c.User = NewUserClient(c.config)
-	c.Vocabulary = NewVocabularyClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -94,15 +94,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Card:       NewCardClient(cfg),
-		Kanji:      NewKanjiClient(cfg),
-		Radical:    NewRadicalClient(cfg),
-		Review:     NewReviewClient(cfg),
-		Subject:    NewSubjectClient(cfg),
-		User:       NewUserClient(cfg),
-		Vocabulary: NewVocabularyClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		ApiToken:     NewApiTokenClient(cfg),
+		Card:         NewCardClient(cfg),
+		Deck:         NewDeckClient(cfg),
+		DeckProgress: NewDeckProgressClient(cfg),
+		Review:       NewReviewClient(cfg),
+		Subject:      NewSubjectClient(cfg),
+		User:         NewUserClient(cfg),
 	}, nil
 }
 
@@ -120,22 +120,22 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Card:       NewCardClient(cfg),
-		Kanji:      NewKanjiClient(cfg),
-		Radical:    NewRadicalClient(cfg),
-		Review:     NewReviewClient(cfg),
-		Subject:    NewSubjectClient(cfg),
-		User:       NewUserClient(cfg),
-		Vocabulary: NewVocabularyClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		ApiToken:     NewApiTokenClient(cfg),
+		Card:         NewCardClient(cfg),
+		Deck:         NewDeckClient(cfg),
+		DeckProgress: NewDeckProgressClient(cfg),
+		Review:       NewReviewClient(cfg),
+		Subject:      NewSubjectClient(cfg),
+		User:         NewUserClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Card.
+//		ApiToken.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -157,13 +157,119 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.ApiToken.Use(hooks...)
 	c.Card.Use(hooks...)
-	c.Kanji.Use(hooks...)
-	c.Radical.Use(hooks...)
+	c.Deck.Use(hooks...)
+	c.DeckProgress.Use(hooks...)
 	c.Review.Use(hooks...)
 	c.Subject.Use(hooks...)
 	c.User.Use(hooks...)
-	c.Vocabulary.Use(hooks...)
+}
+
+// ApiTokenClient is a client for the ApiToken schema.
+type ApiTokenClient struct {
+	config
+}
+
+// NewApiTokenClient returns a client for the ApiToken from the given config.
+func NewApiTokenClient(c config) *ApiTokenClient {
+	return &ApiTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `apitoken.Hooks(f(g(h())))`.
+func (c *ApiTokenClient) Use(hooks ...Hook) {
+	c.hooks.ApiToken = append(c.hooks.ApiToken, hooks...)
+}
+
+// Create returns a builder for creating a ApiToken entity.
+func (c *ApiTokenClient) Create() *ApiTokenCreate {
+	mutation := newApiTokenMutation(c.config, OpCreate)
+	return &ApiTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ApiToken entities.
+func (c *ApiTokenClient) CreateBulk(builders ...*ApiTokenCreate) *ApiTokenCreateBulk {
+	return &ApiTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ApiToken.
+func (c *ApiTokenClient) Update() *ApiTokenUpdate {
+	mutation := newApiTokenMutation(c.config, OpUpdate)
+	return &ApiTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ApiTokenClient) UpdateOne(at *ApiToken) *ApiTokenUpdateOne {
+	mutation := newApiTokenMutation(c.config, OpUpdateOne, withApiToken(at))
+	return &ApiTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ApiTokenClient) UpdateOneID(id uuid.UUID) *ApiTokenUpdateOne {
+	mutation := newApiTokenMutation(c.config, OpUpdateOne, withApiTokenID(id))
+	return &ApiTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ApiToken.
+func (c *ApiTokenClient) Delete() *ApiTokenDelete {
+	mutation := newApiTokenMutation(c.config, OpDelete)
+	return &ApiTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ApiTokenClient) DeleteOne(at *ApiToken) *ApiTokenDeleteOne {
+	return c.DeleteOneID(at.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ApiTokenClient) DeleteOneID(id uuid.UUID) *ApiTokenDeleteOne {
+	builder := c.Delete().Where(apitoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ApiTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for ApiToken.
+func (c *ApiTokenClient) Query() *ApiTokenQuery {
+	return &ApiTokenQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a ApiToken entity by its id.
+func (c *ApiTokenClient) Get(ctx context.Context, id uuid.UUID) (*ApiToken, error) {
+	return c.Query().Where(apitoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ApiTokenClient) GetX(ctx context.Context, id uuid.UUID) *ApiToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a ApiToken.
+func (c *ApiTokenClient) QueryUser(at *ApiToken) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := at.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apitoken.Table, apitoken.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, apitoken.UserTable, apitoken.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(at.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ApiTokenClient) Hooks() []Hook {
+	return c.hooks.ApiToken
 }
 
 // CardClient is a client for the Card schema.
@@ -251,15 +357,15 @@ func (c *CardClient) GetX(ctx context.Context, id uuid.UUID) *Card {
 	return obj
 }
 
-// QueryUser queries the user edge of a Card.
-func (c *CardClient) QueryUser(ca *Card) *UserQuery {
-	query := &UserQuery{config: c.config}
+// QueryDeckProgress queries the deck_progress edge of a Card.
+func (c *CardClient) QueryDeckProgress(ca *Card) *DeckProgressQuery {
+	query := &DeckProgressQuery{config: c.config}
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ca.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(card.Table, card.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, card.UserTable, card.UserColumn),
+			sqlgraph.To(deckprogress.Table, deckprogress.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, card.DeckProgressTable, card.DeckProgressColumn),
 		)
 		fromV = sqlgraph.Neighbors(ca.driver.Dialect(), step)
 		return fromV, nil
@@ -304,84 +410,84 @@ func (c *CardClient) Hooks() []Hook {
 	return c.hooks.Card
 }
 
-// KanjiClient is a client for the Kanji schema.
-type KanjiClient struct {
+// DeckClient is a client for the Deck schema.
+type DeckClient struct {
 	config
 }
 
-// NewKanjiClient returns a client for the Kanji from the given config.
-func NewKanjiClient(c config) *KanjiClient {
-	return &KanjiClient{config: c}
+// NewDeckClient returns a client for the Deck from the given config.
+func NewDeckClient(c config) *DeckClient {
+	return &DeckClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `kanji.Hooks(f(g(h())))`.
-func (c *KanjiClient) Use(hooks ...Hook) {
-	c.hooks.Kanji = append(c.hooks.Kanji, hooks...)
+// A call to `Use(f, g, h)` equals to `deck.Hooks(f(g(h())))`.
+func (c *DeckClient) Use(hooks ...Hook) {
+	c.hooks.Deck = append(c.hooks.Deck, hooks...)
 }
 
-// Create returns a builder for creating a Kanji entity.
-func (c *KanjiClient) Create() *KanjiCreate {
-	mutation := newKanjiMutation(c.config, OpCreate)
-	return &KanjiCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a Deck entity.
+func (c *DeckClient) Create() *DeckCreate {
+	mutation := newDeckMutation(c.config, OpCreate)
+	return &DeckCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Kanji entities.
-func (c *KanjiClient) CreateBulk(builders ...*KanjiCreate) *KanjiCreateBulk {
-	return &KanjiCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Deck entities.
+func (c *DeckClient) CreateBulk(builders ...*DeckCreate) *DeckCreateBulk {
+	return &DeckCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Kanji.
-func (c *KanjiClient) Update() *KanjiUpdate {
-	mutation := newKanjiMutation(c.config, OpUpdate)
-	return &KanjiUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Deck.
+func (c *DeckClient) Update() *DeckUpdate {
+	mutation := newDeckMutation(c.config, OpUpdate)
+	return &DeckUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *KanjiClient) UpdateOne(k *Kanji) *KanjiUpdateOne {
-	mutation := newKanjiMutation(c.config, OpUpdateOne, withKanji(k))
-	return &KanjiUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *DeckClient) UpdateOne(d *Deck) *DeckUpdateOne {
+	mutation := newDeckMutation(c.config, OpUpdateOne, withDeck(d))
+	return &DeckUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *KanjiClient) UpdateOneID(id uuid.UUID) *KanjiUpdateOne {
-	mutation := newKanjiMutation(c.config, OpUpdateOne, withKanjiID(id))
-	return &KanjiUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *DeckClient) UpdateOneID(id uuid.UUID) *DeckUpdateOne {
+	mutation := newDeckMutation(c.config, OpUpdateOne, withDeckID(id))
+	return &DeckUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Kanji.
-func (c *KanjiClient) Delete() *KanjiDelete {
-	mutation := newKanjiMutation(c.config, OpDelete)
-	return &KanjiDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Deck.
+func (c *DeckClient) Delete() *DeckDelete {
+	mutation := newDeckMutation(c.config, OpDelete)
+	return &DeckDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *KanjiClient) DeleteOne(k *Kanji) *KanjiDeleteOne {
-	return c.DeleteOneID(k.ID)
+func (c *DeckClient) DeleteOne(d *Deck) *DeckDeleteOne {
+	return c.DeleteOneID(d.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *KanjiClient) DeleteOneID(id uuid.UUID) *KanjiDeleteOne {
-	builder := c.Delete().Where(kanji.ID(id))
+func (c *DeckClient) DeleteOneID(id uuid.UUID) *DeckDeleteOne {
+	builder := c.Delete().Where(deck.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &KanjiDeleteOne{builder}
+	return &DeckDeleteOne{builder}
 }
 
-// Query returns a query builder for Kanji.
-func (c *KanjiClient) Query() *KanjiQuery {
-	return &KanjiQuery{
+// Query returns a query builder for Deck.
+func (c *DeckClient) Query() *DeckQuery {
+	return &DeckQuery{
 		config: c.config,
 	}
 }
 
-// Get returns a Kanji entity by its id.
-func (c *KanjiClient) Get(ctx context.Context, id uuid.UUID) (*Kanji, error) {
-	return c.Query().Where(kanji.ID(id)).Only(ctx)
+// Get returns a Deck entity by its id.
+func (c *DeckClient) Get(ctx context.Context, id uuid.UUID) (*Deck, error) {
+	return c.Query().Where(deck.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *KanjiClient) GetX(ctx context.Context, id uuid.UUID) *Kanji {
+func (c *DeckClient) GetX(ctx context.Context, id uuid.UUID) *Deck {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -389,137 +495,153 @@ func (c *KanjiClient) GetX(ctx context.Context, id uuid.UUID) *Kanji {
 	return obj
 }
 
-// QueryVocabularies queries the vocabularies edge of a Kanji.
-func (c *KanjiClient) QueryVocabularies(k *Kanji) *VocabularyQuery {
-	query := &VocabularyQuery{config: c.config}
+// QuerySubscribers queries the subscribers edge of a Deck.
+func (c *DeckClient) QuerySubscribers(d *Deck) *UserQuery {
+	query := &UserQuery{config: c.config}
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := k.ID
+		id := d.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(kanji.Table, kanji.FieldID, id),
-			sqlgraph.To(vocabulary.Table, vocabulary.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, kanji.VocabulariesTable, kanji.VocabulariesPrimaryKey...),
+			sqlgraph.From(deck.Table, deck.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, deck.SubscribersTable, deck.SubscribersPrimaryKey...),
 		)
-		fromV = sqlgraph.Neighbors(k.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
-// QueryRadicals queries the radicals edge of a Kanji.
-func (c *KanjiClient) QueryRadicals(k *Kanji) *RadicalQuery {
-	query := &RadicalQuery{config: c.config}
+// QueryOwner queries the owner edge of a Deck.
+func (c *DeckClient) QueryOwner(d *Deck) *UserQuery {
+	query := &UserQuery{config: c.config}
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := k.ID
+		id := d.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(kanji.Table, kanji.FieldID, id),
-			sqlgraph.To(radical.Table, radical.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, kanji.RadicalsTable, kanji.RadicalsPrimaryKey...),
+			sqlgraph.From(deck.Table, deck.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, deck.OwnerTable, deck.OwnerColumn),
 		)
-		fromV = sqlgraph.Neighbors(k.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
-// QueryVisuallySimilar queries the visuallySimilar edge of a Kanji.
-func (c *KanjiClient) QueryVisuallySimilar(k *Kanji) *KanjiQuery {
-	query := &KanjiQuery{config: c.config}
+// QuerySubjects queries the subjects edge of a Deck.
+func (c *DeckClient) QuerySubjects(d *Deck) *SubjectQuery {
+	query := &SubjectQuery{config: c.config}
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := k.ID
+		id := d.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(kanji.Table, kanji.FieldID, id),
-			sqlgraph.To(kanji.Table, kanji.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, kanji.VisuallySimilarTable, kanji.VisuallySimilarPrimaryKey...),
+			sqlgraph.From(deck.Table, deck.FieldID, id),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, deck.SubjectsTable, deck.SubjectsPrimaryKey...),
 		)
-		fromV = sqlgraph.Neighbors(k.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUsersProgress queries the users_progress edge of a Deck.
+func (c *DeckClient) QueryUsersProgress(d *Deck) *DeckProgressQuery {
+	query := &DeckProgressQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deck.Table, deck.FieldID, id),
+			sqlgraph.To(deckprogress.Table, deckprogress.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, deck.UsersProgressTable, deck.UsersProgressColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *KanjiClient) Hooks() []Hook {
-	return c.hooks.Kanji
+func (c *DeckClient) Hooks() []Hook {
+	return c.hooks.Deck
 }
 
-// RadicalClient is a client for the Radical schema.
-type RadicalClient struct {
+// DeckProgressClient is a client for the DeckProgress schema.
+type DeckProgressClient struct {
 	config
 }
 
-// NewRadicalClient returns a client for the Radical from the given config.
-func NewRadicalClient(c config) *RadicalClient {
-	return &RadicalClient{config: c}
+// NewDeckProgressClient returns a client for the DeckProgress from the given config.
+func NewDeckProgressClient(c config) *DeckProgressClient {
+	return &DeckProgressClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `radical.Hooks(f(g(h())))`.
-func (c *RadicalClient) Use(hooks ...Hook) {
-	c.hooks.Radical = append(c.hooks.Radical, hooks...)
+// A call to `Use(f, g, h)` equals to `deckprogress.Hooks(f(g(h())))`.
+func (c *DeckProgressClient) Use(hooks ...Hook) {
+	c.hooks.DeckProgress = append(c.hooks.DeckProgress, hooks...)
 }
 
-// Create returns a builder for creating a Radical entity.
-func (c *RadicalClient) Create() *RadicalCreate {
-	mutation := newRadicalMutation(c.config, OpCreate)
-	return &RadicalCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a DeckProgress entity.
+func (c *DeckProgressClient) Create() *DeckProgressCreate {
+	mutation := newDeckProgressMutation(c.config, OpCreate)
+	return &DeckProgressCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Radical entities.
-func (c *RadicalClient) CreateBulk(builders ...*RadicalCreate) *RadicalCreateBulk {
-	return &RadicalCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of DeckProgress entities.
+func (c *DeckProgressClient) CreateBulk(builders ...*DeckProgressCreate) *DeckProgressCreateBulk {
+	return &DeckProgressCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Radical.
-func (c *RadicalClient) Update() *RadicalUpdate {
-	mutation := newRadicalMutation(c.config, OpUpdate)
-	return &RadicalUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for DeckProgress.
+func (c *DeckProgressClient) Update() *DeckProgressUpdate {
+	mutation := newDeckProgressMutation(c.config, OpUpdate)
+	return &DeckProgressUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *RadicalClient) UpdateOne(r *Radical) *RadicalUpdateOne {
-	mutation := newRadicalMutation(c.config, OpUpdateOne, withRadical(r))
-	return &RadicalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *DeckProgressClient) UpdateOne(dp *DeckProgress) *DeckProgressUpdateOne {
+	mutation := newDeckProgressMutation(c.config, OpUpdateOne, withDeckProgress(dp))
+	return &DeckProgressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *RadicalClient) UpdateOneID(id uuid.UUID) *RadicalUpdateOne {
-	mutation := newRadicalMutation(c.config, OpUpdateOne, withRadicalID(id))
-	return &RadicalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *DeckProgressClient) UpdateOneID(id int) *DeckProgressUpdateOne {
+	mutation := newDeckProgressMutation(c.config, OpUpdateOne, withDeckProgressID(id))
+	return &DeckProgressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Radical.
-func (c *RadicalClient) Delete() *RadicalDelete {
-	mutation := newRadicalMutation(c.config, OpDelete)
-	return &RadicalDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for DeckProgress.
+func (c *DeckProgressClient) Delete() *DeckProgressDelete {
+	mutation := newDeckProgressMutation(c.config, OpDelete)
+	return &DeckProgressDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *RadicalClient) DeleteOne(r *Radical) *RadicalDeleteOne {
-	return c.DeleteOneID(r.ID)
+func (c *DeckProgressClient) DeleteOne(dp *DeckProgress) *DeckProgressDeleteOne {
+	return c.DeleteOneID(dp.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RadicalClient) DeleteOneID(id uuid.UUID) *RadicalDeleteOne {
-	builder := c.Delete().Where(radical.ID(id))
+func (c *DeckProgressClient) DeleteOneID(id int) *DeckProgressDeleteOne {
+	builder := c.Delete().Where(deckprogress.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &RadicalDeleteOne{builder}
+	return &DeckProgressDeleteOne{builder}
 }
 
-// Query returns a query builder for Radical.
-func (c *RadicalClient) Query() *RadicalQuery {
-	return &RadicalQuery{
+// Query returns a query builder for DeckProgress.
+func (c *DeckProgressClient) Query() *DeckProgressQuery {
+	return &DeckProgressQuery{
 		config: c.config,
 	}
 }
 
-// Get returns a Radical entity by its id.
-func (c *RadicalClient) Get(ctx context.Context, id uuid.UUID) (*Radical, error) {
-	return c.Query().Where(radical.ID(id)).Only(ctx)
+// Get returns a DeckProgress entity by its id.
+func (c *DeckProgressClient) Get(ctx context.Context, id int) (*DeckProgress, error) {
+	return c.Query().Where(deckprogress.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *RadicalClient) GetX(ctx context.Context, id uuid.UUID) *Radical {
+func (c *DeckProgressClient) GetX(ctx context.Context, id int) *DeckProgress {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -527,25 +649,57 @@ func (c *RadicalClient) GetX(ctx context.Context, id uuid.UUID) *Radical {
 	return obj
 }
 
-// QueryKanjis queries the kanjis edge of a Radical.
-func (c *RadicalClient) QueryKanjis(r *Radical) *KanjiQuery {
-	query := &KanjiQuery{config: c.config}
+// QueryCards queries the cards edge of a DeckProgress.
+func (c *DeckProgressClient) QueryCards(dp *DeckProgress) *CardQuery {
+	query := &CardQuery{config: c.config}
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := r.ID
+		id := dp.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(radical.Table, radical.FieldID, id),
-			sqlgraph.To(kanji.Table, kanji.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, radical.KanjisTable, radical.KanjisPrimaryKey...),
+			sqlgraph.From(deckprogress.Table, deckprogress.FieldID, id),
+			sqlgraph.To(card.Table, card.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, deckprogress.CardsTable, deckprogress.CardsColumn),
 		)
-		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(dp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a DeckProgress.
+func (c *DeckProgressClient) QueryUser(dp *DeckProgress) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := dp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deckprogress.Table, deckprogress.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, deckprogress.UserTable, deckprogress.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(dp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDeck queries the deck edge of a DeckProgress.
+func (c *DeckProgressClient) QueryDeck(dp *DeckProgress) *DeckQuery {
+	query := &DeckQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := dp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deckprogress.Table, deckprogress.FieldID, id),
+			sqlgraph.To(deck.Table, deck.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, deckprogress.DeckTable, deckprogress.DeckColumn),
+		)
+		fromV = sqlgraph.Neighbors(dp.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *RadicalClient) Hooks() []Hook {
-	return c.hooks.Radical
+func (c *DeckProgressClient) Hooks() []Hook {
+	return c.hooks.DeckProgress
 }
 
 // ReviewClient is a client for the Review schema.
@@ -755,6 +909,86 @@ func (c *SubjectClient) QueryCards(s *Subject) *CardQuery {
 	return query
 }
 
+// QuerySimilar queries the similar edge of a Subject.
+func (c *SubjectClient) QuerySimilar(s *Subject) *SubjectQuery {
+	query := &SubjectQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, id),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, subject.SimilarTable, subject.SimilarPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDependencies queries the dependencies edge of a Subject.
+func (c *SubjectClient) QueryDependencies(s *Subject) *SubjectQuery {
+	query := &SubjectQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, id),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, subject.DependenciesTable, subject.DependenciesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDependents queries the dependents edge of a Subject.
+func (c *SubjectClient) QueryDependents(s *Subject) *SubjectQuery {
+	query := &SubjectQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, id),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, subject.DependentsTable, subject.DependentsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDecks queries the decks edge of a Subject.
+func (c *SubjectClient) QueryDecks(s *Subject) *DeckQuery {
+	query := &DeckQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, id),
+			sqlgraph.To(deck.Table, deck.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, subject.DecksTable, subject.DecksPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOwner queries the owner edge of a Subject.
+func (c *SubjectClient) QueryOwner(s *Subject) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subject.Table, subject.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, subject.OwnerTable, subject.OwnerColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SubjectClient) Hooks() []Hook {
 	return c.hooks.Subject
@@ -845,15 +1079,79 @@ func (c *UserClient) GetX(ctx context.Context, id string) *User {
 	return obj
 }
 
-// QueryCards queries the cards edge of a User.
-func (c *UserClient) QueryCards(u *User) *CardQuery {
-	query := &CardQuery{config: c.config}
+// QueryDecks queries the decks edge of a User.
+func (c *UserClient) QueryDecks(u *User) *DeckQuery {
+	query := &DeckQuery{config: c.config}
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(card.Table, card.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.CardsTable, user.CardsColumn),
+			sqlgraph.To(deck.Table, deck.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.DecksTable, user.DecksColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubjects queries the subjects edge of a User.
+func (c *UserClient) QuerySubjects(u *User) *SubjectQuery {
+	query := &SubjectQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.SubjectsTable, user.SubjectsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubscribedDecks queries the subscribed_decks edge of a User.
+func (c *UserClient) QuerySubscribedDecks(u *User) *DeckQuery {
+	query := &DeckQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(deck.Table, deck.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.SubscribedDecksTable, user.SubscribedDecksPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAPITokens queries the api_tokens edge of a User.
+func (c *UserClient) QueryAPITokens(u *User) *ApiTokenQuery {
+	query := &ApiTokenQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(apitoken.Table, apitoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.APITokensTable, user.APITokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDecksProgress queries the decks_progress edge of a User.
+func (c *UserClient) QueryDecksProgress(u *User) *DeckProgressQuery {
+	query := &DeckProgressQuery{config: c.config}
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(deckprogress.Table, deckprogress.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.DecksProgressTable, user.DecksProgressColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -864,110 +1162,4 @@ func (c *UserClient) QueryCards(u *User) *CardQuery {
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
-}
-
-// VocabularyClient is a client for the Vocabulary schema.
-type VocabularyClient struct {
-	config
-}
-
-// NewVocabularyClient returns a client for the Vocabulary from the given config.
-func NewVocabularyClient(c config) *VocabularyClient {
-	return &VocabularyClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `vocabulary.Hooks(f(g(h())))`.
-func (c *VocabularyClient) Use(hooks ...Hook) {
-	c.hooks.Vocabulary = append(c.hooks.Vocabulary, hooks...)
-}
-
-// Create returns a builder for creating a Vocabulary entity.
-func (c *VocabularyClient) Create() *VocabularyCreate {
-	mutation := newVocabularyMutation(c.config, OpCreate)
-	return &VocabularyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Vocabulary entities.
-func (c *VocabularyClient) CreateBulk(builders ...*VocabularyCreate) *VocabularyCreateBulk {
-	return &VocabularyCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Vocabulary.
-func (c *VocabularyClient) Update() *VocabularyUpdate {
-	mutation := newVocabularyMutation(c.config, OpUpdate)
-	return &VocabularyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *VocabularyClient) UpdateOne(v *Vocabulary) *VocabularyUpdateOne {
-	mutation := newVocabularyMutation(c.config, OpUpdateOne, withVocabulary(v))
-	return &VocabularyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *VocabularyClient) UpdateOneID(id uuid.UUID) *VocabularyUpdateOne {
-	mutation := newVocabularyMutation(c.config, OpUpdateOne, withVocabularyID(id))
-	return &VocabularyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Vocabulary.
-func (c *VocabularyClient) Delete() *VocabularyDelete {
-	mutation := newVocabularyMutation(c.config, OpDelete)
-	return &VocabularyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *VocabularyClient) DeleteOne(v *Vocabulary) *VocabularyDeleteOne {
-	return c.DeleteOneID(v.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *VocabularyClient) DeleteOneID(id uuid.UUID) *VocabularyDeleteOne {
-	builder := c.Delete().Where(vocabulary.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &VocabularyDeleteOne{builder}
-}
-
-// Query returns a query builder for Vocabulary.
-func (c *VocabularyClient) Query() *VocabularyQuery {
-	return &VocabularyQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a Vocabulary entity by its id.
-func (c *VocabularyClient) Get(ctx context.Context, id uuid.UUID) (*Vocabulary, error) {
-	return c.Query().Where(vocabulary.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *VocabularyClient) GetX(ctx context.Context, id uuid.UUID) *Vocabulary {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryKanjis queries the kanjis edge of a Vocabulary.
-func (c *VocabularyClient) QueryKanjis(v *Vocabulary) *KanjiQuery {
-	query := &KanjiQuery{config: c.config}
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := v.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(vocabulary.Table, vocabulary.FieldID, id),
-			sqlgraph.To(kanji.Table, kanji.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, vocabulary.KanjisTable, vocabulary.KanjisPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(v.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *VocabularyClient) Hooks() []Hook {
-	return c.hooks.Vocabulary
 }

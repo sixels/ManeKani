@@ -15,16 +15,17 @@ import (
 
 	_ "sixels.io/manekani/docs/manekani"
 
-	authApi "sixels.io/manekani/server/api/auth"
-	filesApi "sixels.io/manekani/server/api/files"
-	usersApi "sixels.io/manekani/server/api/users"
-	v1CardsApi "sixels.io/manekani/server/api/v1/cards"
+	auth_api "sixels.io/manekani/server/api/auth"
+	cards_api_v1 "sixels.io/manekani/server/api/cards/v1"
+	files_api "sixels.io/manekani/server/api/files"
+	users_api "sixels.io/manekani/server/api/users"
 
 	"sixels.io/manekani/services/auth"
-	"sixels.io/manekani/services/cards"
 	"sixels.io/manekani/services/ent"
+	"sixels.io/manekani/services/ent/cards"
+	"sixels.io/manekani/services/ent/users"
 	"sixels.io/manekani/services/files"
-	"sixels.io/manekani/services/users"
+	"sixels.io/manekani/services/jwt"
 )
 
 type Service interface {
@@ -40,31 +41,35 @@ type Server struct {
 func New() *Server {
 	gob.Register(user.User{})
 
-	entClient, err := ent.Connect()
+	jwtService := jwt.CreateService(os.Getenv("TOKEN_SIGN_KEY"))
+	entRepo, err := ent.NewRepository()
 	if err != nil {
 		log.Fatalf("Could not connect with ManeKani database: %v", err)
 	}
-	cardsRepo := cards.NewRepository(entClient)
-	usersRepo := users.NewRepository(entClient, cardsRepo)
+	cardsRepo := cards.NewRepository(entRepo)
+	usersRepo, err := users.NewRepository(context.Background(), entRepo, jwtService)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if err := auth.StartAuthenticator(usersRepo); err != nil {
-		log.Fatalf("Could not start the authenticator: %v", err)
+		log.Fatalf("Could setup the 'user' repository: %v", err)
 	}
 
 	filesRepo, err := files.NewRepository(context.Background())
 	if err != nil {
-		log.Fatalf("Could not create the Files repository: %v", err)
+		log.Fatalf("Could not setup the 'file' repository: %v", err)
 	}
 
-	cardsV1 := v1CardsApi.New(cardsRepo, filesRepo)
-	filesApi := filesApi.New(filesRepo)
-	usersApi := usersApi.New(usersRepo)
+	cardsV1 := cards_api_v1.New(cardsRepo, filesRepo, jwtService)
+	filesAPI := files_api.New(filesRepo)
+	usersAPI := users_api.New(usersRepo, jwtService)
 
 	router := gin.Default()
 
 	return &Server{
 		router:   router,
-		services: []Service{cardsV1, filesApi, usersApi},
+		services: []Service{cardsV1, filesAPI, usersAPI},
 	}
 }
 
@@ -81,7 +86,7 @@ func (server *Server) Start(logFile io.Writer) {
 	server.router.Use(cors.New(corsConfig))
 
 	// SuperTokens
-	server.router.Use(authApi.SupertokensMiddleware)
+	server.router.Use(auth_api.SupertokensMiddleware)
 
 	server.bindRoutes()
 

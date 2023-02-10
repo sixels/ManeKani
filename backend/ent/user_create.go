@@ -10,8 +10,11 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/apitoken"
+	"sixels.io/manekani/ent/deck"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/schema"
+	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
 )
 
@@ -40,39 +43,93 @@ func (uc *UserCreate) SetEmail(s string) *UserCreate {
 	return uc
 }
 
-// SetLevel sets the "level" field.
-func (uc *UserCreate) SetLevel(i int32) *UserCreate {
-	uc.mutation.SetLevel(i)
-	return uc
-}
-
-// SetNillableLevel sets the "level" field if the given value is not nil.
-func (uc *UserCreate) SetNillableLevel(i *int32) *UserCreate {
-	if i != nil {
-		uc.SetLevel(*i)
-	}
-	return uc
-}
-
 // SetID sets the "id" field.
 func (uc *UserCreate) SetID(s string) *UserCreate {
 	uc.mutation.SetID(s)
 	return uc
 }
 
-// AddCardIDs adds the "cards" edge to the Card entity by IDs.
-func (uc *UserCreate) AddCardIDs(ids ...uuid.UUID) *UserCreate {
-	uc.mutation.AddCardIDs(ids...)
+// SetNillableID sets the "id" field if the given value is not nil.
+func (uc *UserCreate) SetNillableID(s *string) *UserCreate {
+	if s != nil {
+		uc.SetID(*s)
+	}
 	return uc
 }
 
-// AddCards adds the "cards" edges to the Card entity.
-func (uc *UserCreate) AddCards(c ...*Card) *UserCreate {
-	ids := make([]uuid.UUID, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
+// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
+func (uc *UserCreate) AddDeckIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddDeckIDs(ids...)
+	return uc
+}
+
+// AddDecks adds the "decks" edges to the Deck entity.
+func (uc *UserCreate) AddDecks(d ...*Deck) *UserCreate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
 	}
-	return uc.AddCardIDs(ids...)
+	return uc.AddDeckIDs(ids...)
+}
+
+// AddSubjectIDs adds the "subjects" edge to the Subject entity by IDs.
+func (uc *UserCreate) AddSubjectIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddSubjectIDs(ids...)
+	return uc
+}
+
+// AddSubjects adds the "subjects" edges to the Subject entity.
+func (uc *UserCreate) AddSubjects(s ...*Subject) *UserCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uc.AddSubjectIDs(ids...)
+}
+
+// AddSubscribedDeckIDs adds the "subscribed_decks" edge to the Deck entity by IDs.
+func (uc *UserCreate) AddSubscribedDeckIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddSubscribedDeckIDs(ids...)
+	return uc
+}
+
+// AddSubscribedDecks adds the "subscribed_decks" edges to the Deck entity.
+func (uc *UserCreate) AddSubscribedDecks(d ...*Deck) *UserCreate {
+	ids := make([]uuid.UUID, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uc.AddSubscribedDeckIDs(ids...)
+}
+
+// AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
+func (uc *UserCreate) AddAPITokenIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddAPITokenIDs(ids...)
+	return uc
+}
+
+// AddAPITokens adds the "api_tokens" edges to the ApiToken entity.
+func (uc *UserCreate) AddAPITokens(a ...*ApiToken) *UserCreate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uc.AddAPITokenIDs(ids...)
+}
+
+// AddDecksProgresIDs adds the "decks_progress" edge to the DeckProgress entity by IDs.
+func (uc *UserCreate) AddDecksProgresIDs(ids ...int) *UserCreate {
+	uc.mutation.AddDecksProgresIDs(ids...)
+	return uc
+}
+
+// AddDecksProgress adds the "decks_progress" edges to the DeckProgress entity.
+func (uc *UserCreate) AddDecksProgress(d ...*DeckProgress) *UserCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uc.AddDecksProgresIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -152,9 +209,9 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (uc *UserCreate) defaults() {
-	if _, ok := uc.mutation.Level(); !ok {
-		v := user.DefaultLevel
-		uc.mutation.SetLevel(v)
+	if _, ok := uc.mutation.ID(); !ok {
+		v := user.DefaultID()
+		uc.mutation.SetID(v)
 	}
 }
 
@@ -177,14 +234,6 @@ func (uc *UserCreate) check() error {
 	if v, ok := uc.mutation.Email(); ok {
 		if err := user.EmailValidator(v); err != nil {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
-		}
-	}
-	if _, ok := uc.mutation.Level(); !ok {
-		return &ValidationError{Name: "level", err: errors.New(`ent: missing required field "User.level"`)}
-	}
-	if v, ok := uc.mutation.Level(); ok {
-		if err := user.LevelValidator(v); err != nil {
-			return &ValidationError{Name: "level", err: fmt.Errorf(`ent: validator failed for field "User.level": %w`, err)}
 		}
 	}
 	return nil
@@ -235,21 +284,93 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 		_node.Email = value
 	}
-	if value, ok := uc.mutation.Level(); ok {
-		_spec.SetField(user.FieldLevel, field.TypeInt32, value)
-		_node.Level = value
-	}
-	if nodes := uc.mutation.CardsIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.DecksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.CardsTable,
-			Columns: []string{user.CardsColumn},
+			Table:   user.DecksTable,
+			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: card.FieldID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.SubjectsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubjectsTable,
+			Columns: []string{user.SubjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: subject.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.SubscribedDecksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.SubscribedDecksTable,
+			Columns: user.SubscribedDecksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: deck.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.APITokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.APITokensTable,
+			Columns: []string{user.APITokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: apitoken.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.DecksProgressIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.DecksProgressTable,
+			Columns: []string{user.DecksProgressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
 				},
 			},
 		}

@@ -12,20 +12,20 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// ApiToken is the client for interacting with the ApiToken builders.
+	ApiToken *ApiTokenClient
 	// Card is the client for interacting with the Card builders.
 	Card *CardClient
-	// Kanji is the client for interacting with the Kanji builders.
-	Kanji *KanjiClient
-	// Radical is the client for interacting with the Radical builders.
-	Radical *RadicalClient
+	// Deck is the client for interacting with the Deck builders.
+	Deck *DeckClient
+	// DeckProgress is the client for interacting with the DeckProgress builders.
+	DeckProgress *DeckProgressClient
 	// Review is the client for interacting with the Review builders.
 	Review *ReviewClient
 	// Subject is the client for interacting with the Subject builders.
 	Subject *SubjectClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
-	// Vocabulary is the client for interacting with the Vocabulary builders.
-	Vocabulary *VocabularyClient
 
 	// lazily loaded.
 	client     *Client
@@ -157,13 +157,13 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.ApiToken = NewApiTokenClient(tx.config)
 	tx.Card = NewCardClient(tx.config)
-	tx.Kanji = NewKanjiClient(tx.config)
-	tx.Radical = NewRadicalClient(tx.config)
+	tx.Deck = NewDeckClient(tx.config)
+	tx.DeckProgress = NewDeckProgressClient(tx.config)
 	tx.Review = NewReviewClient(tx.config)
 	tx.Subject = NewSubjectClient(tx.config)
 	tx.User = NewUserClient(tx.config)
-	tx.Vocabulary = NewVocabularyClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -173,7 +173,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Card.QueryXXX(), the query will be executed
+// applies a query, for example: ApiToken.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

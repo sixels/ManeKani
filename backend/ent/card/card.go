@@ -31,21 +31,21 @@ const (
 	FieldAvailableAt = "available_at"
 	// FieldBurnedAt holds the string denoting the burned_at field in the database.
 	FieldBurnedAt = "burned_at"
-	// EdgeUser holds the string denoting the user edge name in mutations.
-	EdgeUser = "user"
+	// EdgeDeckProgress holds the string denoting the deck_progress edge name in mutations.
+	EdgeDeckProgress = "deck_progress"
 	// EdgeSubject holds the string denoting the subject edge name in mutations.
 	EdgeSubject = "subject"
 	// EdgeReviews holds the string denoting the reviews edge name in mutations.
 	EdgeReviews = "reviews"
 	// Table holds the table name of the card in the database.
 	Table = "cards"
-	// UserTable is the table that holds the user relation/edge.
-	UserTable = "cards"
-	// UserInverseTable is the table name for the User entity.
-	// It exists in this package in order to avoid circular dependency with the "user" package.
-	UserInverseTable = "users"
-	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "user_cards"
+	// DeckProgressTable is the table that holds the deck_progress relation/edge.
+	DeckProgressTable = "cards"
+	// DeckProgressInverseTable is the table name for the DeckProgress entity.
+	// It exists in this package in order to avoid circular dependency with the "deckprogress" package.
+	DeckProgressInverseTable = "deck_progresses"
+	// DeckProgressColumn is the table column denoting the deck_progress relation/edge.
+	DeckProgressColumn = "deck_progress_cards"
 	// SubjectTable is the table that holds the subject relation/edge.
 	SubjectTable = "cards"
 	// SubjectInverseTable is the table name for the Subject entity.
@@ -79,8 +79,8 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "cards"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"deck_progress_cards",
 	"subject_cards",
-	"user_cards",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

@@ -11,21 +11,29 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"sixels.io/manekani/ent/card"
+	"github.com/google/uuid"
+	"sixels.io/manekani/ent/apitoken"
+	"sixels.io/manekani/ent/deck"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/predicate"
+	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
 )
 
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.User
-	withCards  *CardQuery
+	limit               *int
+	offset              *int
+	unique              *bool
+	order               []OrderFunc
+	fields              []string
+	predicates          []predicate.User
+	withDecks           *DeckQuery
+	withSubjects        *SubjectQuery
+	withSubscribedDecks *DeckQuery
+	withAPITokens       *ApiTokenQuery
+	withDecksProgress   *DeckProgressQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -62,9 +70,9 @@ func (uq *UserQuery) Order(o ...OrderFunc) *UserQuery {
 	return uq
 }
 
-// QueryCards chains the current query on the "cards" edge.
-func (uq *UserQuery) QueryCards() *CardQuery {
-	query := &CardQuery{config: uq.config}
+// QueryDecks chains the current query on the "decks" edge.
+func (uq *UserQuery) QueryDecks() *DeckQuery {
+	query := &DeckQuery{config: uq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,8 +83,96 @@ func (uq *UserQuery) QueryCards() *CardQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(card.Table, card.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.CardsTable, user.CardsColumn),
+			sqlgraph.To(deck.Table, deck.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.DecksTable, user.DecksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySubjects chains the current query on the "subjects" edge.
+func (uq *UserQuery) QuerySubjects() *SubjectQuery {
+	query := &SubjectQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(subject.Table, subject.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.SubjectsTable, user.SubjectsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySubscribedDecks chains the current query on the "subscribed_decks" edge.
+func (uq *UserQuery) QuerySubscribedDecks() *DeckQuery {
+	query := &DeckQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(deck.Table, deck.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, user.SubscribedDecksTable, user.SubscribedDecksPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAPITokens chains the current query on the "api_tokens" edge.
+func (uq *UserQuery) QueryAPITokens() *ApiTokenQuery {
+	query := &ApiTokenQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(apitoken.Table, apitoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.APITokensTable, user.APITokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDecksProgress chains the current query on the "decks_progress" edge.
+func (uq *UserQuery) QueryDecksProgress() *DeckProgressQuery {
+	query := &DeckProgressQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(deckprogress.Table, deckprogress.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.DecksProgressTable, user.DecksProgressColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -260,12 +356,16 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:     uq.config,
-		limit:      uq.limit,
-		offset:     uq.offset,
-		order:      append([]OrderFunc{}, uq.order...),
-		predicates: append([]predicate.User{}, uq.predicates...),
-		withCards:  uq.withCards.Clone(),
+		config:              uq.config,
+		limit:               uq.limit,
+		offset:              uq.offset,
+		order:               append([]OrderFunc{}, uq.order...),
+		predicates:          append([]predicate.User{}, uq.predicates...),
+		withDecks:           uq.withDecks.Clone(),
+		withSubjects:        uq.withSubjects.Clone(),
+		withSubscribedDecks: uq.withSubscribedDecks.Clone(),
+		withAPITokens:       uq.withAPITokens.Clone(),
+		withDecksProgress:   uq.withDecksProgress.Clone(),
 		// clone intermediate query.
 		sql:    uq.sql.Clone(),
 		path:   uq.path,
@@ -273,14 +373,58 @@ func (uq *UserQuery) Clone() *UserQuery {
 	}
 }
 
-// WithCards tells the query-builder to eager-load the nodes that are connected to
-// the "cards" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithCards(opts ...func(*CardQuery)) *UserQuery {
-	query := &CardQuery{config: uq.config}
+// WithDecks tells the query-builder to eager-load the nodes that are connected to
+// the "decks" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithDecks(opts ...func(*DeckQuery)) *UserQuery {
+	query := &DeckQuery{config: uq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withCards = query
+	uq.withDecks = query
+	return uq
+}
+
+// WithSubjects tells the query-builder to eager-load the nodes that are connected to
+// the "subjects" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithSubjects(opts ...func(*SubjectQuery)) *UserQuery {
+	query := &SubjectQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withSubjects = query
+	return uq
+}
+
+// WithSubscribedDecks tells the query-builder to eager-load the nodes that are connected to
+// the "subscribed_decks" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithSubscribedDecks(opts ...func(*DeckQuery)) *UserQuery {
+	query := &DeckQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withSubscribedDecks = query
+	return uq
+}
+
+// WithAPITokens tells the query-builder to eager-load the nodes that are connected to
+// the "api_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithAPITokens(opts ...func(*ApiTokenQuery)) *UserQuery {
+	query := &ApiTokenQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withAPITokens = query
+	return uq
+}
+
+// WithDecksProgress tells the query-builder to eager-load the nodes that are connected to
+// the "decks_progress" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithDecksProgress(opts ...func(*DeckProgressQuery)) *UserQuery {
+	query := &DeckProgressQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withDecksProgress = query
 	return uq
 }
 
@@ -357,8 +501,12 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [1]bool{
-			uq.withCards != nil,
+		loadedTypes = [5]bool{
+			uq.withDecks != nil,
+			uq.withSubjects != nil,
+			uq.withSubscribedDecks != nil,
+			uq.withAPITokens != nil,
+			uq.withDecksProgress != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -379,17 +527,45 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := uq.withCards; query != nil {
-		if err := uq.loadCards(ctx, query, nodes,
-			func(n *User) { n.Edges.Cards = []*Card{} },
-			func(n *User, e *Card) { n.Edges.Cards = append(n.Edges.Cards, e) }); err != nil {
+	if query := uq.withDecks; query != nil {
+		if err := uq.loadDecks(ctx, query, nodes,
+			func(n *User) { n.Edges.Decks = []*Deck{} },
+			func(n *User, e *Deck) { n.Edges.Decks = append(n.Edges.Decks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withSubjects; query != nil {
+		if err := uq.loadSubjects(ctx, query, nodes,
+			func(n *User) { n.Edges.Subjects = []*Subject{} },
+			func(n *User, e *Subject) { n.Edges.Subjects = append(n.Edges.Subjects, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withSubscribedDecks; query != nil {
+		if err := uq.loadSubscribedDecks(ctx, query, nodes,
+			func(n *User) { n.Edges.SubscribedDecks = []*Deck{} },
+			func(n *User, e *Deck) { n.Edges.SubscribedDecks = append(n.Edges.SubscribedDecks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withAPITokens; query != nil {
+		if err := uq.loadAPITokens(ctx, query, nodes,
+			func(n *User) { n.Edges.APITokens = []*ApiToken{} },
+			func(n *User, e *ApiToken) { n.Edges.APITokens = append(n.Edges.APITokens, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withDecksProgress; query != nil {
+		if err := uq.loadDecksProgress(ctx, query, nodes,
+			func(n *User) { n.Edges.DecksProgress = []*DeckProgress{} },
+			func(n *User, e *DeckProgress) { n.Edges.DecksProgress = append(n.Edges.DecksProgress, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (uq *UserQuery) loadCards(ctx context.Context, query *CardQuery, nodes []*User, init func(*User), assign func(*User, *Card)) error {
+func (uq *UserQuery) loadDecks(ctx context.Context, query *DeckQuery, nodes []*User, init func(*User), assign func(*User, *Deck)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[string]*User)
 	for i := range nodes {
@@ -400,21 +576,172 @@ func (uq *UserQuery) loadCards(ctx context.Context, query *CardQuery, nodes []*U
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.Card(func(s *sql.Selector) {
-		s.Where(sql.InValues(user.CardsColumn, fks...))
+	query.Where(predicate.Deck(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.DecksColumn, fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_cards
+		fk := n.user_decks
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_cards" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "user_decks" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_cards" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_decks" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadSubjects(ctx context.Context, query *SubjectQuery, nodes []*User, init func(*User), assign func(*User, *Subject)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.SubjectsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_subjects
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_subjects" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_subjects" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadSubscribedDecks(ctx context.Context, query *DeckQuery, nodes []*User, init func(*User), assign func(*User, *Deck)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[string]*User)
+	nids := make(map[uuid.UUID]map[*User]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(user.SubscribedDecksTable)
+		s.Join(joinT).On(s.C(deck.FieldID), joinT.C(user.SubscribedDecksPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(user.SubscribedDecksPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(user.SubscribedDecksPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(sql.NullString)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := values[0].(*sql.NullString).String
+			inValue := *values[1].(*uuid.UUID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*User]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "subscribed_decks" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (uq *UserQuery) loadAPITokens(ctx context.Context, query *ApiTokenQuery, nodes []*User, init func(*User), assign func(*User, *ApiToken)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.APITokensColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_api_tokens
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_api_tokens" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_api_tokens" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadDecksProgress(ctx context.Context, query *DeckProgressQuery, nodes []*User, init func(*User), assign func(*User, *DeckProgress)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.DeckProgress(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.DecksProgressColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_decks_progress
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_decks_progress" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_decks_progress" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

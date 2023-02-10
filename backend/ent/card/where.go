@@ -791,25 +791,25 @@ func BurnedAtNotNil() predicate.Card {
 	})
 }
 
-// HasUser applies the HasEdge predicate on the "user" edge.
-func HasUser() predicate.Card {
+// HasDeckProgress applies the HasEdge predicate on the "deck_progress" edge.
+func HasDeckProgress() predicate.Card {
 	return predicate.Card(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.To(DeckProgressTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, DeckProgressTable, DeckProgressColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
-func HasUserWith(preds ...predicate.User) predicate.Card {
+// HasDeckProgressWith applies the HasEdge predicate on the "deck_progress" edge with a given conditions (other predicates).
+func HasDeckProgressWith(preds ...predicate.DeckProgress) predicate.Card {
 	return predicate.Card(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.To(DeckProgressInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, DeckProgressTable, DeckProgressColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

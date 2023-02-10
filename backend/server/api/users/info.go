@@ -36,7 +36,6 @@ func (api *UserApi) GetBasicUserInfo() gin.HandlerFunc {
 		c.JSON(http.StatusOK, user.UserBasic{
 			Email:    userInfo.Email,
 			Username: userInfo.Username,
-			Level:    userInfo.Level,
 		})
 	}
 }

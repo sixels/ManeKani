@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"sixels.io/manekani/core/domain/srs"
 	"sixels.io/manekani/core/domain/user"
 )
@@ -19,7 +20,13 @@ func (api *UserApi) GetSRSInfo() gin.HandlerFunc {
 		}
 		userData := ctxUser.(*user.User)
 
-		userCards, err := api.users.GetUserCards(c.Request.Context(), userData.Id)
+		deckID, err := uuid.Parse(c.Param("deck-id"))
+		if err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		userCards, err := api.users.GetUserCards(c.Request.Context(), userData.ID, deckID)
 		if err != nil {
 			c.Error(err)
 			c.Status(http.StatusInternalServerError)
@@ -32,8 +39,10 @@ func (api *UserApi) GetSRSInfo() gin.HandlerFunc {
 	}
 }
 
-func (api *UserApi) ResetSRSData() gin.HandlerFunc {
+func (api *UserApi) UnsubscribeUserFromDeck() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		deckID := uuid.MustParse(c.Param("deck-id"))
+
 		ctxUser, ok := c.Get("user")
 		if !ok {
 			c.Error(fmt.Errorf("user is not set in the context"))
@@ -42,7 +51,7 @@ func (api *UserApi) ResetSRSData() gin.HandlerFunc {
 		}
 		userData := ctxUser.(*user.User)
 
-		err := api.users.ResetSRSData(c.Request.Context(), userData.Id)
+		err := api.users.UnsubscribeUserFromDeck(c.Request.Context(), userData.ID, deckID)
 		if err != nil {
 			c.Error(fmt.Errorf("reset error: %w", err))
 			c.Status(http.StatusInternalServerError)

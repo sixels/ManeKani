@@ -12,9 +12,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/review"
 	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
 )
 
 // CardCreate is the builder for creating a Card entity.
@@ -164,15 +164,15 @@ func (cc *CardCreate) SetNillableID(u *uuid.UUID) *CardCreate {
 	return cc
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (cc *CardCreate) SetUserID(id string) *CardCreate {
-	cc.mutation.SetUserID(id)
+// SetDeckProgressID sets the "deck_progress" edge to the DeckProgress entity by ID.
+func (cc *CardCreate) SetDeckProgressID(id int) *CardCreate {
+	cc.mutation.SetDeckProgressID(id)
 	return cc
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (cc *CardCreate) SetUser(u *User) *CardCreate {
-	return cc.SetUserID(u.ID)
+// SetDeckProgress sets the "deck_progress" edge to the DeckProgress entity.
+func (cc *CardCreate) SetDeckProgress(d *DeckProgress) *CardCreate {
+	return cc.SetDeckProgressID(d.ID)
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by ID.
@@ -314,8 +314,8 @@ func (cc *CardCreate) check() error {
 	if _, ok := cc.mutation.TotalErrors(); !ok {
 		return &ValidationError{Name: "total_errors", err: errors.New(`ent: missing required field "Card.total_errors"`)}
 	}
-	if _, ok := cc.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Card.user"`)}
+	if _, ok := cc.mutation.DeckProgressID(); !ok {
+		return &ValidationError{Name: "deck_progress", err: errors.New(`ent: missing required edge "Card.deck_progress"`)}
 	}
 	if _, ok := cc.mutation.SubjectID(); !ok {
 		return &ValidationError{Name: "subject", err: errors.New(`ent: missing required edge "Card.subject"`)}
@@ -392,24 +392,24 @@ func (cc *CardCreate) createSpec() (*Card, *sqlgraph.CreateSpec) {
 		_spec.SetField(card.FieldBurnedAt, field.TypeTime, value)
 		_node.BurnedAt = &value
 	}
-	if nodes := cc.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := cc.mutation.DeckProgressIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   card.UserTable,
-			Columns: []string{card.UserColumn},
+			Table:   card.DeckProgressTable,
+			Columns: []string{card.DeckProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
+					Type:   field.TypeInt,
+					Column: deckprogress.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_cards = &nodes[0]
+		_node.deck_progress_cards = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := cc.mutation.SubjectIDs(); len(nodes) > 0 {

@@ -10,16 +10,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
+	"sixels.io/manekani/core/domain/cards"
+	"sixels.io/manekani/ent/apitoken"
 	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/kanji"
+	"sixels.io/manekani/ent/deck"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/predicate"
-	"sixels.io/manekani/ent/radical"
 	"sixels.io/manekani/ent/review"
 	"sixels.io/manekani/ent/schema"
 	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
-	"sixels.io/manekani/ent/vocabulary"
 
 	"entgo.io/ent"
 )
@@ -33,43 +33,427 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeCard       = "Card"
-	TypeKanji      = "Kanji"
-	TypeRadical    = "Radical"
-	TypeReview     = "Review"
-	TypeSubject    = "Subject"
-	TypeUser       = "User"
-	TypeVocabulary = "Vocabulary"
+	TypeApiToken     = "ApiToken"
+	TypeCard         = "Card"
+	TypeDeck         = "Deck"
+	TypeDeckProgress = "DeckProgress"
+	TypeReview       = "Review"
+	TypeSubject      = "Subject"
+	TypeUser         = "User"
 )
+
+// ApiTokenMutation represents an operation that mutates the ApiToken nodes in the graph.
+type ApiTokenMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	token         *[]byte
+	clearedFields map[string]struct{}
+	user          *string
+	cleareduser   bool
+	done          bool
+	oldValue      func(context.Context) (*ApiToken, error)
+	predicates    []predicate.ApiToken
+}
+
+var _ ent.Mutation = (*ApiTokenMutation)(nil)
+
+// apitokenOption allows management of the mutation configuration using functional options.
+type apitokenOption func(*ApiTokenMutation)
+
+// newApiTokenMutation creates new mutation for the ApiToken entity.
+func newApiTokenMutation(c config, op Op, opts ...apitokenOption) *ApiTokenMutation {
+	m := &ApiTokenMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeApiToken,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withApiTokenID sets the ID field of the mutation.
+func withApiTokenID(id uuid.UUID) apitokenOption {
+	return func(m *ApiTokenMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ApiToken
+		)
+		m.oldValue = func(ctx context.Context) (*ApiToken, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ApiToken.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withApiToken sets the old ApiToken of the mutation.
+func withApiToken(node *ApiToken) apitokenOption {
+	return func(m *ApiTokenMutation) {
+		m.oldValue = func(context.Context) (*ApiToken, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ApiTokenMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ApiTokenMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ApiToken entities.
+func (m *ApiTokenMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ApiTokenMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ApiTokenMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ApiToken.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetToken sets the "token" field.
+func (m *ApiTokenMutation) SetToken(b []byte) {
+	m.token = &b
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *ApiTokenMutation) Token() (r []byte, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the ApiToken entity.
+// If the ApiToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApiTokenMutation) OldToken(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *ApiTokenMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *ApiTokenMutation) SetUserID(id string) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *ApiTokenMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *ApiTokenMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *ApiTokenMutation) UserID() (id string, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *ApiTokenMutation) UserIDs() (ids []string) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *ApiTokenMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the ApiTokenMutation builder.
+func (m *ApiTokenMutation) Where(ps ...predicate.ApiToken) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ApiTokenMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (ApiToken).
+func (m *ApiTokenMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ApiTokenMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.token != nil {
+		fields = append(fields, apitoken.FieldToken)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ApiTokenMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case apitoken.FieldToken:
+		return m.Token()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ApiTokenMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case apitoken.FieldToken:
+		return m.OldToken(ctx)
+	}
+	return nil, fmt.Errorf("unknown ApiToken field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ApiTokenMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case apitoken.FieldToken:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ApiToken field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ApiTokenMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ApiTokenMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ApiTokenMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ApiToken numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ApiTokenMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ApiTokenMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ApiTokenMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ApiToken nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ApiTokenMutation) ResetField(name string) error {
+	switch name {
+	case apitoken.FieldToken:
+		m.ResetToken()
+		return nil
+	}
+	return fmt.Errorf("unknown ApiToken field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ApiTokenMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, apitoken.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ApiTokenMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case apitoken.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ApiTokenMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ApiTokenMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ApiTokenMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, apitoken.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ApiTokenMutation) EdgeCleared(name string) bool {
+	switch name {
+	case apitoken.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ApiTokenMutation) ClearEdge(name string) error {
+	switch name {
+	case apitoken.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown ApiToken unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ApiTokenMutation) ResetEdge(name string) error {
+	switch name {
+	case apitoken.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown ApiToken edge %s", name)
+}
 
 // CardMutation represents an operation that mutates the Card nodes in the graph.
 type CardMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	created_at      *time.Time
-	updated_at      *time.Time
-	progress        *uint8
-	addprogress     *int8
-	total_errors    *int32
-	addtotal_errors *int32
-	unlocked_at     *time.Time
-	started_at      *time.Time
-	passed_at       *time.Time
-	available_at    *time.Time
-	burned_at       *time.Time
-	clearedFields   map[string]struct{}
-	user            *string
-	cleareduser     bool
-	subject         *uuid.UUID
-	clearedsubject  bool
-	reviews         map[uuid.UUID]struct{}
-	removedreviews  map[uuid.UUID]struct{}
-	clearedreviews  bool
-	done            bool
-	oldValue        func(context.Context) (*Card, error)
-	predicates      []predicate.Card
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	created_at           *time.Time
+	updated_at           *time.Time
+	progress             *uint8
+	addprogress          *int8
+	total_errors         *int32
+	addtotal_errors      *int32
+	unlocked_at          *time.Time
+	started_at           *time.Time
+	passed_at            *time.Time
+	available_at         *time.Time
+	burned_at            *time.Time
+	clearedFields        map[string]struct{}
+	deck_progress        *int
+	cleareddeck_progress bool
+	subject              *uuid.UUID
+	clearedsubject       bool
+	reviews              map[uuid.UUID]struct{}
+	removedreviews       map[uuid.UUID]struct{}
+	clearedreviews       bool
+	done                 bool
+	oldValue             func(context.Context) (*Card, error)
+	predicates           []predicate.Card
 }
 
 var _ ent.Mutation = (*CardMutation)(nil)
@@ -605,43 +989,43 @@ func (m *CardMutation) ResetBurnedAt() {
 	delete(m.clearedFields, card.FieldBurnedAt)
 }
 
-// SetUserID sets the "user" edge to the User entity by id.
-func (m *CardMutation) SetUserID(id string) {
-	m.user = &id
+// SetDeckProgressID sets the "deck_progress" edge to the DeckProgress entity by id.
+func (m *CardMutation) SetDeckProgressID(id int) {
+	m.deck_progress = &id
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (m *CardMutation) ClearUser() {
-	m.cleareduser = true
+// ClearDeckProgress clears the "deck_progress" edge to the DeckProgress entity.
+func (m *CardMutation) ClearDeckProgress() {
+	m.cleareddeck_progress = true
 }
 
-// UserCleared reports if the "user" edge to the User entity was cleared.
-func (m *CardMutation) UserCleared() bool {
-	return m.cleareduser
+// DeckProgressCleared reports if the "deck_progress" edge to the DeckProgress entity was cleared.
+func (m *CardMutation) DeckProgressCleared() bool {
+	return m.cleareddeck_progress
 }
 
-// UserID returns the "user" edge ID in the mutation.
-func (m *CardMutation) UserID() (id string, exists bool) {
-	if m.user != nil {
-		return *m.user, true
+// DeckProgressID returns the "deck_progress" edge ID in the mutation.
+func (m *CardMutation) DeckProgressID() (id int, exists bool) {
+	if m.deck_progress != nil {
+		return *m.deck_progress, true
 	}
 	return
 }
 
-// UserIDs returns the "user" edge IDs in the mutation.
+// DeckProgressIDs returns the "deck_progress" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// UserID instead. It exists only for internal usage by the builders.
-func (m *CardMutation) UserIDs() (ids []string) {
-	if id := m.user; id != nil {
+// DeckProgressID instead. It exists only for internal usage by the builders.
+func (m *CardMutation) DeckProgressIDs() (ids []int) {
+	if id := m.deck_progress; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetUser resets all changes to the "user" edge.
-func (m *CardMutation) ResetUser() {
-	m.user = nil
-	m.cleareduser = false
+// ResetDeckProgress resets all changes to the "deck_progress" edge.
+func (m *CardMutation) ResetDeckProgress() {
+	m.deck_progress = nil
+	m.cleareddeck_progress = false
 }
 
 // SetSubjectID sets the "subject" edge to the Subject entity by id.
@@ -1052,8 +1436,8 @@ func (m *CardMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CardMutation) AddedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.user != nil {
-		edges = append(edges, card.EdgeUser)
+	if m.deck_progress != nil {
+		edges = append(edges, card.EdgeDeckProgress)
 	}
 	if m.subject != nil {
 		edges = append(edges, card.EdgeSubject)
@@ -1068,8 +1452,8 @@ func (m *CardMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *CardMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case card.EdgeUser:
-		if id := m.user; id != nil {
+	case card.EdgeDeckProgress:
+		if id := m.deck_progress; id != nil {
 			return []ent.Value{*id}
 		}
 	case card.EdgeSubject:
@@ -1112,8 +1496,8 @@ func (m *CardMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CardMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.cleareduser {
-		edges = append(edges, card.EdgeUser)
+	if m.cleareddeck_progress {
+		edges = append(edges, card.EdgeDeckProgress)
 	}
 	if m.clearedsubject {
 		edges = append(edges, card.EdgeSubject)
@@ -1128,8 +1512,8 @@ func (m *CardMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *CardMutation) EdgeCleared(name string) bool {
 	switch name {
-	case card.EdgeUser:
-		return m.cleareduser
+	case card.EdgeDeckProgress:
+		return m.cleareddeck_progress
 	case card.EdgeSubject:
 		return m.clearedsubject
 	case card.EdgeReviews:
@@ -1142,8 +1526,8 @@ func (m *CardMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *CardMutation) ClearEdge(name string) error {
 	switch name {
-	case card.EdgeUser:
-		m.ClearUser()
+	case card.EdgeDeckProgress:
+		m.ClearDeckProgress()
 		return nil
 	case card.EdgeSubject:
 		m.ClearSubject()
@@ -1156,8 +1540,8 @@ func (m *CardMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *CardMutation) ResetEdge(name string) error {
 	switch name {
-	case card.EdgeUser:
-		m.ResetUser()
+	case card.EdgeDeckProgress:
+		m.ResetDeckProgress()
 		return nil
 	case card.EdgeSubject:
 		m.ResetSubject()
@@ -1169,51 +1553,44 @@ func (m *CardMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Card edge %s", name)
 }
 
-// KanjiMutation represents an operation that mutates the Kanji nodes in the graph.
-type KanjiMutation struct {
+// DeckMutation represents an operation that mutates the Deck nodes in the graph.
+type DeckMutation struct {
 	config
-	op                     Op
-	typ                    string
-	id                     *uuid.UUID
-	created_at             *time.Time
-	updated_at             *time.Time
-	symbol                 *string
-	name                   *string
-	alt_names              *pgtype.TextArray
-	level                  *int32
-	addlevel               *int32
-	reading                *string
-	onyomi                 *pgtype.TextArray
-	kunyomi                *pgtype.TextArray
-	nanori                 *pgtype.TextArray
-	meaning_mnemonic       *string
-	reading_mnemonic       *string
-	clearedFields          map[string]struct{}
-	vocabularies           map[uuid.UUID]struct{}
-	removedvocabularies    map[uuid.UUID]struct{}
-	clearedvocabularies    bool
-	radicals               map[uuid.UUID]struct{}
-	removedradicals        map[uuid.UUID]struct{}
-	clearedradicals        bool
-	visuallySimilar        map[uuid.UUID]struct{}
-	removedvisuallySimilar map[uuid.UUID]struct{}
-	clearedvisuallySimilar bool
-	done                   bool
-	oldValue               func(context.Context) (*Kanji, error)
-	predicates             []predicate.Kanji
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	created_at            *time.Time
+	updated_at            *time.Time
+	name                  *string
+	description           *string
+	clearedFields         map[string]struct{}
+	subscribers           map[string]struct{}
+	removedsubscribers    map[string]struct{}
+	clearedsubscribers    bool
+	owner                 *string
+	clearedowner          bool
+	subjects              map[uuid.UUID]struct{}
+	removedsubjects       map[uuid.UUID]struct{}
+	clearedsubjects       bool
+	users_progress        map[int]struct{}
+	removedusers_progress map[int]struct{}
+	clearedusers_progress bool
+	done                  bool
+	oldValue              func(context.Context) (*Deck, error)
+	predicates            []predicate.Deck
 }
 
-var _ ent.Mutation = (*KanjiMutation)(nil)
+var _ ent.Mutation = (*DeckMutation)(nil)
 
-// kanjiOption allows management of the mutation configuration using functional options.
-type kanjiOption func(*KanjiMutation)
+// deckOption allows management of the mutation configuration using functional options.
+type deckOption func(*DeckMutation)
 
-// newKanjiMutation creates new mutation for the Kanji entity.
-func newKanjiMutation(c config, op Op, opts ...kanjiOption) *KanjiMutation {
-	m := &KanjiMutation{
+// newDeckMutation creates new mutation for the Deck entity.
+func newDeckMutation(c config, op Op, opts ...deckOption) *DeckMutation {
+	m := &DeckMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeKanji,
+		typ:           TypeDeck,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -1222,20 +1599,20 @@ func newKanjiMutation(c config, op Op, opts ...kanjiOption) *KanjiMutation {
 	return m
 }
 
-// withKanjiID sets the ID field of the mutation.
-func withKanjiID(id uuid.UUID) kanjiOption {
-	return func(m *KanjiMutation) {
+// withDeckID sets the ID field of the mutation.
+func withDeckID(id uuid.UUID) deckOption {
+	return func(m *DeckMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *Kanji
+			value *Deck
 		)
-		m.oldValue = func(ctx context.Context) (*Kanji, error) {
+		m.oldValue = func(ctx context.Context) (*Deck, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().Kanji.Get(ctx, id)
+					value, err = m.Client().Deck.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -1244,10 +1621,10 @@ func withKanjiID(id uuid.UUID) kanjiOption {
 	}
 }
 
-// withKanji sets the old Kanji of the mutation.
-func withKanji(node *Kanji) kanjiOption {
-	return func(m *KanjiMutation) {
-		m.oldValue = func(context.Context) (*Kanji, error) {
+// withDeck sets the old Deck of the mutation.
+func withDeck(node *Deck) deckOption {
+	return func(m *DeckMutation) {
+		m.oldValue = func(context.Context) (*Deck, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -1256,7 +1633,7 @@ func withKanji(node *Kanji) kanjiOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m KanjiMutation) Client() *Client {
+func (m DeckMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -1264,7 +1641,7 @@ func (m KanjiMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m KanjiMutation) Tx() (*Tx, error) {
+func (m DeckMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -1274,14 +1651,14 @@ func (m KanjiMutation) Tx() (*Tx, error) {
 }
 
 // SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of Kanji entities.
-func (m *KanjiMutation) SetID(id uuid.UUID) {
+// operation is only accepted on creation of Deck entities.
+func (m *DeckMutation) SetID(id uuid.UUID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *KanjiMutation) ID() (id uuid.UUID, exists bool) {
+func (m *DeckMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1292,7 +1669,7 @@ func (m *KanjiMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *KanjiMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *DeckMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -1301,19 +1678,19 @@ func (m *KanjiMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Kanji.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().Deck.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (m *KanjiMutation) SetCreatedAt(t time.Time) {
+func (m *DeckMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
 }
 
 // CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *KanjiMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *DeckMutation) CreatedAt() (r time.Time, exists bool) {
 	v := m.created_at
 	if v == nil {
 		return
@@ -1321,10 +1698,10 @@ func (m *KanjiMutation) CreatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
+// OldCreatedAt returns the old "created_at" field's value of the Deck entity.
+// If the Deck object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *DeckMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
@@ -1339,17 +1716,17 @@ func (m *KanjiMutation) OldCreatedAt(ctx context.Context) (v time.Time, err erro
 }
 
 // ResetCreatedAt resets all changes to the "created_at" field.
-func (m *KanjiMutation) ResetCreatedAt() {
+func (m *DeckMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (m *KanjiMutation) SetUpdatedAt(t time.Time) {
+func (m *DeckMutation) SetUpdatedAt(t time.Time) {
 	m.updated_at = &t
 }
 
 // UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *KanjiMutation) UpdatedAt() (r time.Time, exists bool) {
+func (m *DeckMutation) UpdatedAt() (r time.Time, exists bool) {
 	v := m.updated_at
 	if v == nil {
 		return
@@ -1357,10 +1734,10 @@ func (m *KanjiMutation) UpdatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldUpdatedAt returns the old "updated_at" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
+// OldUpdatedAt returns the old "updated_at" field's value of the Deck entity.
+// If the Deck object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *DeckMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
 	}
@@ -1375,53 +1752,17 @@ func (m *KanjiMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err erro
 }
 
 // ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *KanjiMutation) ResetUpdatedAt() {
+func (m *DeckMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// SetSymbol sets the "symbol" field.
-func (m *KanjiMutation) SetSymbol(s string) {
-	m.symbol = &s
-}
-
-// Symbol returns the value of the "symbol" field in the mutation.
-func (m *KanjiMutation) Symbol() (r string, exists bool) {
-	v := m.symbol
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSymbol returns the old "symbol" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldSymbol(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSymbol is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSymbol requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSymbol: %w", err)
-	}
-	return oldValue.Symbol, nil
-}
-
-// ResetSymbol resets all changes to the "symbol" field.
-func (m *KanjiMutation) ResetSymbol() {
-	m.symbol = nil
-}
-
 // SetName sets the "name" field.
-func (m *KanjiMutation) SetName(s string) {
+func (m *DeckMutation) SetName(s string) {
 	m.name = &s
 }
 
 // Name returns the value of the "name" field in the mutation.
-func (m *KanjiMutation) Name() (r string, exists bool) {
+func (m *DeckMutation) Name() (r string, exists bool) {
 	v := m.name
 	if v == nil {
 		return
@@ -1429,10 +1770,10 @@ func (m *KanjiMutation) Name() (r string, exists bool) {
 	return *v, true
 }
 
-// OldName returns the old "name" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
+// OldName returns the old "name" field's value of the Deck entity.
+// If the Deck object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldName(ctx context.Context) (v string, err error) {
+func (m *DeckMutation) OldName(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldName is only allowed on UpdateOne operations")
 	}
@@ -1447,548 +1788,278 @@ func (m *KanjiMutation) OldName(ctx context.Context) (v string, err error) {
 }
 
 // ResetName resets all changes to the "name" field.
-func (m *KanjiMutation) ResetName() {
+func (m *DeckMutation) ResetName() {
 	m.name = nil
 }
 
-// SetAltNames sets the "alt_names" field.
-func (m *KanjiMutation) SetAltNames(pa pgtype.TextArray) {
-	m.alt_names = &pa
+// SetDescription sets the "description" field.
+func (m *DeckMutation) SetDescription(s string) {
+	m.description = &s
 }
 
-// AltNames returns the value of the "alt_names" field in the mutation.
-func (m *KanjiMutation) AltNames() (r pgtype.TextArray, exists bool) {
-	v := m.alt_names
+// Description returns the value of the "description" field in the mutation.
+func (m *DeckMutation) Description() (r string, exists bool) {
+	v := m.description
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldAltNames returns the old "alt_names" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
+// OldDescription returns the old "description" field's value of the Deck entity.
+// If the Deck object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldAltNames(ctx context.Context) (v pgtype.TextArray, err error) {
+func (m *DeckMutation) OldDescription(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAltNames is only allowed on UpdateOne operations")
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAltNames requires an ID field in the mutation")
+		return v, errors.New("OldDescription requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAltNames: %w", err)
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
 	}
-	return oldValue.AltNames, nil
+	return oldValue.Description, nil
 }
 
-// ClearAltNames clears the value of the "alt_names" field.
-func (m *KanjiMutation) ClearAltNames() {
-	m.alt_names = nil
-	m.clearedFields[kanji.FieldAltNames] = struct{}{}
+// ResetDescription resets all changes to the "description" field.
+func (m *DeckMutation) ResetDescription() {
+	m.description = nil
 }
 
-// AltNamesCleared returns if the "alt_names" field was cleared in this mutation.
-func (m *KanjiMutation) AltNamesCleared() bool {
-	_, ok := m.clearedFields[kanji.FieldAltNames]
-	return ok
-}
-
-// ResetAltNames resets all changes to the "alt_names" field.
-func (m *KanjiMutation) ResetAltNames() {
-	m.alt_names = nil
-	delete(m.clearedFields, kanji.FieldAltNames)
-}
-
-// SetLevel sets the "level" field.
-func (m *KanjiMutation) SetLevel(i int32) {
-	m.level = &i
-	m.addlevel = nil
-}
-
-// Level returns the value of the "level" field in the mutation.
-func (m *KanjiMutation) Level() (r int32, exists bool) {
-	v := m.level
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLevel returns the old "level" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldLevel(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLevel requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLevel: %w", err)
-	}
-	return oldValue.Level, nil
-}
-
-// AddLevel adds i to the "level" field.
-func (m *KanjiMutation) AddLevel(i int32) {
-	if m.addlevel != nil {
-		*m.addlevel += i
-	} else {
-		m.addlevel = &i
-	}
-}
-
-// AddedLevel returns the value that was added to the "level" field in this mutation.
-func (m *KanjiMutation) AddedLevel() (r int32, exists bool) {
-	v := m.addlevel
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetLevel resets all changes to the "level" field.
-func (m *KanjiMutation) ResetLevel() {
-	m.level = nil
-	m.addlevel = nil
-}
-
-// SetReading sets the "reading" field.
-func (m *KanjiMutation) SetReading(s string) {
-	m.reading = &s
-}
-
-// Reading returns the value of the "reading" field in the mutation.
-func (m *KanjiMutation) Reading() (r string, exists bool) {
-	v := m.reading
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldReading returns the old "reading" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldReading(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldReading is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldReading requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldReading: %w", err)
-	}
-	return oldValue.Reading, nil
-}
-
-// ResetReading resets all changes to the "reading" field.
-func (m *KanjiMutation) ResetReading() {
-	m.reading = nil
-}
-
-// SetOnyomi sets the "onyomi" field.
-func (m *KanjiMutation) SetOnyomi(pa pgtype.TextArray) {
-	m.onyomi = &pa
-}
-
-// Onyomi returns the value of the "onyomi" field in the mutation.
-func (m *KanjiMutation) Onyomi() (r pgtype.TextArray, exists bool) {
-	v := m.onyomi
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldOnyomi returns the old "onyomi" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldOnyomi(ctx context.Context) (v pgtype.TextArray, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOnyomi is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOnyomi requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOnyomi: %w", err)
-	}
-	return oldValue.Onyomi, nil
-}
-
-// ResetOnyomi resets all changes to the "onyomi" field.
-func (m *KanjiMutation) ResetOnyomi() {
-	m.onyomi = nil
-}
-
-// SetKunyomi sets the "kunyomi" field.
-func (m *KanjiMutation) SetKunyomi(pa pgtype.TextArray) {
-	m.kunyomi = &pa
-}
-
-// Kunyomi returns the value of the "kunyomi" field in the mutation.
-func (m *KanjiMutation) Kunyomi() (r pgtype.TextArray, exists bool) {
-	v := m.kunyomi
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldKunyomi returns the old "kunyomi" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldKunyomi(ctx context.Context) (v pgtype.TextArray, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldKunyomi is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldKunyomi requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldKunyomi: %w", err)
-	}
-	return oldValue.Kunyomi, nil
-}
-
-// ResetKunyomi resets all changes to the "kunyomi" field.
-func (m *KanjiMutation) ResetKunyomi() {
-	m.kunyomi = nil
-}
-
-// SetNanori sets the "nanori" field.
-func (m *KanjiMutation) SetNanori(pa pgtype.TextArray) {
-	m.nanori = &pa
-}
-
-// Nanori returns the value of the "nanori" field in the mutation.
-func (m *KanjiMutation) Nanori() (r pgtype.TextArray, exists bool) {
-	v := m.nanori
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldNanori returns the old "nanori" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldNanori(ctx context.Context) (v pgtype.TextArray, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldNanori is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldNanori requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldNanori: %w", err)
-	}
-	return oldValue.Nanori, nil
-}
-
-// ResetNanori resets all changes to the "nanori" field.
-func (m *KanjiMutation) ResetNanori() {
-	m.nanori = nil
-}
-
-// SetMeaningMnemonic sets the "meaning_mnemonic" field.
-func (m *KanjiMutation) SetMeaningMnemonic(s string) {
-	m.meaning_mnemonic = &s
-}
-
-// MeaningMnemonic returns the value of the "meaning_mnemonic" field in the mutation.
-func (m *KanjiMutation) MeaningMnemonic() (r string, exists bool) {
-	v := m.meaning_mnemonic
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldMeaningMnemonic returns the old "meaning_mnemonic" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldMeaningMnemonic(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMeaningMnemonic is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMeaningMnemonic requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMeaningMnemonic: %w", err)
-	}
-	return oldValue.MeaningMnemonic, nil
-}
-
-// ResetMeaningMnemonic resets all changes to the "meaning_mnemonic" field.
-func (m *KanjiMutation) ResetMeaningMnemonic() {
-	m.meaning_mnemonic = nil
-}
-
-// SetReadingMnemonic sets the "reading_mnemonic" field.
-func (m *KanjiMutation) SetReadingMnemonic(s string) {
-	m.reading_mnemonic = &s
-}
-
-// ReadingMnemonic returns the value of the "reading_mnemonic" field in the mutation.
-func (m *KanjiMutation) ReadingMnemonic() (r string, exists bool) {
-	v := m.reading_mnemonic
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldReadingMnemonic returns the old "reading_mnemonic" field's value of the Kanji entity.
-// If the Kanji object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *KanjiMutation) OldReadingMnemonic(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldReadingMnemonic is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldReadingMnemonic requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldReadingMnemonic: %w", err)
-	}
-	return oldValue.ReadingMnemonic, nil
-}
-
-// ResetReadingMnemonic resets all changes to the "reading_mnemonic" field.
-func (m *KanjiMutation) ResetReadingMnemonic() {
-	m.reading_mnemonic = nil
-}
-
-// AddVocabularyIDs adds the "vocabularies" edge to the Vocabulary entity by ids.
-func (m *KanjiMutation) AddVocabularyIDs(ids ...uuid.UUID) {
-	if m.vocabularies == nil {
-		m.vocabularies = make(map[uuid.UUID]struct{})
+// AddSubscriberIDs adds the "subscribers" edge to the User entity by ids.
+func (m *DeckMutation) AddSubscriberIDs(ids ...string) {
+	if m.subscribers == nil {
+		m.subscribers = make(map[string]struct{})
 	}
 	for i := range ids {
-		m.vocabularies[ids[i]] = struct{}{}
+		m.subscribers[ids[i]] = struct{}{}
 	}
 }
 
-// ClearVocabularies clears the "vocabularies" edge to the Vocabulary entity.
-func (m *KanjiMutation) ClearVocabularies() {
-	m.clearedvocabularies = true
+// ClearSubscribers clears the "subscribers" edge to the User entity.
+func (m *DeckMutation) ClearSubscribers() {
+	m.clearedsubscribers = true
 }
 
-// VocabulariesCleared reports if the "vocabularies" edge to the Vocabulary entity was cleared.
-func (m *KanjiMutation) VocabulariesCleared() bool {
-	return m.clearedvocabularies
+// SubscribersCleared reports if the "subscribers" edge to the User entity was cleared.
+func (m *DeckMutation) SubscribersCleared() bool {
+	return m.clearedsubscribers
 }
 
-// RemoveVocabularyIDs removes the "vocabularies" edge to the Vocabulary entity by IDs.
-func (m *KanjiMutation) RemoveVocabularyIDs(ids ...uuid.UUID) {
-	if m.removedvocabularies == nil {
-		m.removedvocabularies = make(map[uuid.UUID]struct{})
+// RemoveSubscriberIDs removes the "subscribers" edge to the User entity by IDs.
+func (m *DeckMutation) RemoveSubscriberIDs(ids ...string) {
+	if m.removedsubscribers == nil {
+		m.removedsubscribers = make(map[string]struct{})
 	}
 	for i := range ids {
-		delete(m.vocabularies, ids[i])
-		m.removedvocabularies[ids[i]] = struct{}{}
+		delete(m.subscribers, ids[i])
+		m.removedsubscribers[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedVocabularies returns the removed IDs of the "vocabularies" edge to the Vocabulary entity.
-func (m *KanjiMutation) RemovedVocabulariesIDs() (ids []uuid.UUID) {
-	for id := range m.removedvocabularies {
+// RemovedSubscribers returns the removed IDs of the "subscribers" edge to the User entity.
+func (m *DeckMutation) RemovedSubscribersIDs() (ids []string) {
+	for id := range m.removedsubscribers {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// VocabulariesIDs returns the "vocabularies" edge IDs in the mutation.
-func (m *KanjiMutation) VocabulariesIDs() (ids []uuid.UUID) {
-	for id := range m.vocabularies {
+// SubscribersIDs returns the "subscribers" edge IDs in the mutation.
+func (m *DeckMutation) SubscribersIDs() (ids []string) {
+	for id := range m.subscribers {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetVocabularies resets all changes to the "vocabularies" edge.
-func (m *KanjiMutation) ResetVocabularies() {
-	m.vocabularies = nil
-	m.clearedvocabularies = false
-	m.removedvocabularies = nil
+// ResetSubscribers resets all changes to the "subscribers" edge.
+func (m *DeckMutation) ResetSubscribers() {
+	m.subscribers = nil
+	m.clearedsubscribers = false
+	m.removedsubscribers = nil
 }
 
-// AddRadicalIDs adds the "radicals" edge to the Radical entity by ids.
-func (m *KanjiMutation) AddRadicalIDs(ids ...uuid.UUID) {
-	if m.radicals == nil {
-		m.radicals = make(map[uuid.UUID]struct{})
+// SetOwnerID sets the "owner" edge to the User entity by id.
+func (m *DeckMutation) SetOwnerID(id string) {
+	m.owner = &id
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (m *DeckMutation) ClearOwner() {
+	m.clearedowner = true
+}
+
+// OwnerCleared reports if the "owner" edge to the User entity was cleared.
+func (m *DeckMutation) OwnerCleared() bool {
+	return m.clearedowner
+}
+
+// OwnerID returns the "owner" edge ID in the mutation.
+func (m *DeckMutation) OwnerID() (id string, exists bool) {
+	if m.owner != nil {
+		return *m.owner, true
+	}
+	return
+}
+
+// OwnerIDs returns the "owner" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OwnerID instead. It exists only for internal usage by the builders.
+func (m *DeckMutation) OwnerIDs() (ids []string) {
+	if id := m.owner; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOwner resets all changes to the "owner" edge.
+func (m *DeckMutation) ResetOwner() {
+	m.owner = nil
+	m.clearedowner = false
+}
+
+// AddSubjectIDs adds the "subjects" edge to the Subject entity by ids.
+func (m *DeckMutation) AddSubjectIDs(ids ...uuid.UUID) {
+	if m.subjects == nil {
+		m.subjects = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.radicals[ids[i]] = struct{}{}
+		m.subjects[ids[i]] = struct{}{}
 	}
 }
 
-// ClearRadicals clears the "radicals" edge to the Radical entity.
-func (m *KanjiMutation) ClearRadicals() {
-	m.clearedradicals = true
+// ClearSubjects clears the "subjects" edge to the Subject entity.
+func (m *DeckMutation) ClearSubjects() {
+	m.clearedsubjects = true
 }
 
-// RadicalsCleared reports if the "radicals" edge to the Radical entity was cleared.
-func (m *KanjiMutation) RadicalsCleared() bool {
-	return m.clearedradicals
+// SubjectsCleared reports if the "subjects" edge to the Subject entity was cleared.
+func (m *DeckMutation) SubjectsCleared() bool {
+	return m.clearedsubjects
 }
 
-// RemoveRadicalIDs removes the "radicals" edge to the Radical entity by IDs.
-func (m *KanjiMutation) RemoveRadicalIDs(ids ...uuid.UUID) {
-	if m.removedradicals == nil {
-		m.removedradicals = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.radicals, ids[i])
-		m.removedradicals[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedRadicals returns the removed IDs of the "radicals" edge to the Radical entity.
-func (m *KanjiMutation) RemovedRadicalsIDs() (ids []uuid.UUID) {
-	for id := range m.removedradicals {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// RadicalsIDs returns the "radicals" edge IDs in the mutation.
-func (m *KanjiMutation) RadicalsIDs() (ids []uuid.UUID) {
-	for id := range m.radicals {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetRadicals resets all changes to the "radicals" edge.
-func (m *KanjiMutation) ResetRadicals() {
-	m.radicals = nil
-	m.clearedradicals = false
-	m.removedradicals = nil
-}
-
-// AddVisuallySimilarIDs adds the "visuallySimilar" edge to the Kanji entity by ids.
-func (m *KanjiMutation) AddVisuallySimilarIDs(ids ...uuid.UUID) {
-	if m.visuallySimilar == nil {
-		m.visuallySimilar = make(map[uuid.UUID]struct{})
+// RemoveSubjectIDs removes the "subjects" edge to the Subject entity by IDs.
+func (m *DeckMutation) RemoveSubjectIDs(ids ...uuid.UUID) {
+	if m.removedsubjects == nil {
+		m.removedsubjects = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.visuallySimilar[ids[i]] = struct{}{}
+		delete(m.subjects, ids[i])
+		m.removedsubjects[ids[i]] = struct{}{}
 	}
 }
 
-// ClearVisuallySimilar clears the "visuallySimilar" edge to the Kanji entity.
-func (m *KanjiMutation) ClearVisuallySimilar() {
-	m.clearedvisuallySimilar = true
+// RemovedSubjects returns the removed IDs of the "subjects" edge to the Subject entity.
+func (m *DeckMutation) RemovedSubjectsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsubjects {
+		ids = append(ids, id)
+	}
+	return
 }
 
-// VisuallySimilarCleared reports if the "visuallySimilar" edge to the Kanji entity was cleared.
-func (m *KanjiMutation) VisuallySimilarCleared() bool {
-	return m.clearedvisuallySimilar
+// SubjectsIDs returns the "subjects" edge IDs in the mutation.
+func (m *DeckMutation) SubjectsIDs() (ids []uuid.UUID) {
+	for id := range m.subjects {
+		ids = append(ids, id)
+	}
+	return
 }
 
-// RemoveVisuallySimilarIDs removes the "visuallySimilar" edge to the Kanji entity by IDs.
-func (m *KanjiMutation) RemoveVisuallySimilarIDs(ids ...uuid.UUID) {
-	if m.removedvisuallySimilar == nil {
-		m.removedvisuallySimilar = make(map[uuid.UUID]struct{})
+// ResetSubjects resets all changes to the "subjects" edge.
+func (m *DeckMutation) ResetSubjects() {
+	m.subjects = nil
+	m.clearedsubjects = false
+	m.removedsubjects = nil
+}
+
+// AddUsersProgresIDs adds the "users_progress" edge to the DeckProgress entity by ids.
+func (m *DeckMutation) AddUsersProgresIDs(ids ...int) {
+	if m.users_progress == nil {
+		m.users_progress = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.visuallySimilar, ids[i])
-		m.removedvisuallySimilar[ids[i]] = struct{}{}
+		m.users_progress[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedVisuallySimilar returns the removed IDs of the "visuallySimilar" edge to the Kanji entity.
-func (m *KanjiMutation) RemovedVisuallySimilarIDs() (ids []uuid.UUID) {
-	for id := range m.removedvisuallySimilar {
+// ClearUsersProgress clears the "users_progress" edge to the DeckProgress entity.
+func (m *DeckMutation) ClearUsersProgress() {
+	m.clearedusers_progress = true
+}
+
+// UsersProgressCleared reports if the "users_progress" edge to the DeckProgress entity was cleared.
+func (m *DeckMutation) UsersProgressCleared() bool {
+	return m.clearedusers_progress
+}
+
+// RemoveUsersProgresIDs removes the "users_progress" edge to the DeckProgress entity by IDs.
+func (m *DeckMutation) RemoveUsersProgresIDs(ids ...int) {
+	if m.removedusers_progress == nil {
+		m.removedusers_progress = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.users_progress, ids[i])
+		m.removedusers_progress[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUsersProgress returns the removed IDs of the "users_progress" edge to the DeckProgress entity.
+func (m *DeckMutation) RemovedUsersProgressIDs() (ids []int) {
+	for id := range m.removedusers_progress {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// VisuallySimilarIDs returns the "visuallySimilar" edge IDs in the mutation.
-func (m *KanjiMutation) VisuallySimilarIDs() (ids []uuid.UUID) {
-	for id := range m.visuallySimilar {
+// UsersProgressIDs returns the "users_progress" edge IDs in the mutation.
+func (m *DeckMutation) UsersProgressIDs() (ids []int) {
+	for id := range m.users_progress {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetVisuallySimilar resets all changes to the "visuallySimilar" edge.
-func (m *KanjiMutation) ResetVisuallySimilar() {
-	m.visuallySimilar = nil
-	m.clearedvisuallySimilar = false
-	m.removedvisuallySimilar = nil
+// ResetUsersProgress resets all changes to the "users_progress" edge.
+func (m *DeckMutation) ResetUsersProgress() {
+	m.users_progress = nil
+	m.clearedusers_progress = false
+	m.removedusers_progress = nil
 }
 
-// Where appends a list predicates to the KanjiMutation builder.
-func (m *KanjiMutation) Where(ps ...predicate.Kanji) {
+// Where appends a list predicates to the DeckMutation builder.
+func (m *DeckMutation) Where(ps ...predicate.Deck) {
 	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
-func (m *KanjiMutation) Op() Op {
+func (m *DeckMutation) Op() Op {
 	return m.op
 }
 
-// Type returns the node type of this mutation (Kanji).
-func (m *KanjiMutation) Type() string {
+// Type returns the node type of this mutation (Deck).
+func (m *DeckMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *KanjiMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+func (m *DeckMutation) Fields() []string {
+	fields := make([]string, 0, 4)
 	if m.created_at != nil {
-		fields = append(fields, kanji.FieldCreatedAt)
+		fields = append(fields, deck.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
-		fields = append(fields, kanji.FieldUpdatedAt)
-	}
-	if m.symbol != nil {
-		fields = append(fields, kanji.FieldSymbol)
+		fields = append(fields, deck.FieldUpdatedAt)
 	}
 	if m.name != nil {
-		fields = append(fields, kanji.FieldName)
+		fields = append(fields, deck.FieldName)
 	}
-	if m.alt_names != nil {
-		fields = append(fields, kanji.FieldAltNames)
-	}
-	if m.level != nil {
-		fields = append(fields, kanji.FieldLevel)
-	}
-	if m.reading != nil {
-		fields = append(fields, kanji.FieldReading)
-	}
-	if m.onyomi != nil {
-		fields = append(fields, kanji.FieldOnyomi)
-	}
-	if m.kunyomi != nil {
-		fields = append(fields, kanji.FieldKunyomi)
-	}
-	if m.nanori != nil {
-		fields = append(fields, kanji.FieldNanori)
-	}
-	if m.meaning_mnemonic != nil {
-		fields = append(fields, kanji.FieldMeaningMnemonic)
-	}
-	if m.reading_mnemonic != nil {
-		fields = append(fields, kanji.FieldReadingMnemonic)
+	if m.description != nil {
+		fields = append(fields, deck.FieldDescription)
 	}
 	return fields
 }
@@ -1996,32 +2067,16 @@ func (m *KanjiMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *KanjiMutation) Field(name string) (ent.Value, bool) {
+func (m *DeckMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case kanji.FieldCreatedAt:
+	case deck.FieldCreatedAt:
 		return m.CreatedAt()
-	case kanji.FieldUpdatedAt:
+	case deck.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case kanji.FieldSymbol:
-		return m.Symbol()
-	case kanji.FieldName:
+	case deck.FieldName:
 		return m.Name()
-	case kanji.FieldAltNames:
-		return m.AltNames()
-	case kanji.FieldLevel:
-		return m.Level()
-	case kanji.FieldReading:
-		return m.Reading()
-	case kanji.FieldOnyomi:
-		return m.Onyomi()
-	case kanji.FieldKunyomi:
-		return m.Kunyomi()
-	case kanji.FieldNanori:
-		return m.Nanori()
-	case kanji.FieldMeaningMnemonic:
-		return m.MeaningMnemonic()
-	case kanji.FieldReadingMnemonic:
-		return m.ReadingMnemonic()
+	case deck.FieldDescription:
+		return m.Description()
 	}
 	return nil, false
 }
@@ -2029,272 +2084,159 @@ func (m *KanjiMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *KanjiMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *DeckMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case kanji.FieldCreatedAt:
+	case deck.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case kanji.FieldUpdatedAt:
+	case deck.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case kanji.FieldSymbol:
-		return m.OldSymbol(ctx)
-	case kanji.FieldName:
+	case deck.FieldName:
 		return m.OldName(ctx)
-	case kanji.FieldAltNames:
-		return m.OldAltNames(ctx)
-	case kanji.FieldLevel:
-		return m.OldLevel(ctx)
-	case kanji.FieldReading:
-		return m.OldReading(ctx)
-	case kanji.FieldOnyomi:
-		return m.OldOnyomi(ctx)
-	case kanji.FieldKunyomi:
-		return m.OldKunyomi(ctx)
-	case kanji.FieldNanori:
-		return m.OldNanori(ctx)
-	case kanji.FieldMeaningMnemonic:
-		return m.OldMeaningMnemonic(ctx)
-	case kanji.FieldReadingMnemonic:
-		return m.OldReadingMnemonic(ctx)
+	case deck.FieldDescription:
+		return m.OldDescription(ctx)
 	}
-	return nil, fmt.Errorf("unknown Kanji field %s", name)
+	return nil, fmt.Errorf("unknown Deck field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *KanjiMutation) SetField(name string, value ent.Value) error {
+func (m *DeckMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case kanji.FieldCreatedAt:
+	case deck.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
 		return nil
-	case kanji.FieldUpdatedAt:
+	case deck.FieldUpdatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case kanji.FieldSymbol:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSymbol(v)
-		return nil
-	case kanji.FieldName:
+	case deck.FieldName:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
 		return nil
-	case kanji.FieldAltNames:
-		v, ok := value.(pgtype.TextArray)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAltNames(v)
-		return nil
-	case kanji.FieldLevel:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLevel(v)
-		return nil
-	case kanji.FieldReading:
+	case deck.FieldDescription:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetReading(v)
-		return nil
-	case kanji.FieldOnyomi:
-		v, ok := value.(pgtype.TextArray)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetOnyomi(v)
-		return nil
-	case kanji.FieldKunyomi:
-		v, ok := value.(pgtype.TextArray)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetKunyomi(v)
-		return nil
-	case kanji.FieldNanori:
-		v, ok := value.(pgtype.TextArray)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetNanori(v)
-		return nil
-	case kanji.FieldMeaningMnemonic:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetMeaningMnemonic(v)
-		return nil
-	case kanji.FieldReadingMnemonic:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetReadingMnemonic(v)
+		m.SetDescription(v)
 		return nil
 	}
-	return fmt.Errorf("unknown Kanji field %s", name)
+	return fmt.Errorf("unknown Deck field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *KanjiMutation) AddedFields() []string {
-	var fields []string
-	if m.addlevel != nil {
-		fields = append(fields, kanji.FieldLevel)
-	}
-	return fields
+func (m *DeckMutation) AddedFields() []string {
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *KanjiMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case kanji.FieldLevel:
-		return m.AddedLevel()
-	}
+func (m *DeckMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *KanjiMutation) AddField(name string, value ent.Value) error {
+func (m *DeckMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case kanji.FieldLevel:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddLevel(v)
-		return nil
 	}
-	return fmt.Errorf("unknown Kanji numeric field %s", name)
+	return fmt.Errorf("unknown Deck numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *KanjiMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(kanji.FieldAltNames) {
-		fields = append(fields, kanji.FieldAltNames)
-	}
-	return fields
+func (m *DeckMutation) ClearedFields() []string {
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *KanjiMutation) FieldCleared(name string) bool {
+func (m *DeckMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *KanjiMutation) ClearField(name string) error {
-	switch name {
-	case kanji.FieldAltNames:
-		m.ClearAltNames()
-		return nil
-	}
-	return fmt.Errorf("unknown Kanji nullable field %s", name)
+func (m *DeckMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Deck nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *KanjiMutation) ResetField(name string) error {
+func (m *DeckMutation) ResetField(name string) error {
 	switch name {
-	case kanji.FieldCreatedAt:
+	case deck.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
-	case kanji.FieldUpdatedAt:
+	case deck.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case kanji.FieldSymbol:
-		m.ResetSymbol()
-		return nil
-	case kanji.FieldName:
+	case deck.FieldName:
 		m.ResetName()
 		return nil
-	case kanji.FieldAltNames:
-		m.ResetAltNames()
-		return nil
-	case kanji.FieldLevel:
-		m.ResetLevel()
-		return nil
-	case kanji.FieldReading:
-		m.ResetReading()
-		return nil
-	case kanji.FieldOnyomi:
-		m.ResetOnyomi()
-		return nil
-	case kanji.FieldKunyomi:
-		m.ResetKunyomi()
-		return nil
-	case kanji.FieldNanori:
-		m.ResetNanori()
-		return nil
-	case kanji.FieldMeaningMnemonic:
-		m.ResetMeaningMnemonic()
-		return nil
-	case kanji.FieldReadingMnemonic:
-		m.ResetReadingMnemonic()
+	case deck.FieldDescription:
+		m.ResetDescription()
 		return nil
 	}
-	return fmt.Errorf("unknown Kanji field %s", name)
+	return fmt.Errorf("unknown Deck field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *KanjiMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.vocabularies != nil {
-		edges = append(edges, kanji.EdgeVocabularies)
+func (m *DeckMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.subscribers != nil {
+		edges = append(edges, deck.EdgeSubscribers)
 	}
-	if m.radicals != nil {
-		edges = append(edges, kanji.EdgeRadicals)
+	if m.owner != nil {
+		edges = append(edges, deck.EdgeOwner)
 	}
-	if m.visuallySimilar != nil {
-		edges = append(edges, kanji.EdgeVisuallySimilar)
+	if m.subjects != nil {
+		edges = append(edges, deck.EdgeSubjects)
+	}
+	if m.users_progress != nil {
+		edges = append(edges, deck.EdgeUsersProgress)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *KanjiMutation) AddedIDs(name string) []ent.Value {
+func (m *DeckMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case kanji.EdgeVocabularies:
-		ids := make([]ent.Value, 0, len(m.vocabularies))
-		for id := range m.vocabularies {
+	case deck.EdgeSubscribers:
+		ids := make([]ent.Value, 0, len(m.subscribers))
+		for id := range m.subscribers {
 			ids = append(ids, id)
 		}
 		return ids
-	case kanji.EdgeRadicals:
-		ids := make([]ent.Value, 0, len(m.radicals))
-		for id := range m.radicals {
+	case deck.EdgeOwner:
+		if id := m.owner; id != nil {
+			return []ent.Value{*id}
+		}
+	case deck.EdgeSubjects:
+		ids := make([]ent.Value, 0, len(m.subjects))
+		for id := range m.subjects {
 			ids = append(ids, id)
 		}
 		return ids
-	case kanji.EdgeVisuallySimilar:
-		ids := make([]ent.Value, 0, len(m.visuallySimilar))
-		for id := range m.visuallySimilar {
+	case deck.EdgeUsersProgress:
+		ids := make([]ent.Value, 0, len(m.users_progress))
+		for id := range m.users_progress {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2303,39 +2245,39 @@ func (m *KanjiMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *KanjiMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.removedvocabularies != nil {
-		edges = append(edges, kanji.EdgeVocabularies)
+func (m *DeckMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.removedsubscribers != nil {
+		edges = append(edges, deck.EdgeSubscribers)
 	}
-	if m.removedradicals != nil {
-		edges = append(edges, kanji.EdgeRadicals)
+	if m.removedsubjects != nil {
+		edges = append(edges, deck.EdgeSubjects)
 	}
-	if m.removedvisuallySimilar != nil {
-		edges = append(edges, kanji.EdgeVisuallySimilar)
+	if m.removedusers_progress != nil {
+		edges = append(edges, deck.EdgeUsersProgress)
 	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *KanjiMutation) RemovedIDs(name string) []ent.Value {
+func (m *DeckMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case kanji.EdgeVocabularies:
-		ids := make([]ent.Value, 0, len(m.removedvocabularies))
-		for id := range m.removedvocabularies {
+	case deck.EdgeSubscribers:
+		ids := make([]ent.Value, 0, len(m.removedsubscribers))
+		for id := range m.removedsubscribers {
 			ids = append(ids, id)
 		}
 		return ids
-	case kanji.EdgeRadicals:
-		ids := make([]ent.Value, 0, len(m.removedradicals))
-		for id := range m.removedradicals {
+	case deck.EdgeSubjects:
+		ids := make([]ent.Value, 0, len(m.removedsubjects))
+		for id := range m.removedsubjects {
 			ids = append(ids, id)
 		}
 		return ids
-	case kanji.EdgeVisuallySimilar:
-		ids := make([]ent.Value, 0, len(m.removedvisuallySimilar))
-		for id := range m.removedvisuallySimilar {
+	case deck.EdgeUsersProgress:
+		ids := make([]ent.Value, 0, len(m.removedusers_progress))
+		for id := range m.removedusers_progress {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2344,92 +2286,102 @@ func (m *KanjiMutation) RemovedIDs(name string) []ent.Value {
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *KanjiMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.clearedvocabularies {
-		edges = append(edges, kanji.EdgeVocabularies)
+func (m *DeckMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.clearedsubscribers {
+		edges = append(edges, deck.EdgeSubscribers)
 	}
-	if m.clearedradicals {
-		edges = append(edges, kanji.EdgeRadicals)
+	if m.clearedowner {
+		edges = append(edges, deck.EdgeOwner)
 	}
-	if m.clearedvisuallySimilar {
-		edges = append(edges, kanji.EdgeVisuallySimilar)
+	if m.clearedsubjects {
+		edges = append(edges, deck.EdgeSubjects)
+	}
+	if m.clearedusers_progress {
+		edges = append(edges, deck.EdgeUsersProgress)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *KanjiMutation) EdgeCleared(name string) bool {
+func (m *DeckMutation) EdgeCleared(name string) bool {
 	switch name {
-	case kanji.EdgeVocabularies:
-		return m.clearedvocabularies
-	case kanji.EdgeRadicals:
-		return m.clearedradicals
-	case kanji.EdgeVisuallySimilar:
-		return m.clearedvisuallySimilar
+	case deck.EdgeSubscribers:
+		return m.clearedsubscribers
+	case deck.EdgeOwner:
+		return m.clearedowner
+	case deck.EdgeSubjects:
+		return m.clearedsubjects
+	case deck.EdgeUsersProgress:
+		return m.clearedusers_progress
 	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *KanjiMutation) ClearEdge(name string) error {
+func (m *DeckMutation) ClearEdge(name string) error {
 	switch name {
+	case deck.EdgeOwner:
+		m.ClearOwner()
+		return nil
 	}
-	return fmt.Errorf("unknown Kanji unique edge %s", name)
+	return fmt.Errorf("unknown Deck unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *KanjiMutation) ResetEdge(name string) error {
+func (m *DeckMutation) ResetEdge(name string) error {
 	switch name {
-	case kanji.EdgeVocabularies:
-		m.ResetVocabularies()
+	case deck.EdgeSubscribers:
+		m.ResetSubscribers()
 		return nil
-	case kanji.EdgeRadicals:
-		m.ResetRadicals()
+	case deck.EdgeOwner:
+		m.ResetOwner()
 		return nil
-	case kanji.EdgeVisuallySimilar:
-		m.ResetVisuallySimilar()
+	case deck.EdgeSubjects:
+		m.ResetSubjects()
+		return nil
+	case deck.EdgeUsersProgress:
+		m.ResetUsersProgress()
 		return nil
 	}
-	return fmt.Errorf("unknown Kanji edge %s", name)
+	return fmt.Errorf("unknown Deck edge %s", name)
 }
 
-// RadicalMutation represents an operation that mutates the Radical nodes in the graph.
-type RadicalMutation struct {
+// DeckProgressMutation represents an operation that mutates the DeckProgress nodes in the graph.
+type DeckProgressMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	created_at       *time.Time
-	updated_at       *time.Time
-	name             *string
-	level            *int32
-	addlevel         *int32
-	symbol           *string
-	meaning_mnemonic *string
-	clearedFields    map[string]struct{}
-	kanjis           map[uuid.UUID]struct{}
-	removedkanjis    map[uuid.UUID]struct{}
-	clearedkanjis    bool
-	done             bool
-	oldValue         func(context.Context) (*Radical, error)
-	predicates       []predicate.Radical
+	op            Op
+	typ           string
+	id            *int
+	level         *uint32
+	addlevel      *int32
+	clearedFields map[string]struct{}
+	cards         map[uuid.UUID]struct{}
+	removedcards  map[uuid.UUID]struct{}
+	clearedcards  bool
+	user          *string
+	cleareduser   bool
+	deck          *uuid.UUID
+	cleareddeck   bool
+	done          bool
+	oldValue      func(context.Context) (*DeckProgress, error)
+	predicates    []predicate.DeckProgress
 }
 
-var _ ent.Mutation = (*RadicalMutation)(nil)
+var _ ent.Mutation = (*DeckProgressMutation)(nil)
 
-// radicalOption allows management of the mutation configuration using functional options.
-type radicalOption func(*RadicalMutation)
+// deckprogressOption allows management of the mutation configuration using functional options.
+type deckprogressOption func(*DeckProgressMutation)
 
-// newRadicalMutation creates new mutation for the Radical entity.
-func newRadicalMutation(c config, op Op, opts ...radicalOption) *RadicalMutation {
-	m := &RadicalMutation{
+// newDeckProgressMutation creates new mutation for the DeckProgress entity.
+func newDeckProgressMutation(c config, op Op, opts ...deckprogressOption) *DeckProgressMutation {
+	m := &DeckProgressMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeRadical,
+		typ:           TypeDeckProgress,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -2438,20 +2390,20 @@ func newRadicalMutation(c config, op Op, opts ...radicalOption) *RadicalMutation
 	return m
 }
 
-// withRadicalID sets the ID field of the mutation.
-func withRadicalID(id uuid.UUID) radicalOption {
-	return func(m *RadicalMutation) {
+// withDeckProgressID sets the ID field of the mutation.
+func withDeckProgressID(id int) deckprogressOption {
+	return func(m *DeckProgressMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *Radical
+			value *DeckProgress
 		)
-		m.oldValue = func(ctx context.Context) (*Radical, error) {
+		m.oldValue = func(ctx context.Context) (*DeckProgress, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().Radical.Get(ctx, id)
+					value, err = m.Client().DeckProgress.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -2460,10 +2412,10 @@ func withRadicalID(id uuid.UUID) radicalOption {
 	}
 }
 
-// withRadical sets the old Radical of the mutation.
-func withRadical(node *Radical) radicalOption {
-	return func(m *RadicalMutation) {
-		m.oldValue = func(context.Context) (*Radical, error) {
+// withDeckProgress sets the old DeckProgress of the mutation.
+func withDeckProgress(node *DeckProgress) deckprogressOption {
+	return func(m *DeckProgressMutation) {
+		m.oldValue = func(context.Context) (*DeckProgress, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -2472,7 +2424,7 @@ func withRadical(node *Radical) radicalOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m RadicalMutation) Client() *Client {
+func (m DeckProgressMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -2480,7 +2432,7 @@ func (m RadicalMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m RadicalMutation) Tx() (*Tx, error) {
+func (m DeckProgressMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -2489,15 +2441,9 @@ func (m RadicalMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of Radical entities.
-func (m *RadicalMutation) SetID(id uuid.UUID) {
-	m.id = &id
-}
-
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *RadicalMutation) ID() (id uuid.UUID, exists bool) {
+func (m *DeckProgressMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2508,137 +2454,29 @@ func (m *RadicalMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *RadicalMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *DeckProgressMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []int{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Radical.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().DeckProgress.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (m *RadicalMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *RadicalMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the Radical entity.
-// If the Radical object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RadicalMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *RadicalMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (m *RadicalMutation) SetUpdatedAt(t time.Time) {
-	m.updated_at = &t
-}
-
-// UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *RadicalMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old "updated_at" field's value of the Radical entity.
-// If the Radical object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RadicalMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *RadicalMutation) ResetUpdatedAt() {
-	m.updated_at = nil
-}
-
-// SetName sets the "name" field.
-func (m *RadicalMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the value of the "name" field in the mutation.
-func (m *RadicalMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old "name" field's value of the Radical entity.
-// If the Radical object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RadicalMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName resets all changes to the "name" field.
-func (m *RadicalMutation) ResetName() {
-	m.name = nil
-}
-
 // SetLevel sets the "level" field.
-func (m *RadicalMutation) SetLevel(i int32) {
-	m.level = &i
+func (m *DeckProgressMutation) SetLevel(u uint32) {
+	m.level = &u
 	m.addlevel = nil
 }
 
 // Level returns the value of the "level" field in the mutation.
-func (m *RadicalMutation) Level() (r int32, exists bool) {
+func (m *DeckProgressMutation) Level() (r uint32, exists bool) {
 	v := m.level
 	if v == nil {
 		return
@@ -2646,10 +2484,10 @@ func (m *RadicalMutation) Level() (r int32, exists bool) {
 	return *v, true
 }
 
-// OldLevel returns the old "level" field's value of the Radical entity.
-// If the Radical object wasn't provided to the builder, the object is fetched from the database.
+// OldLevel returns the old "level" field's value of the DeckProgress entity.
+// If the DeckProgress object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RadicalMutation) OldLevel(ctx context.Context) (v int32, err error) {
+func (m *DeckProgressMutation) OldLevel(ctx context.Context) (v uint32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
 	}
@@ -2663,17 +2501,17 @@ func (m *RadicalMutation) OldLevel(ctx context.Context) (v int32, err error) {
 	return oldValue.Level, nil
 }
 
-// AddLevel adds i to the "level" field.
-func (m *RadicalMutation) AddLevel(i int32) {
+// AddLevel adds u to the "level" field.
+func (m *DeckProgressMutation) AddLevel(u int32) {
 	if m.addlevel != nil {
-		*m.addlevel += i
+		*m.addlevel += u
 	} else {
-		m.addlevel = &i
+		m.addlevel = &u
 	}
 }
 
 // AddedLevel returns the value that was added to the "level" field in this mutation.
-func (m *RadicalMutation) AddedLevel() (r int32, exists bool) {
+func (m *DeckProgressMutation) AddedLevel() (r int32, exists bool) {
 	v := m.addlevel
 	if v == nil {
 		return
@@ -2682,174 +2520,165 @@ func (m *RadicalMutation) AddedLevel() (r int32, exists bool) {
 }
 
 // ResetLevel resets all changes to the "level" field.
-func (m *RadicalMutation) ResetLevel() {
+func (m *DeckProgressMutation) ResetLevel() {
 	m.level = nil
 	m.addlevel = nil
 }
 
-// SetSymbol sets the "symbol" field.
-func (m *RadicalMutation) SetSymbol(s string) {
-	m.symbol = &s
-}
-
-// Symbol returns the value of the "symbol" field in the mutation.
-func (m *RadicalMutation) Symbol() (r string, exists bool) {
-	v := m.symbol
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSymbol returns the old "symbol" field's value of the Radical entity.
-// If the Radical object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RadicalMutation) OldSymbol(ctx context.Context) (v *string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSymbol is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSymbol requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSymbol: %w", err)
-	}
-	return oldValue.Symbol, nil
-}
-
-// ResetSymbol resets all changes to the "symbol" field.
-func (m *RadicalMutation) ResetSymbol() {
-	m.symbol = nil
-}
-
-// SetMeaningMnemonic sets the "meaning_mnemonic" field.
-func (m *RadicalMutation) SetMeaningMnemonic(s string) {
-	m.meaning_mnemonic = &s
-}
-
-// MeaningMnemonic returns the value of the "meaning_mnemonic" field in the mutation.
-func (m *RadicalMutation) MeaningMnemonic() (r string, exists bool) {
-	v := m.meaning_mnemonic
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldMeaningMnemonic returns the old "meaning_mnemonic" field's value of the Radical entity.
-// If the Radical object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RadicalMutation) OldMeaningMnemonic(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMeaningMnemonic is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMeaningMnemonic requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMeaningMnemonic: %w", err)
-	}
-	return oldValue.MeaningMnemonic, nil
-}
-
-// ResetMeaningMnemonic resets all changes to the "meaning_mnemonic" field.
-func (m *RadicalMutation) ResetMeaningMnemonic() {
-	m.meaning_mnemonic = nil
-}
-
-// AddKanjiIDs adds the "kanjis" edge to the Kanji entity by ids.
-func (m *RadicalMutation) AddKanjiIDs(ids ...uuid.UUID) {
-	if m.kanjis == nil {
-		m.kanjis = make(map[uuid.UUID]struct{})
+// AddCardIDs adds the "cards" edge to the Card entity by ids.
+func (m *DeckProgressMutation) AddCardIDs(ids ...uuid.UUID) {
+	if m.cards == nil {
+		m.cards = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.kanjis[ids[i]] = struct{}{}
+		m.cards[ids[i]] = struct{}{}
 	}
 }
 
-// ClearKanjis clears the "kanjis" edge to the Kanji entity.
-func (m *RadicalMutation) ClearKanjis() {
-	m.clearedkanjis = true
+// ClearCards clears the "cards" edge to the Card entity.
+func (m *DeckProgressMutation) ClearCards() {
+	m.clearedcards = true
 }
 
-// KanjisCleared reports if the "kanjis" edge to the Kanji entity was cleared.
-func (m *RadicalMutation) KanjisCleared() bool {
-	return m.clearedkanjis
+// CardsCleared reports if the "cards" edge to the Card entity was cleared.
+func (m *DeckProgressMutation) CardsCleared() bool {
+	return m.clearedcards
 }
 
-// RemoveKanjiIDs removes the "kanjis" edge to the Kanji entity by IDs.
-func (m *RadicalMutation) RemoveKanjiIDs(ids ...uuid.UUID) {
-	if m.removedkanjis == nil {
-		m.removedkanjis = make(map[uuid.UUID]struct{})
+// RemoveCardIDs removes the "cards" edge to the Card entity by IDs.
+func (m *DeckProgressMutation) RemoveCardIDs(ids ...uuid.UUID) {
+	if m.removedcards == nil {
+		m.removedcards = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.kanjis, ids[i])
-		m.removedkanjis[ids[i]] = struct{}{}
+		delete(m.cards, ids[i])
+		m.removedcards[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedKanjis returns the removed IDs of the "kanjis" edge to the Kanji entity.
-func (m *RadicalMutation) RemovedKanjisIDs() (ids []uuid.UUID) {
-	for id := range m.removedkanjis {
+// RemovedCards returns the removed IDs of the "cards" edge to the Card entity.
+func (m *DeckProgressMutation) RemovedCardsIDs() (ids []uuid.UUID) {
+	for id := range m.removedcards {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// KanjisIDs returns the "kanjis" edge IDs in the mutation.
-func (m *RadicalMutation) KanjisIDs() (ids []uuid.UUID) {
-	for id := range m.kanjis {
+// CardsIDs returns the "cards" edge IDs in the mutation.
+func (m *DeckProgressMutation) CardsIDs() (ids []uuid.UUID) {
+	for id := range m.cards {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetKanjis resets all changes to the "kanjis" edge.
-func (m *RadicalMutation) ResetKanjis() {
-	m.kanjis = nil
-	m.clearedkanjis = false
-	m.removedkanjis = nil
+// ResetCards resets all changes to the "cards" edge.
+func (m *DeckProgressMutation) ResetCards() {
+	m.cards = nil
+	m.clearedcards = false
+	m.removedcards = nil
 }
 
-// Where appends a list predicates to the RadicalMutation builder.
-func (m *RadicalMutation) Where(ps ...predicate.Radical) {
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *DeckProgressMutation) SetUserID(id string) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *DeckProgressMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *DeckProgressMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *DeckProgressMutation) UserID() (id string, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *DeckProgressMutation) UserIDs() (ids []string) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *DeckProgressMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// SetDeckID sets the "deck" edge to the Deck entity by id.
+func (m *DeckProgressMutation) SetDeckID(id uuid.UUID) {
+	m.deck = &id
+}
+
+// ClearDeck clears the "deck" edge to the Deck entity.
+func (m *DeckProgressMutation) ClearDeck() {
+	m.cleareddeck = true
+}
+
+// DeckCleared reports if the "deck" edge to the Deck entity was cleared.
+func (m *DeckProgressMutation) DeckCleared() bool {
+	return m.cleareddeck
+}
+
+// DeckID returns the "deck" edge ID in the mutation.
+func (m *DeckProgressMutation) DeckID() (id uuid.UUID, exists bool) {
+	if m.deck != nil {
+		return *m.deck, true
+	}
+	return
+}
+
+// DeckIDs returns the "deck" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DeckID instead. It exists only for internal usage by the builders.
+func (m *DeckProgressMutation) DeckIDs() (ids []uuid.UUID) {
+	if id := m.deck; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDeck resets all changes to the "deck" edge.
+func (m *DeckProgressMutation) ResetDeck() {
+	m.deck = nil
+	m.cleareddeck = false
+}
+
+// Where appends a list predicates to the DeckProgressMutation builder.
+func (m *DeckProgressMutation) Where(ps ...predicate.DeckProgress) {
 	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
-func (m *RadicalMutation) Op() Op {
+func (m *DeckProgressMutation) Op() Op {
 	return m.op
 }
 
-// Type returns the node type of this mutation (Radical).
-func (m *RadicalMutation) Type() string {
+// Type returns the node type of this mutation (DeckProgress).
+func (m *DeckProgressMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *RadicalMutation) Fields() []string {
-	fields := make([]string, 0, 6)
-	if m.created_at != nil {
-		fields = append(fields, radical.FieldCreatedAt)
-	}
-	if m.updated_at != nil {
-		fields = append(fields, radical.FieldUpdatedAt)
-	}
-	if m.name != nil {
-		fields = append(fields, radical.FieldName)
-	}
+func (m *DeckProgressMutation) Fields() []string {
+	fields := make([]string, 0, 1)
 	if m.level != nil {
-		fields = append(fields, radical.FieldLevel)
-	}
-	if m.symbol != nil {
-		fields = append(fields, radical.FieldSymbol)
-	}
-	if m.meaning_mnemonic != nil {
-		fields = append(fields, radical.FieldMeaningMnemonic)
+		fields = append(fields, deckprogress.FieldLevel)
 	}
 	return fields
 }
@@ -2857,20 +2686,10 @@ func (m *RadicalMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *RadicalMutation) Field(name string) (ent.Value, bool) {
+func (m *DeckProgressMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case radical.FieldCreatedAt:
-		return m.CreatedAt()
-	case radical.FieldUpdatedAt:
-		return m.UpdatedAt()
-	case radical.FieldName:
-		return m.Name()
-	case radical.FieldLevel:
+	case deckprogress.FieldLevel:
 		return m.Level()
-	case radical.FieldSymbol:
-		return m.Symbol()
-	case radical.FieldMeaningMnemonic:
-		return m.MeaningMnemonic()
 	}
 	return nil, false
 }
@@ -2878,81 +2697,36 @@ func (m *RadicalMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *RadicalMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *DeckProgressMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case radical.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case radical.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	case radical.FieldName:
-		return m.OldName(ctx)
-	case radical.FieldLevel:
+	case deckprogress.FieldLevel:
 		return m.OldLevel(ctx)
-	case radical.FieldSymbol:
-		return m.OldSymbol(ctx)
-	case radical.FieldMeaningMnemonic:
-		return m.OldMeaningMnemonic(ctx)
 	}
-	return nil, fmt.Errorf("unknown Radical field %s", name)
+	return nil, fmt.Errorf("unknown DeckProgress field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *RadicalMutation) SetField(name string, value ent.Value) error {
+func (m *DeckProgressMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case radical.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case radical.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	case radical.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
-	case radical.FieldLevel:
-		v, ok := value.(int32)
+	case deckprogress.FieldLevel:
+		v, ok := value.(uint32)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLevel(v)
 		return nil
-	case radical.FieldSymbol:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSymbol(v)
-		return nil
-	case radical.FieldMeaningMnemonic:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetMeaningMnemonic(v)
-		return nil
 	}
-	return fmt.Errorf("unknown Radical field %s", name)
+	return fmt.Errorf("unknown DeckProgress field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *RadicalMutation) AddedFields() []string {
+func (m *DeckProgressMutation) AddedFields() []string {
 	var fields []string
 	if m.addlevel != nil {
-		fields = append(fields, radical.FieldLevel)
+		fields = append(fields, deckprogress.FieldLevel)
 	}
 	return fields
 }
@@ -2960,9 +2734,9 @@ func (m *RadicalMutation) AddedFields() []string {
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *RadicalMutation) AddedField(name string) (ent.Value, bool) {
+func (m *DeckProgressMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case radical.FieldLevel:
+	case deckprogress.FieldLevel:
 		return m.AddedLevel()
 	}
 	return nil, false
@@ -2971,9 +2745,9 @@ func (m *RadicalMutation) AddedField(name string) (ent.Value, bool) {
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *RadicalMutation) AddField(name string, value ent.Value) error {
+func (m *DeckProgressMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case radical.FieldLevel:
+	case deckprogress.FieldLevel:
 		v, ok := value.(int32)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
@@ -2981,93 +2755,92 @@ func (m *RadicalMutation) AddField(name string, value ent.Value) error {
 		m.AddLevel(v)
 		return nil
 	}
-	return fmt.Errorf("unknown Radical numeric field %s", name)
+	return fmt.Errorf("unknown DeckProgress numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *RadicalMutation) ClearedFields() []string {
+func (m *DeckProgressMutation) ClearedFields() []string {
 	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *RadicalMutation) FieldCleared(name string) bool {
+func (m *DeckProgressMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *RadicalMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Radical nullable field %s", name)
+func (m *DeckProgressMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown DeckProgress nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *RadicalMutation) ResetField(name string) error {
+func (m *DeckProgressMutation) ResetField(name string) error {
 	switch name {
-	case radical.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case radical.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	case radical.FieldName:
-		m.ResetName()
-		return nil
-	case radical.FieldLevel:
+	case deckprogress.FieldLevel:
 		m.ResetLevel()
 		return nil
-	case radical.FieldSymbol:
-		m.ResetSymbol()
-		return nil
-	case radical.FieldMeaningMnemonic:
-		m.ResetMeaningMnemonic()
-		return nil
 	}
-	return fmt.Errorf("unknown Radical field %s", name)
+	return fmt.Errorf("unknown DeckProgress field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *RadicalMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.kanjis != nil {
-		edges = append(edges, radical.EdgeKanjis)
+func (m *DeckProgressMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.cards != nil {
+		edges = append(edges, deckprogress.EdgeCards)
+	}
+	if m.user != nil {
+		edges = append(edges, deckprogress.EdgeUser)
+	}
+	if m.deck != nil {
+		edges = append(edges, deckprogress.EdgeDeck)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *RadicalMutation) AddedIDs(name string) []ent.Value {
+func (m *DeckProgressMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case radical.EdgeKanjis:
-		ids := make([]ent.Value, 0, len(m.kanjis))
-		for id := range m.kanjis {
+	case deckprogress.EdgeCards:
+		ids := make([]ent.Value, 0, len(m.cards))
+		for id := range m.cards {
 			ids = append(ids, id)
 		}
 		return ids
+	case deckprogress.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	case deckprogress.EdgeDeck:
+		if id := m.deck; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *RadicalMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.removedkanjis != nil {
-		edges = append(edges, radical.EdgeKanjis)
+func (m *DeckProgressMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedcards != nil {
+		edges = append(edges, deckprogress.EdgeCards)
 	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *RadicalMutation) RemovedIDs(name string) []ent.Value {
+func (m *DeckProgressMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case radical.EdgeKanjis:
-		ids := make([]ent.Value, 0, len(m.removedkanjis))
-		for id := range m.removedkanjis {
+	case deckprogress.EdgeCards:
+		ids := make([]ent.Value, 0, len(m.removedcards))
+		for id := range m.removedcards {
 			ids = append(ids, id)
 		}
 		return ids
@@ -3076,41 +2849,63 @@ func (m *RadicalMutation) RemovedIDs(name string) []ent.Value {
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *RadicalMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedkanjis {
-		edges = append(edges, radical.EdgeKanjis)
+func (m *DeckProgressMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedcards {
+		edges = append(edges, deckprogress.EdgeCards)
+	}
+	if m.cleareduser {
+		edges = append(edges, deckprogress.EdgeUser)
+	}
+	if m.cleareddeck {
+		edges = append(edges, deckprogress.EdgeDeck)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *RadicalMutation) EdgeCleared(name string) bool {
+func (m *DeckProgressMutation) EdgeCleared(name string) bool {
 	switch name {
-	case radical.EdgeKanjis:
-		return m.clearedkanjis
+	case deckprogress.EdgeCards:
+		return m.clearedcards
+	case deckprogress.EdgeUser:
+		return m.cleareduser
+	case deckprogress.EdgeDeck:
+		return m.cleareddeck
 	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *RadicalMutation) ClearEdge(name string) error {
+func (m *DeckProgressMutation) ClearEdge(name string) error {
 	switch name {
+	case deckprogress.EdgeUser:
+		m.ClearUser()
+		return nil
+	case deckprogress.EdgeDeck:
+		m.ClearDeck()
+		return nil
 	}
-	return fmt.Errorf("unknown Radical unique edge %s", name)
+	return fmt.Errorf("unknown DeckProgress unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *RadicalMutation) ResetEdge(name string) error {
+func (m *DeckProgressMutation) ResetEdge(name string) error {
 	switch name {
-	case radical.EdgeKanjis:
-		m.ResetKanjis()
+	case deckprogress.EdgeCards:
+		m.ResetCards()
+		return nil
+	case deckprogress.EdgeUser:
+		m.ResetUser()
+		return nil
+	case deckprogress.EdgeDeck:
+		m.ResetDeck()
 		return nil
 	}
-	return fmt.Errorf("unknown Radical edge %s", name)
+	return fmt.Errorf("unknown DeckProgress edge %s", name)
 }
 
 // ReviewMutation represents an operation that mutates the Review nodes in the graph.
@@ -3851,19 +3646,44 @@ func (m *ReviewMutation) ResetEdge(name string) error {
 // SubjectMutation represents an operation that mutates the Subject nodes in the graph.
 type SubjectMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	kind          *subject.Kind
-	level         *int32
-	addlevel      *int32
-	clearedFields map[string]struct{}
-	cards         map[uuid.UUID]struct{}
-	removedcards  map[uuid.UUID]struct{}
-	clearedcards  bool
-	done          bool
-	oldValue      func(context.Context) (*Subject, error)
-	predicates    []predicate.Subject
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	created_at          *time.Time
+	updated_at          *time.Time
+	kind                *string
+	level               *int32
+	addlevel            *int32
+	name                *string
+	value               *string
+	value_image         **cards.RemoteContent
+	slug                *string
+	priority            *uint8
+	addpriority         *int8
+	resources           **map[string][]cards.RemoteContent
+	study_data          *[]cards.StudyData
+	appendstudy_data    []cards.StudyData
+	clearedFields       map[string]struct{}
+	cards               map[uuid.UUID]struct{}
+	removedcards        map[uuid.UUID]struct{}
+	clearedcards        bool
+	similar             map[uuid.UUID]struct{}
+	removedsimilar      map[uuid.UUID]struct{}
+	clearedsimilar      bool
+	dependencies        map[uuid.UUID]struct{}
+	removeddependencies map[uuid.UUID]struct{}
+	cleareddependencies bool
+	dependents          map[uuid.UUID]struct{}
+	removeddependents   map[uuid.UUID]struct{}
+	cleareddependents   bool
+	decks               map[uuid.UUID]struct{}
+	removeddecks        map[uuid.UUID]struct{}
+	cleareddecks        bool
+	owner               *string
+	clearedowner        bool
+	done                bool
+	oldValue            func(context.Context) (*Subject, error)
+	predicates          []predicate.Subject
 }
 
 var _ ent.Mutation = (*SubjectMutation)(nil)
@@ -3970,13 +3790,85 @@ func (m *SubjectMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	}
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (m *SubjectMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SubjectMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SubjectMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SubjectMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SubjectMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SubjectMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
 // SetKind sets the "kind" field.
-func (m *SubjectMutation) SetKind(s subject.Kind) {
+func (m *SubjectMutation) SetKind(s string) {
 	m.kind = &s
 }
 
 // Kind returns the value of the "kind" field in the mutation.
-func (m *SubjectMutation) Kind() (r subject.Kind, exists bool) {
+func (m *SubjectMutation) Kind() (r string, exists bool) {
 	v := m.kind
 	if v == nil {
 		return
@@ -3987,7 +3879,7 @@ func (m *SubjectMutation) Kind() (r subject.Kind, exists bool) {
 // OldKind returns the old "kind" field's value of the Subject entity.
 // If the Subject object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SubjectMutation) OldKind(ctx context.Context) (v subject.Kind, err error) {
+func (m *SubjectMutation) OldKind(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldKind is only allowed on UpdateOne operations")
 	}
@@ -4062,6 +3954,332 @@ func (m *SubjectMutation) ResetLevel() {
 	m.addlevel = nil
 }
 
+// SetName sets the "name" field.
+func (m *SubjectMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *SubjectMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *SubjectMutation) ResetName() {
+	m.name = nil
+}
+
+// SetValue sets the "value" field.
+func (m *SubjectMutation) SetValue(s string) {
+	m.value = &s
+}
+
+// Value returns the value of the "value" field in the mutation.
+func (m *SubjectMutation) Value() (r string, exists bool) {
+	v := m.value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValue returns the old "value" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldValue(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValue: %w", err)
+	}
+	return oldValue.Value, nil
+}
+
+// ClearValue clears the value of the "value" field.
+func (m *SubjectMutation) ClearValue() {
+	m.value = nil
+	m.clearedFields[subject.FieldValue] = struct{}{}
+}
+
+// ValueCleared returns if the "value" field was cleared in this mutation.
+func (m *SubjectMutation) ValueCleared() bool {
+	_, ok := m.clearedFields[subject.FieldValue]
+	return ok
+}
+
+// ResetValue resets all changes to the "value" field.
+func (m *SubjectMutation) ResetValue() {
+	m.value = nil
+	delete(m.clearedFields, subject.FieldValue)
+}
+
+// SetValueImage sets the "value_image" field.
+func (m *SubjectMutation) SetValueImage(cc *cards.RemoteContent) {
+	m.value_image = &cc
+}
+
+// ValueImage returns the value of the "value_image" field in the mutation.
+func (m *SubjectMutation) ValueImage() (r *cards.RemoteContent, exists bool) {
+	v := m.value_image
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValueImage returns the old "value_image" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldValueImage(ctx context.Context) (v *cards.RemoteContent, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValueImage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValueImage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValueImage: %w", err)
+	}
+	return oldValue.ValueImage, nil
+}
+
+// ClearValueImage clears the value of the "value_image" field.
+func (m *SubjectMutation) ClearValueImage() {
+	m.value_image = nil
+	m.clearedFields[subject.FieldValueImage] = struct{}{}
+}
+
+// ValueImageCleared returns if the "value_image" field was cleared in this mutation.
+func (m *SubjectMutation) ValueImageCleared() bool {
+	_, ok := m.clearedFields[subject.FieldValueImage]
+	return ok
+}
+
+// ResetValueImage resets all changes to the "value_image" field.
+func (m *SubjectMutation) ResetValueImage() {
+	m.value_image = nil
+	delete(m.clearedFields, subject.FieldValueImage)
+}
+
+// SetSlug sets the "slug" field.
+func (m *SubjectMutation) SetSlug(s string) {
+	m.slug = &s
+}
+
+// Slug returns the value of the "slug" field in the mutation.
+func (m *SubjectMutation) Slug() (r string, exists bool) {
+	v := m.slug
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSlug returns the old "slug" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldSlug(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSlug is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSlug requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSlug: %w", err)
+	}
+	return oldValue.Slug, nil
+}
+
+// ResetSlug resets all changes to the "slug" field.
+func (m *SubjectMutation) ResetSlug() {
+	m.slug = nil
+}
+
+// SetPriority sets the "priority" field.
+func (m *SubjectMutation) SetPriority(u uint8) {
+	m.priority = &u
+	m.addpriority = nil
+}
+
+// Priority returns the value of the "priority" field in the mutation.
+func (m *SubjectMutation) Priority() (r uint8, exists bool) {
+	v := m.priority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriority returns the old "priority" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldPriority(ctx context.Context) (v uint8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriority is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriority requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriority: %w", err)
+	}
+	return oldValue.Priority, nil
+}
+
+// AddPriority adds u to the "priority" field.
+func (m *SubjectMutation) AddPriority(u int8) {
+	if m.addpriority != nil {
+		*m.addpriority += u
+	} else {
+		m.addpriority = &u
+	}
+}
+
+// AddedPriority returns the value that was added to the "priority" field in this mutation.
+func (m *SubjectMutation) AddedPriority() (r int8, exists bool) {
+	v := m.addpriority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPriority resets all changes to the "priority" field.
+func (m *SubjectMutation) ResetPriority() {
+	m.priority = nil
+	m.addpriority = nil
+}
+
+// SetResources sets the "resources" field.
+func (m *SubjectMutation) SetResources(mc *map[string][]cards.RemoteContent) {
+	m.resources = &mc
+}
+
+// Resources returns the value of the "resources" field in the mutation.
+func (m *SubjectMutation) Resources() (r *map[string][]cards.RemoteContent, exists bool) {
+	v := m.resources
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResources returns the old "resources" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldResources(ctx context.Context) (v *map[string][]cards.RemoteContent, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResources is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResources requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResources: %w", err)
+	}
+	return oldValue.Resources, nil
+}
+
+// ClearResources clears the value of the "resources" field.
+func (m *SubjectMutation) ClearResources() {
+	m.resources = nil
+	m.clearedFields[subject.FieldResources] = struct{}{}
+}
+
+// ResourcesCleared returns if the "resources" field was cleared in this mutation.
+func (m *SubjectMutation) ResourcesCleared() bool {
+	_, ok := m.clearedFields[subject.FieldResources]
+	return ok
+}
+
+// ResetResources resets all changes to the "resources" field.
+func (m *SubjectMutation) ResetResources() {
+	m.resources = nil
+	delete(m.clearedFields, subject.FieldResources)
+}
+
+// SetStudyData sets the "study_data" field.
+func (m *SubjectMutation) SetStudyData(cd []cards.StudyData) {
+	m.study_data = &cd
+	m.appendstudy_data = nil
+}
+
+// StudyData returns the value of the "study_data" field in the mutation.
+func (m *SubjectMutation) StudyData() (r []cards.StudyData, exists bool) {
+	v := m.study_data
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStudyData returns the old "study_data" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldStudyData(ctx context.Context) (v []cards.StudyData, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStudyData is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStudyData requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStudyData: %w", err)
+	}
+	return oldValue.StudyData, nil
+}
+
+// AppendStudyData adds cd to the "study_data" field.
+func (m *SubjectMutation) AppendStudyData(cd []cards.StudyData) {
+	m.appendstudy_data = append(m.appendstudy_data, cd...)
+}
+
+// AppendedStudyData returns the list of values that were appended to the "study_data" field in this mutation.
+func (m *SubjectMutation) AppendedStudyData() ([]cards.StudyData, bool) {
+	if len(m.appendstudy_data) == 0 {
+		return nil, false
+	}
+	return m.appendstudy_data, true
+}
+
+// ResetStudyData resets all changes to the "study_data" field.
+func (m *SubjectMutation) ResetStudyData() {
+	m.study_data = nil
+	m.appendstudy_data = nil
+}
+
 // AddCardIDs adds the "cards" edge to the Card entity by ids.
 func (m *SubjectMutation) AddCardIDs(ids ...uuid.UUID) {
 	if m.cards == nil {
@@ -4116,6 +4334,261 @@ func (m *SubjectMutation) ResetCards() {
 	m.removedcards = nil
 }
 
+// AddSimilarIDs adds the "similar" edge to the Subject entity by ids.
+func (m *SubjectMutation) AddSimilarIDs(ids ...uuid.UUID) {
+	if m.similar == nil {
+		m.similar = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.similar[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSimilar clears the "similar" edge to the Subject entity.
+func (m *SubjectMutation) ClearSimilar() {
+	m.clearedsimilar = true
+}
+
+// SimilarCleared reports if the "similar" edge to the Subject entity was cleared.
+func (m *SubjectMutation) SimilarCleared() bool {
+	return m.clearedsimilar
+}
+
+// RemoveSimilarIDs removes the "similar" edge to the Subject entity by IDs.
+func (m *SubjectMutation) RemoveSimilarIDs(ids ...uuid.UUID) {
+	if m.removedsimilar == nil {
+		m.removedsimilar = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.similar, ids[i])
+		m.removedsimilar[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSimilar returns the removed IDs of the "similar" edge to the Subject entity.
+func (m *SubjectMutation) RemovedSimilarIDs() (ids []uuid.UUID) {
+	for id := range m.removedsimilar {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SimilarIDs returns the "similar" edge IDs in the mutation.
+func (m *SubjectMutation) SimilarIDs() (ids []uuid.UUID) {
+	for id := range m.similar {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSimilar resets all changes to the "similar" edge.
+func (m *SubjectMutation) ResetSimilar() {
+	m.similar = nil
+	m.clearedsimilar = false
+	m.removedsimilar = nil
+}
+
+// AddDependencyIDs adds the "dependencies" edge to the Subject entity by ids.
+func (m *SubjectMutation) AddDependencyIDs(ids ...uuid.UUID) {
+	if m.dependencies == nil {
+		m.dependencies = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.dependencies[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDependencies clears the "dependencies" edge to the Subject entity.
+func (m *SubjectMutation) ClearDependencies() {
+	m.cleareddependencies = true
+}
+
+// DependenciesCleared reports if the "dependencies" edge to the Subject entity was cleared.
+func (m *SubjectMutation) DependenciesCleared() bool {
+	return m.cleareddependencies
+}
+
+// RemoveDependencyIDs removes the "dependencies" edge to the Subject entity by IDs.
+func (m *SubjectMutation) RemoveDependencyIDs(ids ...uuid.UUID) {
+	if m.removeddependencies == nil {
+		m.removeddependencies = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.dependencies, ids[i])
+		m.removeddependencies[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDependencies returns the removed IDs of the "dependencies" edge to the Subject entity.
+func (m *SubjectMutation) RemovedDependenciesIDs() (ids []uuid.UUID) {
+	for id := range m.removeddependencies {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DependenciesIDs returns the "dependencies" edge IDs in the mutation.
+func (m *SubjectMutation) DependenciesIDs() (ids []uuid.UUID) {
+	for id := range m.dependencies {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDependencies resets all changes to the "dependencies" edge.
+func (m *SubjectMutation) ResetDependencies() {
+	m.dependencies = nil
+	m.cleareddependencies = false
+	m.removeddependencies = nil
+}
+
+// AddDependentIDs adds the "dependents" edge to the Subject entity by ids.
+func (m *SubjectMutation) AddDependentIDs(ids ...uuid.UUID) {
+	if m.dependents == nil {
+		m.dependents = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.dependents[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDependents clears the "dependents" edge to the Subject entity.
+func (m *SubjectMutation) ClearDependents() {
+	m.cleareddependents = true
+}
+
+// DependentsCleared reports if the "dependents" edge to the Subject entity was cleared.
+func (m *SubjectMutation) DependentsCleared() bool {
+	return m.cleareddependents
+}
+
+// RemoveDependentIDs removes the "dependents" edge to the Subject entity by IDs.
+func (m *SubjectMutation) RemoveDependentIDs(ids ...uuid.UUID) {
+	if m.removeddependents == nil {
+		m.removeddependents = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.dependents, ids[i])
+		m.removeddependents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDependents returns the removed IDs of the "dependents" edge to the Subject entity.
+func (m *SubjectMutation) RemovedDependentsIDs() (ids []uuid.UUID) {
+	for id := range m.removeddependents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DependentsIDs returns the "dependents" edge IDs in the mutation.
+func (m *SubjectMutation) DependentsIDs() (ids []uuid.UUID) {
+	for id := range m.dependents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDependents resets all changes to the "dependents" edge.
+func (m *SubjectMutation) ResetDependents() {
+	m.dependents = nil
+	m.cleareddependents = false
+	m.removeddependents = nil
+}
+
+// AddDeckIDs adds the "decks" edge to the Deck entity by ids.
+func (m *SubjectMutation) AddDeckIDs(ids ...uuid.UUID) {
+	if m.decks == nil {
+		m.decks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.decks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDecks clears the "decks" edge to the Deck entity.
+func (m *SubjectMutation) ClearDecks() {
+	m.cleareddecks = true
+}
+
+// DecksCleared reports if the "decks" edge to the Deck entity was cleared.
+func (m *SubjectMutation) DecksCleared() bool {
+	return m.cleareddecks
+}
+
+// RemoveDeckIDs removes the "decks" edge to the Deck entity by IDs.
+func (m *SubjectMutation) RemoveDeckIDs(ids ...uuid.UUID) {
+	if m.removeddecks == nil {
+		m.removeddecks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.decks, ids[i])
+		m.removeddecks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDecks returns the removed IDs of the "decks" edge to the Deck entity.
+func (m *SubjectMutation) RemovedDecksIDs() (ids []uuid.UUID) {
+	for id := range m.removeddecks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DecksIDs returns the "decks" edge IDs in the mutation.
+func (m *SubjectMutation) DecksIDs() (ids []uuid.UUID) {
+	for id := range m.decks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDecks resets all changes to the "decks" edge.
+func (m *SubjectMutation) ResetDecks() {
+	m.decks = nil
+	m.cleareddecks = false
+	m.removeddecks = nil
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by id.
+func (m *SubjectMutation) SetOwnerID(id string) {
+	m.owner = &id
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (m *SubjectMutation) ClearOwner() {
+	m.clearedowner = true
+}
+
+// OwnerCleared reports if the "owner" edge to the User entity was cleared.
+func (m *SubjectMutation) OwnerCleared() bool {
+	return m.clearedowner
+}
+
+// OwnerID returns the "owner" edge ID in the mutation.
+func (m *SubjectMutation) OwnerID() (id string, exists bool) {
+	if m.owner != nil {
+		return *m.owner, true
+	}
+	return
+}
+
+// OwnerIDs returns the "owner" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OwnerID instead. It exists only for internal usage by the builders.
+func (m *SubjectMutation) OwnerIDs() (ids []string) {
+	if id := m.owner; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOwner resets all changes to the "owner" edge.
+func (m *SubjectMutation) ResetOwner() {
+	m.owner = nil
+	m.clearedowner = false
+}
+
 // Where appends a list predicates to the SubjectMutation builder.
 func (m *SubjectMutation) Where(ps ...predicate.Subject) {
 	m.predicates = append(m.predicates, ps...)
@@ -4135,12 +4608,39 @@ func (m *SubjectMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SubjectMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 11)
+	if m.created_at != nil {
+		fields = append(fields, subject.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, subject.FieldUpdatedAt)
+	}
 	if m.kind != nil {
 		fields = append(fields, subject.FieldKind)
 	}
 	if m.level != nil {
 		fields = append(fields, subject.FieldLevel)
+	}
+	if m.name != nil {
+		fields = append(fields, subject.FieldName)
+	}
+	if m.value != nil {
+		fields = append(fields, subject.FieldValue)
+	}
+	if m.value_image != nil {
+		fields = append(fields, subject.FieldValueImage)
+	}
+	if m.slug != nil {
+		fields = append(fields, subject.FieldSlug)
+	}
+	if m.priority != nil {
+		fields = append(fields, subject.FieldPriority)
+	}
+	if m.resources != nil {
+		fields = append(fields, subject.FieldResources)
+	}
+	if m.study_data != nil {
+		fields = append(fields, subject.FieldStudyData)
 	}
 	return fields
 }
@@ -4150,10 +4650,28 @@ func (m *SubjectMutation) Fields() []string {
 // schema.
 func (m *SubjectMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case subject.FieldCreatedAt:
+		return m.CreatedAt()
+	case subject.FieldUpdatedAt:
+		return m.UpdatedAt()
 	case subject.FieldKind:
 		return m.Kind()
 	case subject.FieldLevel:
 		return m.Level()
+	case subject.FieldName:
+		return m.Name()
+	case subject.FieldValue:
+		return m.Value()
+	case subject.FieldValueImage:
+		return m.ValueImage()
+	case subject.FieldSlug:
+		return m.Slug()
+	case subject.FieldPriority:
+		return m.Priority()
+	case subject.FieldResources:
+		return m.Resources()
+	case subject.FieldStudyData:
+		return m.StudyData()
 	}
 	return nil, false
 }
@@ -4163,10 +4681,28 @@ func (m *SubjectMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *SubjectMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case subject.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case subject.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	case subject.FieldKind:
 		return m.OldKind(ctx)
 	case subject.FieldLevel:
 		return m.OldLevel(ctx)
+	case subject.FieldName:
+		return m.OldName(ctx)
+	case subject.FieldValue:
+		return m.OldValue(ctx)
+	case subject.FieldValueImage:
+		return m.OldValueImage(ctx)
+	case subject.FieldSlug:
+		return m.OldSlug(ctx)
+	case subject.FieldPriority:
+		return m.OldPriority(ctx)
+	case subject.FieldResources:
+		return m.OldResources(ctx)
+	case subject.FieldStudyData:
+		return m.OldStudyData(ctx)
 	}
 	return nil, fmt.Errorf("unknown Subject field %s", name)
 }
@@ -4176,8 +4712,22 @@ func (m *SubjectMutation) OldField(ctx context.Context, name string) (ent.Value,
 // type.
 func (m *SubjectMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case subject.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case subject.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
 	case subject.FieldKind:
-		v, ok := value.(subject.Kind)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -4190,6 +4740,55 @@ func (m *SubjectMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLevel(v)
 		return nil
+	case subject.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case subject.FieldValue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValue(v)
+		return nil
+	case subject.FieldValueImage:
+		v, ok := value.(*cards.RemoteContent)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValueImage(v)
+		return nil
+	case subject.FieldSlug:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSlug(v)
+		return nil
+	case subject.FieldPriority:
+		v, ok := value.(uint8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriority(v)
+		return nil
+	case subject.FieldResources:
+		v, ok := value.(*map[string][]cards.RemoteContent)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResources(v)
+		return nil
+	case subject.FieldStudyData:
+		v, ok := value.([]cards.StudyData)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStudyData(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Subject field %s", name)
 }
@@ -4201,6 +4800,9 @@ func (m *SubjectMutation) AddedFields() []string {
 	if m.addlevel != nil {
 		fields = append(fields, subject.FieldLevel)
 	}
+	if m.addpriority != nil {
+		fields = append(fields, subject.FieldPriority)
+	}
 	return fields
 }
 
@@ -4211,6 +4813,8 @@ func (m *SubjectMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case subject.FieldLevel:
 		return m.AddedLevel()
+	case subject.FieldPriority:
+		return m.AddedPriority()
 	}
 	return nil, false
 }
@@ -4227,6 +4831,13 @@ func (m *SubjectMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddLevel(v)
 		return nil
+	case subject.FieldPriority:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPriority(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Subject numeric field %s", name)
 }
@@ -4234,7 +4845,17 @@ func (m *SubjectMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *SubjectMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(subject.FieldValue) {
+		fields = append(fields, subject.FieldValue)
+	}
+	if m.FieldCleared(subject.FieldValueImage) {
+		fields = append(fields, subject.FieldValueImage)
+	}
+	if m.FieldCleared(subject.FieldResources) {
+		fields = append(fields, subject.FieldResources)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -4247,6 +4868,17 @@ func (m *SubjectMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *SubjectMutation) ClearField(name string) error {
+	switch name {
+	case subject.FieldValue:
+		m.ClearValue()
+		return nil
+	case subject.FieldValueImage:
+		m.ClearValueImage()
+		return nil
+	case subject.FieldResources:
+		m.ClearResources()
+		return nil
+	}
 	return fmt.Errorf("unknown Subject nullable field %s", name)
 }
 
@@ -4254,11 +4886,38 @@ func (m *SubjectMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *SubjectMutation) ResetField(name string) error {
 	switch name {
+	case subject.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case subject.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
 	case subject.FieldKind:
 		m.ResetKind()
 		return nil
 	case subject.FieldLevel:
 		m.ResetLevel()
+		return nil
+	case subject.FieldName:
+		m.ResetName()
+		return nil
+	case subject.FieldValue:
+		m.ResetValue()
+		return nil
+	case subject.FieldValueImage:
+		m.ResetValueImage()
+		return nil
+	case subject.FieldSlug:
+		m.ResetSlug()
+		return nil
+	case subject.FieldPriority:
+		m.ResetPriority()
+		return nil
+	case subject.FieldResources:
+		m.ResetResources()
+		return nil
+	case subject.FieldStudyData:
+		m.ResetStudyData()
 		return nil
 	}
 	return fmt.Errorf("unknown Subject field %s", name)
@@ -4266,9 +4925,24 @@ func (m *SubjectMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SubjectMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 6)
 	if m.cards != nil {
 		edges = append(edges, subject.EdgeCards)
+	}
+	if m.similar != nil {
+		edges = append(edges, subject.EdgeSimilar)
+	}
+	if m.dependencies != nil {
+		edges = append(edges, subject.EdgeDependencies)
+	}
+	if m.dependents != nil {
+		edges = append(edges, subject.EdgeDependents)
+	}
+	if m.decks != nil {
+		edges = append(edges, subject.EdgeDecks)
+	}
+	if m.owner != nil {
+		edges = append(edges, subject.EdgeOwner)
 	}
 	return edges
 }
@@ -4283,15 +4957,55 @@ func (m *SubjectMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case subject.EdgeSimilar:
+		ids := make([]ent.Value, 0, len(m.similar))
+		for id := range m.similar {
+			ids = append(ids, id)
+		}
+		return ids
+	case subject.EdgeDependencies:
+		ids := make([]ent.Value, 0, len(m.dependencies))
+		for id := range m.dependencies {
+			ids = append(ids, id)
+		}
+		return ids
+	case subject.EdgeDependents:
+		ids := make([]ent.Value, 0, len(m.dependents))
+		for id := range m.dependents {
+			ids = append(ids, id)
+		}
+		return ids
+	case subject.EdgeDecks:
+		ids := make([]ent.Value, 0, len(m.decks))
+		for id := range m.decks {
+			ids = append(ids, id)
+		}
+		return ids
+	case subject.EdgeOwner:
+		if id := m.owner; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SubjectMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 6)
 	if m.removedcards != nil {
 		edges = append(edges, subject.EdgeCards)
+	}
+	if m.removedsimilar != nil {
+		edges = append(edges, subject.EdgeSimilar)
+	}
+	if m.removeddependencies != nil {
+		edges = append(edges, subject.EdgeDependencies)
+	}
+	if m.removeddependents != nil {
+		edges = append(edges, subject.EdgeDependents)
+	}
+	if m.removeddecks != nil {
+		edges = append(edges, subject.EdgeDecks)
 	}
 	return edges
 }
@@ -4306,15 +5020,54 @@ func (m *SubjectMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case subject.EdgeSimilar:
+		ids := make([]ent.Value, 0, len(m.removedsimilar))
+		for id := range m.removedsimilar {
+			ids = append(ids, id)
+		}
+		return ids
+	case subject.EdgeDependencies:
+		ids := make([]ent.Value, 0, len(m.removeddependencies))
+		for id := range m.removeddependencies {
+			ids = append(ids, id)
+		}
+		return ids
+	case subject.EdgeDependents:
+		ids := make([]ent.Value, 0, len(m.removeddependents))
+		for id := range m.removeddependents {
+			ids = append(ids, id)
+		}
+		return ids
+	case subject.EdgeDecks:
+		ids := make([]ent.Value, 0, len(m.removeddecks))
+		for id := range m.removeddecks {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SubjectMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 6)
 	if m.clearedcards {
 		edges = append(edges, subject.EdgeCards)
+	}
+	if m.clearedsimilar {
+		edges = append(edges, subject.EdgeSimilar)
+	}
+	if m.cleareddependencies {
+		edges = append(edges, subject.EdgeDependencies)
+	}
+	if m.cleareddependents {
+		edges = append(edges, subject.EdgeDependents)
+	}
+	if m.cleareddecks {
+		edges = append(edges, subject.EdgeDecks)
+	}
+	if m.clearedowner {
+		edges = append(edges, subject.EdgeOwner)
 	}
 	return edges
 }
@@ -4325,6 +5078,16 @@ func (m *SubjectMutation) EdgeCleared(name string) bool {
 	switch name {
 	case subject.EdgeCards:
 		return m.clearedcards
+	case subject.EdgeSimilar:
+		return m.clearedsimilar
+	case subject.EdgeDependencies:
+		return m.cleareddependencies
+	case subject.EdgeDependents:
+		return m.cleareddependents
+	case subject.EdgeDecks:
+		return m.cleareddecks
+	case subject.EdgeOwner:
+		return m.clearedowner
 	}
 	return false
 }
@@ -4333,6 +5096,9 @@ func (m *SubjectMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *SubjectMutation) ClearEdge(name string) error {
 	switch name {
+	case subject.EdgeOwner:
+		m.ClearOwner()
+		return nil
 	}
 	return fmt.Errorf("unknown Subject unique edge %s", name)
 }
@@ -4344,6 +5110,21 @@ func (m *SubjectMutation) ResetEdge(name string) error {
 	case subject.EdgeCards:
 		m.ResetCards()
 		return nil
+	case subject.EdgeSimilar:
+		m.ResetSimilar()
+		return nil
+	case subject.EdgeDependencies:
+		m.ResetDependencies()
+		return nil
+	case subject.EdgeDependents:
+		m.ResetDependents()
+		return nil
+	case subject.EdgeDecks:
+		m.ResetDecks()
+		return nil
+	case subject.EdgeOwner:
+		m.ResetOwner()
+		return nil
 	}
 	return fmt.Errorf("unknown Subject edge %s", name)
 }
@@ -4351,22 +5132,32 @@ func (m *SubjectMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *string
-	username              *string
-	pending_actions       *[]schema.PendingAction
-	appendpending_actions []schema.PendingAction
-	email                 *string
-	level                 *int32
-	addlevel              *int32
-	clearedFields         map[string]struct{}
-	cards                 map[uuid.UUID]struct{}
-	removedcards          map[uuid.UUID]struct{}
-	clearedcards          bool
-	done                  bool
-	oldValue              func(context.Context) (*User, error)
-	predicates            []predicate.User
+	op                      Op
+	typ                     string
+	id                      *string
+	username                *string
+	pending_actions         *[]schema.PendingAction
+	appendpending_actions   []schema.PendingAction
+	email                   *string
+	clearedFields           map[string]struct{}
+	decks                   map[uuid.UUID]struct{}
+	removeddecks            map[uuid.UUID]struct{}
+	cleareddecks            bool
+	subjects                map[uuid.UUID]struct{}
+	removedsubjects         map[uuid.UUID]struct{}
+	clearedsubjects         bool
+	subscribed_decks        map[uuid.UUID]struct{}
+	removedsubscribed_decks map[uuid.UUID]struct{}
+	clearedsubscribed_decks bool
+	api_tokens              map[uuid.UUID]struct{}
+	removedapi_tokens       map[uuid.UUID]struct{}
+	clearedapi_tokens       bool
+	decks_progress          map[int]struct{}
+	removeddecks_progress   map[int]struct{}
+	cleareddecks_progress   bool
+	done                    bool
+	oldValue                func(context.Context) (*User, error)
+	predicates              []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -4596,114 +5387,274 @@ func (m *UserMutation) ResetEmail() {
 	m.email = nil
 }
 
-// SetLevel sets the "level" field.
-func (m *UserMutation) SetLevel(i int32) {
-	m.level = &i
-	m.addlevel = nil
-}
-
-// Level returns the value of the "level" field in the mutation.
-func (m *UserMutation) Level() (r int32, exists bool) {
-	v := m.level
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLevel returns the old "level" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldLevel(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLevel requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLevel: %w", err)
-	}
-	return oldValue.Level, nil
-}
-
-// AddLevel adds i to the "level" field.
-func (m *UserMutation) AddLevel(i int32) {
-	if m.addlevel != nil {
-		*m.addlevel += i
-	} else {
-		m.addlevel = &i
-	}
-}
-
-// AddedLevel returns the value that was added to the "level" field in this mutation.
-func (m *UserMutation) AddedLevel() (r int32, exists bool) {
-	v := m.addlevel
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetLevel resets all changes to the "level" field.
-func (m *UserMutation) ResetLevel() {
-	m.level = nil
-	m.addlevel = nil
-}
-
-// AddCardIDs adds the "cards" edge to the Card entity by ids.
-func (m *UserMutation) AddCardIDs(ids ...uuid.UUID) {
-	if m.cards == nil {
-		m.cards = make(map[uuid.UUID]struct{})
+// AddDeckIDs adds the "decks" edge to the Deck entity by ids.
+func (m *UserMutation) AddDeckIDs(ids ...uuid.UUID) {
+	if m.decks == nil {
+		m.decks = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.cards[ids[i]] = struct{}{}
+		m.decks[ids[i]] = struct{}{}
 	}
 }
 
-// ClearCards clears the "cards" edge to the Card entity.
-func (m *UserMutation) ClearCards() {
-	m.clearedcards = true
+// ClearDecks clears the "decks" edge to the Deck entity.
+func (m *UserMutation) ClearDecks() {
+	m.cleareddecks = true
 }
 
-// CardsCleared reports if the "cards" edge to the Card entity was cleared.
-func (m *UserMutation) CardsCleared() bool {
-	return m.clearedcards
+// DecksCleared reports if the "decks" edge to the Deck entity was cleared.
+func (m *UserMutation) DecksCleared() bool {
+	return m.cleareddecks
 }
 
-// RemoveCardIDs removes the "cards" edge to the Card entity by IDs.
-func (m *UserMutation) RemoveCardIDs(ids ...uuid.UUID) {
-	if m.removedcards == nil {
-		m.removedcards = make(map[uuid.UUID]struct{})
+// RemoveDeckIDs removes the "decks" edge to the Deck entity by IDs.
+func (m *UserMutation) RemoveDeckIDs(ids ...uuid.UUID) {
+	if m.removeddecks == nil {
+		m.removeddecks = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.cards, ids[i])
-		m.removedcards[ids[i]] = struct{}{}
+		delete(m.decks, ids[i])
+		m.removeddecks[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedCards returns the removed IDs of the "cards" edge to the Card entity.
-func (m *UserMutation) RemovedCardsIDs() (ids []uuid.UUID) {
-	for id := range m.removedcards {
+// RemovedDecks returns the removed IDs of the "decks" edge to the Deck entity.
+func (m *UserMutation) RemovedDecksIDs() (ids []uuid.UUID) {
+	for id := range m.removeddecks {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// CardsIDs returns the "cards" edge IDs in the mutation.
-func (m *UserMutation) CardsIDs() (ids []uuid.UUID) {
-	for id := range m.cards {
+// DecksIDs returns the "decks" edge IDs in the mutation.
+func (m *UserMutation) DecksIDs() (ids []uuid.UUID) {
+	for id := range m.decks {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetCards resets all changes to the "cards" edge.
-func (m *UserMutation) ResetCards() {
-	m.cards = nil
-	m.clearedcards = false
-	m.removedcards = nil
+// ResetDecks resets all changes to the "decks" edge.
+func (m *UserMutation) ResetDecks() {
+	m.decks = nil
+	m.cleareddecks = false
+	m.removeddecks = nil
+}
+
+// AddSubjectIDs adds the "subjects" edge to the Subject entity by ids.
+func (m *UserMutation) AddSubjectIDs(ids ...uuid.UUID) {
+	if m.subjects == nil {
+		m.subjects = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.subjects[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubjects clears the "subjects" edge to the Subject entity.
+func (m *UserMutation) ClearSubjects() {
+	m.clearedsubjects = true
+}
+
+// SubjectsCleared reports if the "subjects" edge to the Subject entity was cleared.
+func (m *UserMutation) SubjectsCleared() bool {
+	return m.clearedsubjects
+}
+
+// RemoveSubjectIDs removes the "subjects" edge to the Subject entity by IDs.
+func (m *UserMutation) RemoveSubjectIDs(ids ...uuid.UUID) {
+	if m.removedsubjects == nil {
+		m.removedsubjects = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.subjects, ids[i])
+		m.removedsubjects[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubjects returns the removed IDs of the "subjects" edge to the Subject entity.
+func (m *UserMutation) RemovedSubjectsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsubjects {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubjectsIDs returns the "subjects" edge IDs in the mutation.
+func (m *UserMutation) SubjectsIDs() (ids []uuid.UUID) {
+	for id := range m.subjects {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubjects resets all changes to the "subjects" edge.
+func (m *UserMutation) ResetSubjects() {
+	m.subjects = nil
+	m.clearedsubjects = false
+	m.removedsubjects = nil
+}
+
+// AddSubscribedDeckIDs adds the "subscribed_decks" edge to the Deck entity by ids.
+func (m *UserMutation) AddSubscribedDeckIDs(ids ...uuid.UUID) {
+	if m.subscribed_decks == nil {
+		m.subscribed_decks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.subscribed_decks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubscribedDecks clears the "subscribed_decks" edge to the Deck entity.
+func (m *UserMutation) ClearSubscribedDecks() {
+	m.clearedsubscribed_decks = true
+}
+
+// SubscribedDecksCleared reports if the "subscribed_decks" edge to the Deck entity was cleared.
+func (m *UserMutation) SubscribedDecksCleared() bool {
+	return m.clearedsubscribed_decks
+}
+
+// RemoveSubscribedDeckIDs removes the "subscribed_decks" edge to the Deck entity by IDs.
+func (m *UserMutation) RemoveSubscribedDeckIDs(ids ...uuid.UUID) {
+	if m.removedsubscribed_decks == nil {
+		m.removedsubscribed_decks = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.subscribed_decks, ids[i])
+		m.removedsubscribed_decks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubscribedDecks returns the removed IDs of the "subscribed_decks" edge to the Deck entity.
+func (m *UserMutation) RemovedSubscribedDecksIDs() (ids []uuid.UUID) {
+	for id := range m.removedsubscribed_decks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubscribedDecksIDs returns the "subscribed_decks" edge IDs in the mutation.
+func (m *UserMutation) SubscribedDecksIDs() (ids []uuid.UUID) {
+	for id := range m.subscribed_decks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubscribedDecks resets all changes to the "subscribed_decks" edge.
+func (m *UserMutation) ResetSubscribedDecks() {
+	m.subscribed_decks = nil
+	m.clearedsubscribed_decks = false
+	m.removedsubscribed_decks = nil
+}
+
+// AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by ids.
+func (m *UserMutation) AddAPITokenIDs(ids ...uuid.UUID) {
+	if m.api_tokens == nil {
+		m.api_tokens = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.api_tokens[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAPITokens clears the "api_tokens" edge to the ApiToken entity.
+func (m *UserMutation) ClearAPITokens() {
+	m.clearedapi_tokens = true
+}
+
+// APITokensCleared reports if the "api_tokens" edge to the ApiToken entity was cleared.
+func (m *UserMutation) APITokensCleared() bool {
+	return m.clearedapi_tokens
+}
+
+// RemoveAPITokenIDs removes the "api_tokens" edge to the ApiToken entity by IDs.
+func (m *UserMutation) RemoveAPITokenIDs(ids ...uuid.UUID) {
+	if m.removedapi_tokens == nil {
+		m.removedapi_tokens = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.api_tokens, ids[i])
+		m.removedapi_tokens[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAPITokens returns the removed IDs of the "api_tokens" edge to the ApiToken entity.
+func (m *UserMutation) RemovedAPITokensIDs() (ids []uuid.UUID) {
+	for id := range m.removedapi_tokens {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// APITokensIDs returns the "api_tokens" edge IDs in the mutation.
+func (m *UserMutation) APITokensIDs() (ids []uuid.UUID) {
+	for id := range m.api_tokens {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAPITokens resets all changes to the "api_tokens" edge.
+func (m *UserMutation) ResetAPITokens() {
+	m.api_tokens = nil
+	m.clearedapi_tokens = false
+	m.removedapi_tokens = nil
+}
+
+// AddDecksProgresIDs adds the "decks_progress" edge to the DeckProgress entity by ids.
+func (m *UserMutation) AddDecksProgresIDs(ids ...int) {
+	if m.decks_progress == nil {
+		m.decks_progress = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.decks_progress[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDecksProgress clears the "decks_progress" edge to the DeckProgress entity.
+func (m *UserMutation) ClearDecksProgress() {
+	m.cleareddecks_progress = true
+}
+
+// DecksProgressCleared reports if the "decks_progress" edge to the DeckProgress entity was cleared.
+func (m *UserMutation) DecksProgressCleared() bool {
+	return m.cleareddecks_progress
+}
+
+// RemoveDecksProgresIDs removes the "decks_progress" edge to the DeckProgress entity by IDs.
+func (m *UserMutation) RemoveDecksProgresIDs(ids ...int) {
+	if m.removeddecks_progress == nil {
+		m.removeddecks_progress = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.decks_progress, ids[i])
+		m.removeddecks_progress[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDecksProgress returns the removed IDs of the "decks_progress" edge to the DeckProgress entity.
+func (m *UserMutation) RemovedDecksProgressIDs() (ids []int) {
+	for id := range m.removeddecks_progress {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DecksProgressIDs returns the "decks_progress" edge IDs in the mutation.
+func (m *UserMutation) DecksProgressIDs() (ids []int) {
+	for id := range m.decks_progress {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDecksProgress resets all changes to the "decks_progress" edge.
+func (m *UserMutation) ResetDecksProgress() {
+	m.decks_progress = nil
+	m.cleareddecks_progress = false
+	m.removeddecks_progress = nil
 }
 
 // Where appends a list predicates to the UserMutation builder.
@@ -4725,7 +5676,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 3)
 	if m.username != nil {
 		fields = append(fields, user.FieldUsername)
 	}
@@ -4734,9 +5685,6 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.email != nil {
 		fields = append(fields, user.FieldEmail)
-	}
-	if m.level != nil {
-		fields = append(fields, user.FieldLevel)
 	}
 	return fields
 }
@@ -4752,8 +5700,6 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.PendingActions()
 	case user.FieldEmail:
 		return m.Email()
-	case user.FieldLevel:
-		return m.Level()
 	}
 	return nil, false
 }
@@ -4769,8 +5715,6 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPendingActions(ctx)
 	case user.FieldEmail:
 		return m.OldEmail(ctx)
-	case user.FieldLevel:
-		return m.OldLevel(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -4801,13 +5745,6 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEmail(v)
 		return nil
-	case user.FieldLevel:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLevel(v)
-		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
@@ -4815,21 +5752,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *UserMutation) AddedFields() []string {
-	var fields []string
-	if m.addlevel != nil {
-		fields = append(fields, user.FieldLevel)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case user.FieldLevel:
-		return m.AddedLevel()
-	}
 	return nil, false
 }
 
@@ -4838,13 +5767,6 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *UserMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case user.FieldLevel:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddLevel(v)
-		return nil
 	}
 	return fmt.Errorf("unknown User numeric field %s", name)
 }
@@ -4881,18 +5803,27 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldEmail:
 		m.ResetEmail()
 		return nil
-	case user.FieldLevel:
-		m.ResetLevel()
-		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.cards != nil {
-		edges = append(edges, user.EdgeCards)
+	edges := make([]string, 0, 5)
+	if m.decks != nil {
+		edges = append(edges, user.EdgeDecks)
+	}
+	if m.subjects != nil {
+		edges = append(edges, user.EdgeSubjects)
+	}
+	if m.subscribed_decks != nil {
+		edges = append(edges, user.EdgeSubscribedDecks)
+	}
+	if m.api_tokens != nil {
+		edges = append(edges, user.EdgeAPITokens)
+	}
+	if m.decks_progress != nil {
+		edges = append(edges, user.EdgeDecksProgress)
 	}
 	return edges
 }
@@ -4901,9 +5832,33 @@ func (m *UserMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeCards:
-		ids := make([]ent.Value, 0, len(m.cards))
-		for id := range m.cards {
+	case user.EdgeDecks:
+		ids := make([]ent.Value, 0, len(m.decks))
+		for id := range m.decks {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeSubjects:
+		ids := make([]ent.Value, 0, len(m.subjects))
+		for id := range m.subjects {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeSubscribedDecks:
+		ids := make([]ent.Value, 0, len(m.subscribed_decks))
+		for id := range m.subscribed_decks {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeAPITokens:
+		ids := make([]ent.Value, 0, len(m.api_tokens))
+		for id := range m.api_tokens {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeDecksProgress:
+		ids := make([]ent.Value, 0, len(m.decks_progress))
+		for id := range m.decks_progress {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4913,9 +5868,21 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.removedcards != nil {
-		edges = append(edges, user.EdgeCards)
+	edges := make([]string, 0, 5)
+	if m.removeddecks != nil {
+		edges = append(edges, user.EdgeDecks)
+	}
+	if m.removedsubjects != nil {
+		edges = append(edges, user.EdgeSubjects)
+	}
+	if m.removedsubscribed_decks != nil {
+		edges = append(edges, user.EdgeSubscribedDecks)
+	}
+	if m.removedapi_tokens != nil {
+		edges = append(edges, user.EdgeAPITokens)
+	}
+	if m.removeddecks_progress != nil {
+		edges = append(edges, user.EdgeDecksProgress)
 	}
 	return edges
 }
@@ -4924,9 +5891,33 @@ func (m *UserMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeCards:
-		ids := make([]ent.Value, 0, len(m.removedcards))
-		for id := range m.removedcards {
+	case user.EdgeDecks:
+		ids := make([]ent.Value, 0, len(m.removeddecks))
+		for id := range m.removeddecks {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeSubjects:
+		ids := make([]ent.Value, 0, len(m.removedsubjects))
+		for id := range m.removedsubjects {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeSubscribedDecks:
+		ids := make([]ent.Value, 0, len(m.removedsubscribed_decks))
+		for id := range m.removedsubscribed_decks {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeAPITokens:
+		ids := make([]ent.Value, 0, len(m.removedapi_tokens))
+		for id := range m.removedapi_tokens {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeDecksProgress:
+		ids := make([]ent.Value, 0, len(m.removeddecks_progress))
+		for id := range m.removeddecks_progress {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4936,9 +5927,21 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedcards {
-		edges = append(edges, user.EdgeCards)
+	edges := make([]string, 0, 5)
+	if m.cleareddecks {
+		edges = append(edges, user.EdgeDecks)
+	}
+	if m.clearedsubjects {
+		edges = append(edges, user.EdgeSubjects)
+	}
+	if m.clearedsubscribed_decks {
+		edges = append(edges, user.EdgeSubscribedDecks)
+	}
+	if m.clearedapi_tokens {
+		edges = append(edges, user.EdgeAPITokens)
+	}
+	if m.cleareddecks_progress {
+		edges = append(edges, user.EdgeDecksProgress)
 	}
 	return edges
 }
@@ -4947,8 +5950,16 @@ func (m *UserMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
-	case user.EdgeCards:
-		return m.clearedcards
+	case user.EdgeDecks:
+		return m.cleareddecks
+	case user.EdgeSubjects:
+		return m.clearedsubjects
+	case user.EdgeSubscribedDecks:
+		return m.clearedsubscribed_decks
+	case user.EdgeAPITokens:
+		return m.clearedapi_tokens
+	case user.EdgeDecksProgress:
+		return m.cleareddecks_progress
 	}
 	return false
 }
@@ -4965,1176 +5976,21 @@ func (m *UserMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
-	case user.EdgeCards:
-		m.ResetCards()
+	case user.EdgeDecks:
+		m.ResetDecks()
+		return nil
+	case user.EdgeSubjects:
+		m.ResetSubjects()
+		return nil
+	case user.EdgeSubscribedDecks:
+		m.ResetSubscribedDecks()
+		return nil
+	case user.EdgeAPITokens:
+		m.ResetAPITokens()
+		return nil
+	case user.EdgeDecksProgress:
+		m.ResetDecksProgress()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)
-}
-
-// VocabularyMutation represents an operation that mutates the Vocabulary nodes in the graph.
-type VocabularyMutation struct {
-	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	created_at       *time.Time
-	updated_at       *time.Time
-	name             *string
-	alt_names        *pgtype.TextArray
-	level            *int32
-	addlevel         *int32
-	word             *string
-	word_type        *pgtype.TextArray
-	reading          *string
-	alt_readings     *pgtype.TextArray
-	patterns         *[]schema.Pattern
-	appendpatterns   []schema.Pattern
-	sentences        *[]schema.Sentence
-	appendsentences  []schema.Sentence
-	meaning_mnemonic *string
-	reading_mnemonic *string
-	clearedFields    map[string]struct{}
-	kanjis           map[uuid.UUID]struct{}
-	removedkanjis    map[uuid.UUID]struct{}
-	clearedkanjis    bool
-	done             bool
-	oldValue         func(context.Context) (*Vocabulary, error)
-	predicates       []predicate.Vocabulary
-}
-
-var _ ent.Mutation = (*VocabularyMutation)(nil)
-
-// vocabularyOption allows management of the mutation configuration using functional options.
-type vocabularyOption func(*VocabularyMutation)
-
-// newVocabularyMutation creates new mutation for the Vocabulary entity.
-func newVocabularyMutation(c config, op Op, opts ...vocabularyOption) *VocabularyMutation {
-	m := &VocabularyMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeVocabulary,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withVocabularyID sets the ID field of the mutation.
-func withVocabularyID(id uuid.UUID) vocabularyOption {
-	return func(m *VocabularyMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Vocabulary
-		)
-		m.oldValue = func(ctx context.Context) (*Vocabulary, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Vocabulary.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withVocabulary sets the old Vocabulary of the mutation.
-func withVocabulary(node *Vocabulary) vocabularyOption {
-	return func(m *VocabularyMutation) {
-		m.oldValue = func(context.Context) (*Vocabulary, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m VocabularyMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m VocabularyMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of Vocabulary entities.
-func (m *VocabularyMutation) SetID(id uuid.UUID) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *VocabularyMutation) ID() (id uuid.UUID, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *VocabularyMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []uuid.UUID{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Vocabulary.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *VocabularyMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *VocabularyMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *VocabularyMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (m *VocabularyMutation) SetUpdatedAt(t time.Time) {
-	m.updated_at = &t
-}
-
-// UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *VocabularyMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old "updated_at" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *VocabularyMutation) ResetUpdatedAt() {
-	m.updated_at = nil
-}
-
-// SetName sets the "name" field.
-func (m *VocabularyMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the value of the "name" field in the mutation.
-func (m *VocabularyMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old "name" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName resets all changes to the "name" field.
-func (m *VocabularyMutation) ResetName() {
-	m.name = nil
-}
-
-// SetAltNames sets the "alt_names" field.
-func (m *VocabularyMutation) SetAltNames(pa pgtype.TextArray) {
-	m.alt_names = &pa
-}
-
-// AltNames returns the value of the "alt_names" field in the mutation.
-func (m *VocabularyMutation) AltNames() (r pgtype.TextArray, exists bool) {
-	v := m.alt_names
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAltNames returns the old "alt_names" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldAltNames(ctx context.Context) (v pgtype.TextArray, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAltNames is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAltNames requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAltNames: %w", err)
-	}
-	return oldValue.AltNames, nil
-}
-
-// ClearAltNames clears the value of the "alt_names" field.
-func (m *VocabularyMutation) ClearAltNames() {
-	m.alt_names = nil
-	m.clearedFields[vocabulary.FieldAltNames] = struct{}{}
-}
-
-// AltNamesCleared returns if the "alt_names" field was cleared in this mutation.
-func (m *VocabularyMutation) AltNamesCleared() bool {
-	_, ok := m.clearedFields[vocabulary.FieldAltNames]
-	return ok
-}
-
-// ResetAltNames resets all changes to the "alt_names" field.
-func (m *VocabularyMutation) ResetAltNames() {
-	m.alt_names = nil
-	delete(m.clearedFields, vocabulary.FieldAltNames)
-}
-
-// SetLevel sets the "level" field.
-func (m *VocabularyMutation) SetLevel(i int32) {
-	m.level = &i
-	m.addlevel = nil
-}
-
-// Level returns the value of the "level" field in the mutation.
-func (m *VocabularyMutation) Level() (r int32, exists bool) {
-	v := m.level
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLevel returns the old "level" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldLevel(ctx context.Context) (v int32, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLevel requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLevel: %w", err)
-	}
-	return oldValue.Level, nil
-}
-
-// AddLevel adds i to the "level" field.
-func (m *VocabularyMutation) AddLevel(i int32) {
-	if m.addlevel != nil {
-		*m.addlevel += i
-	} else {
-		m.addlevel = &i
-	}
-}
-
-// AddedLevel returns the value that was added to the "level" field in this mutation.
-func (m *VocabularyMutation) AddedLevel() (r int32, exists bool) {
-	v := m.addlevel
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetLevel resets all changes to the "level" field.
-func (m *VocabularyMutation) ResetLevel() {
-	m.level = nil
-	m.addlevel = nil
-}
-
-// SetWord sets the "word" field.
-func (m *VocabularyMutation) SetWord(s string) {
-	m.word = &s
-}
-
-// Word returns the value of the "word" field in the mutation.
-func (m *VocabularyMutation) Word() (r string, exists bool) {
-	v := m.word
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldWord returns the old "word" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldWord(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWord is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWord requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWord: %w", err)
-	}
-	return oldValue.Word, nil
-}
-
-// ResetWord resets all changes to the "word" field.
-func (m *VocabularyMutation) ResetWord() {
-	m.word = nil
-}
-
-// SetWordType sets the "word_type" field.
-func (m *VocabularyMutation) SetWordType(pa pgtype.TextArray) {
-	m.word_type = &pa
-}
-
-// WordType returns the value of the "word_type" field in the mutation.
-func (m *VocabularyMutation) WordType() (r pgtype.TextArray, exists bool) {
-	v := m.word_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldWordType returns the old "word_type" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldWordType(ctx context.Context) (v pgtype.TextArray, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWordType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWordType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWordType: %w", err)
-	}
-	return oldValue.WordType, nil
-}
-
-// ResetWordType resets all changes to the "word_type" field.
-func (m *VocabularyMutation) ResetWordType() {
-	m.word_type = nil
-}
-
-// SetReading sets the "reading" field.
-func (m *VocabularyMutation) SetReading(s string) {
-	m.reading = &s
-}
-
-// Reading returns the value of the "reading" field in the mutation.
-func (m *VocabularyMutation) Reading() (r string, exists bool) {
-	v := m.reading
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldReading returns the old "reading" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldReading(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldReading is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldReading requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldReading: %w", err)
-	}
-	return oldValue.Reading, nil
-}
-
-// ResetReading resets all changes to the "reading" field.
-func (m *VocabularyMutation) ResetReading() {
-	m.reading = nil
-}
-
-// SetAltReadings sets the "alt_readings" field.
-func (m *VocabularyMutation) SetAltReadings(pa pgtype.TextArray) {
-	m.alt_readings = &pa
-}
-
-// AltReadings returns the value of the "alt_readings" field in the mutation.
-func (m *VocabularyMutation) AltReadings() (r pgtype.TextArray, exists bool) {
-	v := m.alt_readings
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAltReadings returns the old "alt_readings" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldAltReadings(ctx context.Context) (v pgtype.TextArray, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAltReadings is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAltReadings requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAltReadings: %w", err)
-	}
-	return oldValue.AltReadings, nil
-}
-
-// ClearAltReadings clears the value of the "alt_readings" field.
-func (m *VocabularyMutation) ClearAltReadings() {
-	m.alt_readings = nil
-	m.clearedFields[vocabulary.FieldAltReadings] = struct{}{}
-}
-
-// AltReadingsCleared returns if the "alt_readings" field was cleared in this mutation.
-func (m *VocabularyMutation) AltReadingsCleared() bool {
-	_, ok := m.clearedFields[vocabulary.FieldAltReadings]
-	return ok
-}
-
-// ResetAltReadings resets all changes to the "alt_readings" field.
-func (m *VocabularyMutation) ResetAltReadings() {
-	m.alt_readings = nil
-	delete(m.clearedFields, vocabulary.FieldAltReadings)
-}
-
-// SetPatterns sets the "patterns" field.
-func (m *VocabularyMutation) SetPatterns(s []schema.Pattern) {
-	m.patterns = &s
-	m.appendpatterns = nil
-}
-
-// Patterns returns the value of the "patterns" field in the mutation.
-func (m *VocabularyMutation) Patterns() (r []schema.Pattern, exists bool) {
-	v := m.patterns
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPatterns returns the old "patterns" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldPatterns(ctx context.Context) (v []schema.Pattern, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPatterns is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPatterns requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPatterns: %w", err)
-	}
-	return oldValue.Patterns, nil
-}
-
-// AppendPatterns adds s to the "patterns" field.
-func (m *VocabularyMutation) AppendPatterns(s []schema.Pattern) {
-	m.appendpatterns = append(m.appendpatterns, s...)
-}
-
-// AppendedPatterns returns the list of values that were appended to the "patterns" field in this mutation.
-func (m *VocabularyMutation) AppendedPatterns() ([]schema.Pattern, bool) {
-	if len(m.appendpatterns) == 0 {
-		return nil, false
-	}
-	return m.appendpatterns, true
-}
-
-// ResetPatterns resets all changes to the "patterns" field.
-func (m *VocabularyMutation) ResetPatterns() {
-	m.patterns = nil
-	m.appendpatterns = nil
-}
-
-// SetSentences sets the "sentences" field.
-func (m *VocabularyMutation) SetSentences(s []schema.Sentence) {
-	m.sentences = &s
-	m.appendsentences = nil
-}
-
-// Sentences returns the value of the "sentences" field in the mutation.
-func (m *VocabularyMutation) Sentences() (r []schema.Sentence, exists bool) {
-	v := m.sentences
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSentences returns the old "sentences" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldSentences(ctx context.Context) (v []schema.Sentence, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSentences is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSentences requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSentences: %w", err)
-	}
-	return oldValue.Sentences, nil
-}
-
-// AppendSentences adds s to the "sentences" field.
-func (m *VocabularyMutation) AppendSentences(s []schema.Sentence) {
-	m.appendsentences = append(m.appendsentences, s...)
-}
-
-// AppendedSentences returns the list of values that were appended to the "sentences" field in this mutation.
-func (m *VocabularyMutation) AppendedSentences() ([]schema.Sentence, bool) {
-	if len(m.appendsentences) == 0 {
-		return nil, false
-	}
-	return m.appendsentences, true
-}
-
-// ResetSentences resets all changes to the "sentences" field.
-func (m *VocabularyMutation) ResetSentences() {
-	m.sentences = nil
-	m.appendsentences = nil
-}
-
-// SetMeaningMnemonic sets the "meaning_mnemonic" field.
-func (m *VocabularyMutation) SetMeaningMnemonic(s string) {
-	m.meaning_mnemonic = &s
-}
-
-// MeaningMnemonic returns the value of the "meaning_mnemonic" field in the mutation.
-func (m *VocabularyMutation) MeaningMnemonic() (r string, exists bool) {
-	v := m.meaning_mnemonic
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldMeaningMnemonic returns the old "meaning_mnemonic" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldMeaningMnemonic(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMeaningMnemonic is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMeaningMnemonic requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMeaningMnemonic: %w", err)
-	}
-	return oldValue.MeaningMnemonic, nil
-}
-
-// ResetMeaningMnemonic resets all changes to the "meaning_mnemonic" field.
-func (m *VocabularyMutation) ResetMeaningMnemonic() {
-	m.meaning_mnemonic = nil
-}
-
-// SetReadingMnemonic sets the "reading_mnemonic" field.
-func (m *VocabularyMutation) SetReadingMnemonic(s string) {
-	m.reading_mnemonic = &s
-}
-
-// ReadingMnemonic returns the value of the "reading_mnemonic" field in the mutation.
-func (m *VocabularyMutation) ReadingMnemonic() (r string, exists bool) {
-	v := m.reading_mnemonic
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldReadingMnemonic returns the old "reading_mnemonic" field's value of the Vocabulary entity.
-// If the Vocabulary object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VocabularyMutation) OldReadingMnemonic(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldReadingMnemonic is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldReadingMnemonic requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldReadingMnemonic: %w", err)
-	}
-	return oldValue.ReadingMnemonic, nil
-}
-
-// ResetReadingMnemonic resets all changes to the "reading_mnemonic" field.
-func (m *VocabularyMutation) ResetReadingMnemonic() {
-	m.reading_mnemonic = nil
-}
-
-// AddKanjiIDs adds the "kanjis" edge to the Kanji entity by ids.
-func (m *VocabularyMutation) AddKanjiIDs(ids ...uuid.UUID) {
-	if m.kanjis == nil {
-		m.kanjis = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.kanjis[ids[i]] = struct{}{}
-	}
-}
-
-// ClearKanjis clears the "kanjis" edge to the Kanji entity.
-func (m *VocabularyMutation) ClearKanjis() {
-	m.clearedkanjis = true
-}
-
-// KanjisCleared reports if the "kanjis" edge to the Kanji entity was cleared.
-func (m *VocabularyMutation) KanjisCleared() bool {
-	return m.clearedkanjis
-}
-
-// RemoveKanjiIDs removes the "kanjis" edge to the Kanji entity by IDs.
-func (m *VocabularyMutation) RemoveKanjiIDs(ids ...uuid.UUID) {
-	if m.removedkanjis == nil {
-		m.removedkanjis = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.kanjis, ids[i])
-		m.removedkanjis[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedKanjis returns the removed IDs of the "kanjis" edge to the Kanji entity.
-func (m *VocabularyMutation) RemovedKanjisIDs() (ids []uuid.UUID) {
-	for id := range m.removedkanjis {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// KanjisIDs returns the "kanjis" edge IDs in the mutation.
-func (m *VocabularyMutation) KanjisIDs() (ids []uuid.UUID) {
-	for id := range m.kanjis {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetKanjis resets all changes to the "kanjis" edge.
-func (m *VocabularyMutation) ResetKanjis() {
-	m.kanjis = nil
-	m.clearedkanjis = false
-	m.removedkanjis = nil
-}
-
-// Where appends a list predicates to the VocabularyMutation builder.
-func (m *VocabularyMutation) Where(ps ...predicate.Vocabulary) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *VocabularyMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (Vocabulary).
-func (m *VocabularyMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *VocabularyMutation) Fields() []string {
-	fields := make([]string, 0, 13)
-	if m.created_at != nil {
-		fields = append(fields, vocabulary.FieldCreatedAt)
-	}
-	if m.updated_at != nil {
-		fields = append(fields, vocabulary.FieldUpdatedAt)
-	}
-	if m.name != nil {
-		fields = append(fields, vocabulary.FieldName)
-	}
-	if m.alt_names != nil {
-		fields = append(fields, vocabulary.FieldAltNames)
-	}
-	if m.level != nil {
-		fields = append(fields, vocabulary.FieldLevel)
-	}
-	if m.word != nil {
-		fields = append(fields, vocabulary.FieldWord)
-	}
-	if m.word_type != nil {
-		fields = append(fields, vocabulary.FieldWordType)
-	}
-	if m.reading != nil {
-		fields = append(fields, vocabulary.FieldReading)
-	}
-	if m.alt_readings != nil {
-		fields = append(fields, vocabulary.FieldAltReadings)
-	}
-	if m.patterns != nil {
-		fields = append(fields, vocabulary.FieldPatterns)
-	}
-	if m.sentences != nil {
-		fields = append(fields, vocabulary.FieldSentences)
-	}
-	if m.meaning_mnemonic != nil {
-		fields = append(fields, vocabulary.FieldMeaningMnemonic)
-	}
-	if m.reading_mnemonic != nil {
-		fields = append(fields, vocabulary.FieldReadingMnemonic)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *VocabularyMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case vocabulary.FieldCreatedAt:
-		return m.CreatedAt()
-	case vocabulary.FieldUpdatedAt:
-		return m.UpdatedAt()
-	case vocabulary.FieldName:
-		return m.Name()
-	case vocabulary.FieldAltNames:
-		return m.AltNames()
-	case vocabulary.FieldLevel:
-		return m.Level()
-	case vocabulary.FieldWord:
-		return m.Word()
-	case vocabulary.FieldWordType:
-		return m.WordType()
-	case vocabulary.FieldReading:
-		return m.Reading()
-	case vocabulary.FieldAltReadings:
-		return m.AltReadings()
-	case vocabulary.FieldPatterns:
-		return m.Patterns()
-	case vocabulary.FieldSentences:
-		return m.Sentences()
-	case vocabulary.FieldMeaningMnemonic:
-		return m.MeaningMnemonic()
-	case vocabulary.FieldReadingMnemonic:
-		return m.ReadingMnemonic()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *VocabularyMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case vocabulary.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case vocabulary.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	case vocabulary.FieldName:
-		return m.OldName(ctx)
-	case vocabulary.FieldAltNames:
-		return m.OldAltNames(ctx)
-	case vocabulary.FieldLevel:
-		return m.OldLevel(ctx)
-	case vocabulary.FieldWord:
-		return m.OldWord(ctx)
-	case vocabulary.FieldWordType:
-		return m.OldWordType(ctx)
-	case vocabulary.FieldReading:
-		return m.OldReading(ctx)
-	case vocabulary.FieldAltReadings:
-		return m.OldAltReadings(ctx)
-	case vocabulary.FieldPatterns:
-		return m.OldPatterns(ctx)
-	case vocabulary.FieldSentences:
-		return m.OldSentences(ctx)
-	case vocabulary.FieldMeaningMnemonic:
-		return m.OldMeaningMnemonic(ctx)
-	case vocabulary.FieldReadingMnemonic:
-		return m.OldReadingMnemonic(ctx)
-	}
-	return nil, fmt.Errorf("unknown Vocabulary field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *VocabularyMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case vocabulary.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case vocabulary.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	case vocabulary.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
-	case vocabulary.FieldAltNames:
-		v, ok := value.(pgtype.TextArray)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAltNames(v)
-		return nil
-	case vocabulary.FieldLevel:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLevel(v)
-		return nil
-	case vocabulary.FieldWord:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetWord(v)
-		return nil
-	case vocabulary.FieldWordType:
-		v, ok := value.(pgtype.TextArray)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetWordType(v)
-		return nil
-	case vocabulary.FieldReading:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetReading(v)
-		return nil
-	case vocabulary.FieldAltReadings:
-		v, ok := value.(pgtype.TextArray)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAltReadings(v)
-		return nil
-	case vocabulary.FieldPatterns:
-		v, ok := value.([]schema.Pattern)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPatterns(v)
-		return nil
-	case vocabulary.FieldSentences:
-		v, ok := value.([]schema.Sentence)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSentences(v)
-		return nil
-	case vocabulary.FieldMeaningMnemonic:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetMeaningMnemonic(v)
-		return nil
-	case vocabulary.FieldReadingMnemonic:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetReadingMnemonic(v)
-		return nil
-	}
-	return fmt.Errorf("unknown Vocabulary field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *VocabularyMutation) AddedFields() []string {
-	var fields []string
-	if m.addlevel != nil {
-		fields = append(fields, vocabulary.FieldLevel)
-	}
-	return fields
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *VocabularyMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case vocabulary.FieldLevel:
-		return m.AddedLevel()
-	}
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *VocabularyMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	case vocabulary.FieldLevel:
-		v, ok := value.(int32)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddLevel(v)
-		return nil
-	}
-	return fmt.Errorf("unknown Vocabulary numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *VocabularyMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(vocabulary.FieldAltNames) {
-		fields = append(fields, vocabulary.FieldAltNames)
-	}
-	if m.FieldCleared(vocabulary.FieldAltReadings) {
-		fields = append(fields, vocabulary.FieldAltReadings)
-	}
-	return fields
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *VocabularyMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *VocabularyMutation) ClearField(name string) error {
-	switch name {
-	case vocabulary.FieldAltNames:
-		m.ClearAltNames()
-		return nil
-	case vocabulary.FieldAltReadings:
-		m.ClearAltReadings()
-		return nil
-	}
-	return fmt.Errorf("unknown Vocabulary nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *VocabularyMutation) ResetField(name string) error {
-	switch name {
-	case vocabulary.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case vocabulary.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	case vocabulary.FieldName:
-		m.ResetName()
-		return nil
-	case vocabulary.FieldAltNames:
-		m.ResetAltNames()
-		return nil
-	case vocabulary.FieldLevel:
-		m.ResetLevel()
-		return nil
-	case vocabulary.FieldWord:
-		m.ResetWord()
-		return nil
-	case vocabulary.FieldWordType:
-		m.ResetWordType()
-		return nil
-	case vocabulary.FieldReading:
-		m.ResetReading()
-		return nil
-	case vocabulary.FieldAltReadings:
-		m.ResetAltReadings()
-		return nil
-	case vocabulary.FieldPatterns:
-		m.ResetPatterns()
-		return nil
-	case vocabulary.FieldSentences:
-		m.ResetSentences()
-		return nil
-	case vocabulary.FieldMeaningMnemonic:
-		m.ResetMeaningMnemonic()
-		return nil
-	case vocabulary.FieldReadingMnemonic:
-		m.ResetReadingMnemonic()
-		return nil
-	}
-	return fmt.Errorf("unknown Vocabulary field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *VocabularyMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.kanjis != nil {
-		edges = append(edges, vocabulary.EdgeKanjis)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *VocabularyMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case vocabulary.EdgeKanjis:
-		ids := make([]ent.Value, 0, len(m.kanjis))
-		for id := range m.kanjis {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *VocabularyMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.removedkanjis != nil {
-		edges = append(edges, vocabulary.EdgeKanjis)
-	}
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *VocabularyMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case vocabulary.EdgeKanjis:
-		ids := make([]ent.Value, 0, len(m.removedkanjis))
-		for id := range m.removedkanjis {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *VocabularyMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedkanjis {
-		edges = append(edges, vocabulary.EdgeKanjis)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *VocabularyMutation) EdgeCleared(name string) bool {
-	switch name {
-	case vocabulary.EdgeKanjis:
-		return m.clearedkanjis
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *VocabularyMutation) ClearEdge(name string) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Vocabulary unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *VocabularyMutation) ResetEdge(name string) error {
-	switch name {
-	case vocabulary.EdgeKanjis:
-		m.ResetKanjis()
-		return nil
-	}
-	return fmt.Errorf("unknown Vocabulary edge %s", name)
 }

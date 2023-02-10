@@ -96,14 +96,6 @@ func (rc *ReviewCreate) SetCardID(id uuid.UUID) *ReviewCreate {
 	return rc
 }
 
-// SetNillableCardID sets the "card" edge to the Card entity by ID if the given value is not nil.
-func (rc *ReviewCreate) SetNillableCardID(id *uuid.UUID) *ReviewCreate {
-	if id != nil {
-		rc = rc.SetCardID(*id)
-	}
-	return rc
-}
-
 // SetCard sets the "card" edge to the Card entity.
 func (rc *ReviewCreate) SetCard(c *Card) *ReviewCreate {
 	return rc.SetCardID(c.ID)
@@ -220,6 +212,9 @@ func (rc *ReviewCreate) check() error {
 	}
 	if _, ok := rc.mutation.EndProgress(); !ok {
 		return &ValidationError{Name: "end_progress", err: errors.New(`ent: missing required field "Review.end_progress"`)}
+	}
+	if _, ok := rc.mutation.CardID(); !ok {
+		return &ValidationError{Name: "card", err: errors.New(`ent: missing required edge "Review.card"`)}
 	}
 	return nil
 }

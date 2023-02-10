@@ -24,13 +24,13 @@ type config struct {
 
 // hooks per client, for fast access.
 type hooks struct {
-	Card       []ent.Hook
-	Kanji      []ent.Hook
-	Radical    []ent.Hook
-	Review     []ent.Hook
-	Subject    []ent.Hook
-	User       []ent.Hook
-	Vocabulary []ent.Hook
+	ApiToken     []ent.Hook
+	Card         []ent.Hook
+	Deck         []ent.Hook
+	DeckProgress []ent.Hook
+	Review       []ent.Hook
+	Subject      []ent.Hook
+	User         []ent.Hook
 }
 
 // Options applies the options on the config object.

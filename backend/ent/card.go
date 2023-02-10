@@ -10,8 +10,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"sixels.io/manekani/ent/card"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
 )
 
 // Card is the model entity for the Card schema.
@@ -39,15 +39,15 @@ type Card struct {
 	BurnedAt *time.Time `json:"burned_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CardQuery when eager-loading is set.
-	Edges         CardEdges `json:"edges"`
-	subject_cards *uuid.UUID
-	user_cards    *string
+	Edges               CardEdges `json:"edges"`
+	deck_progress_cards *int
+	subject_cards       *uuid.UUID
 }
 
 // CardEdges holds the relations/edges for other nodes in the graph.
 type CardEdges struct {
-	// User holds the value of the user edge.
-	User *User `json:"user,omitempty"`
+	// DeckProgress holds the value of the deck_progress edge.
+	DeckProgress *DeckProgress `json:"deck_progress,omitempty"`
 	// Subject holds the value of the subject edge.
 	Subject *Subject `json:"subject,omitempty"`
 	// Reviews holds the value of the reviews edge.
@@ -57,17 +57,17 @@ type CardEdges struct {
 	loadedTypes [3]bool
 }
 
-// UserOrErr returns the User value or an error if the edge
+// DeckProgressOrErr returns the DeckProgress value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e CardEdges) UserOrErr() (*User, error) {
+func (e CardEdges) DeckProgressOrErr() (*DeckProgress, error) {
 	if e.loadedTypes[0] {
-		if e.User == nil {
+		if e.DeckProgress == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
+			return nil, &NotFoundError{label: deckprogress.Label}
 		}
-		return e.User, nil
+		return e.DeckProgress, nil
 	}
-	return nil, &NotLoadedError{edge: "user"}
+	return nil, &NotLoadedError{edge: "deck_progress"}
 }
 
 // SubjectOrErr returns the Subject value or an error if the edge
@@ -103,10 +103,10 @@ func (*Card) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case card.FieldID:
 			values[i] = new(uuid.UUID)
-		case card.ForeignKeys[0]: // subject_cards
+		case card.ForeignKeys[0]: // deck_progress_cards
+			values[i] = new(sql.NullInt64)
+		case card.ForeignKeys[1]: // subject_cards
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case card.ForeignKeys[1]: // user_cards
-			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Card", columns[i])
 		}
@@ -188,27 +188,27 @@ func (c *Card) assignValues(columns []string, values []any) error {
 				*c.BurnedAt = value.Time
 			}
 		case card.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field deck_progress_cards", value)
+			} else if value.Valid {
+				c.deck_progress_cards = new(int)
+				*c.deck_progress_cards = int(value.Int64)
+			}
+		case card.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field subject_cards", values[i])
 			} else if value.Valid {
 				c.subject_cards = new(uuid.UUID)
 				*c.subject_cards = *value.S.(*uuid.UUID)
 			}
-		case card.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field user_cards", values[i])
-			} else if value.Valid {
-				c.user_cards = new(string)
-				*c.user_cards = value.String
-			}
 		}
 	}
 	return nil
 }
 
-// QueryUser queries the "user" edge of the Card entity.
-func (c *Card) QueryUser() *UserQuery {
-	return (&CardClient{config: c.config}).QueryUser(c)
+// QueryDeckProgress queries the "deck_progress" edge of the Card entity.
+func (c *Card) QueryDeckProgress() *DeckProgressQuery {
+	return (&CardClient{config: c.config}).QueryDeckProgress(c)
 }
 
 // QuerySubject queries the "subject" edge of the Card entity.
