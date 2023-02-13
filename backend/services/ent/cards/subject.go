@@ -14,12 +14,13 @@ import (
 	"sixels.io/manekani/services/ent/util"
 )
 
-// check if there is a subject with the given `kind` and `name` in a deck.
-func (repo *CardsRepository) SubjectExists(ctx context.Context, kind string, name string, deckID uuid.UUID) (bool, error) {
+// check if there is a subject with the given `kind`, `name` and `slug` in a deck.
+func (repo *CardsRepository) SubjectExists(ctx context.Context, kind string, name string, slug string, deckID uuid.UUID) (bool, error) {
 	return repo.client.Subject.Query().
 		Where(subject.And(
 			subject.KindEQ(kind),
 			subject.NameEQ(name),
+			subject.SlugEQ(slug),
 			subject.HasDeckWith(deck.IDEQ(deckID)),
 		)).
 		Exist(ctx)

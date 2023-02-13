@@ -78,7 +78,7 @@ func (api *CardsApi) CreateSubject() gin.HandlerFunc {
 		// so they can upload resources after the subject is successfully created.
 		// That also removes the need of using `multipart/form-data`.
 		exists, err := api.cards.SubjectExists(
-			ctx, form.Data.Kind, form.Data.Name, form.Data.Deck,
+			ctx, form.Data.Kind, form.Data.Name, form.Data.Slug, form.Data.Deck,
 		)
 		if err != nil {
 			c.Error(fmt.Errorf("could not check if subject exists: %w", err))
