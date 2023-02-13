@@ -22,8 +22,8 @@ type CreateSubjectForm struct {
 	ValueImage *multipart.FileHeader   `json:"-" form:"value_image" binding:"-"`
 	Resources  []*multipart.FileHeader `json:"-" form:"resources[]" binding:"-"`
 
-	ValueImageMeta *cards.ContentMeta   `json:"value_image_meta" form:"value_image_meta" binding:"-"`
-	ResourcesMeta  []*cards.ContentMeta `json:"resources_meta" form:"resources_meta" binding:"-"`
+	ValueImageMeta *cards.ContentMeta  `json:"value_image_meta" form:"value_image_meta" binding:"-"`
+	ResourcesMeta  []cards.ContentMeta `json:"resource_meta[]" form:"resource_meta[]" binding:"-"`
 
 	Data struct {
 		// shadow ValueImage and Resources from CreateSubjectRequest
@@ -33,22 +33,6 @@ type CreateSubjectForm struct {
 		cards.CreateSubjectRequest
 	} `json:"data" form:"data" binding:"required"`
 }
-
-// type UpdateSubjectForm struct {
-// 	ValueImage *multipart.FileHeader    `json:"-" form:"value_image"`
-// 	Resources  *[]*multipart.FileHeader `json:"-" form:"resources[]"`
-
-// 	ValueImageMeta *cards.ContentMeta   `json:"value_image_meta,omitempty" form:"value_image_meta"`
-// 	ResourcesMeta  *[]cards.ContentMeta `json:"resources_meta,omitempty" form:"resources_meta"`
-
-// 	Data struct {
-// 		// shadow ValueImage and Resources from UpdateSubjectRequest
-// 		ValueImage struct{} `json:"-" form:"-"`
-// 		Resources  struct{} `json:"-" form:"-"`
-
-// 		cards.UpdateSubjectRequest
-// 	} `json:"data" form:"data"`
-// }
 
 // CreateSubject godoc
 // @Id post-subject-create
@@ -71,19 +55,38 @@ func (api *CardsApi) CreateSubject() gin.HandlerFunc {
 		}
 		userID := userIDCtx.(string)
 
-		log.Printf("subject create by user: %s\n", userID)
+		log.Printf("subject created by user: %s\n", userID)
 
 		var form CreateSubjectForm
 		if err := c.Bind(&form); err != nil {
-			c.Error(err)
+			c.Error(fmt.Errorf("create-subject bind error: %w", err))
 			c.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		if status, err :=
 			checkResourceOwner(ctx, userID, form.Data.Deck, api.cards.DeckOwner); err != nil {
-			c.Error(err)
+			c.Error(fmt.Errorf("authorization error: %w", err))
 			c.Status(status)
+			return
+		}
+
+		// check if the subject violates the uniqueness constraint inside the deck.
+		// NOTE: this is only done now to prevent uploading resources of an invalid
+		// card. A better approach would be:
+		// TODO: return a pre-signed url to the client
+		// so they can upload resources after the subject is successfully created.
+		// That also removes the need of using `multipart/form-data`.
+		exists, err := api.cards.SubjectExists(
+			ctx, form.Data.Kind, form.Data.Name, form.Data.Deck,
+		)
+		if err != nil {
+			c.Error(fmt.Errorf("could not check if subject exists: %w", err))
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		if exists {
+			c.Status(http.StatusConflict)
 			return
 		}
 
@@ -92,11 +95,12 @@ func (api *CardsApi) CreateSubject() gin.HandlerFunc {
 
 		// upload value image
 		if form.ValueImage != nil && form.ValueImageMeta != nil {
-			url, err := api.uploadRemoteResource(
+			resource, err := api.uploadRemoteResource(
 				ctx,
 				*form.ValueImage,
-				fmt.Sprintf("L%d-%s\n", form.Data.Level, form.Data.Name),
-				"resource",
+				form.ValueImageMeta,
+				fmt.Sprintf("L%d-%s\n", form.Data.Level, form.Data.Slug),
+				"value",
 			)
 			if err != nil {
 				c.Error(fmt.Errorf("could not upload the file: %w", err))
@@ -104,51 +108,42 @@ func (api *CardsApi) CreateSubject() gin.HandlerFunc {
 				return
 			}
 
-			subjectImage = &cards.RemoteContent{
-				URL:         url,
-				ContentType: form.ValueImage.Header.Get("Content-Type"),
-				Metadata:    form.ValueImageMeta.Metadata,
-			}
+			subjectImage = resource
 		}
 
 		// upload resources
 		if form.ResourcesMeta != nil {
 			resources := map[string][]cards.RemoteContent{}
 
-			for _, resource := range form.ResourcesMeta {
-				if resource.Group == nil || resource.Attachment == nil {
+			for _, resourceMeta := range form.ResourcesMeta {
+				if (resourceMeta.Group == nil || resourceMeta.Attachment == nil) ||
+					(*resourceMeta.Attachment < 0 || *resourceMeta.Attachment >= len(form.Resources)) ||
+					(form.Resources[*resourceMeta.Attachment] == nil) {
 					continue
 				}
 
-				if (*resource.Attachment >= 0 && *resource.Attachment < len(form.Resources)) &&
-					form.Resources[*resource.Attachment] != nil {
-
-					resourceFile := form.Resources[*resource.Attachment]
-					url, err := api.uploadRemoteResource(
-						ctx,
-						*resourceFile,
-						fmt.Sprintf("%s-%s\n", form.Data.Name, *resource.Group),
-						"resource",
-					)
-					if err != nil {
-						c.Error(fmt.Errorf("could not upload the file: %w", err))
-						c.Status(http.StatusInternalServerError)
-						return
-					}
-
-					resourceContents, ok := resources[*resource.Group]
-					if !ok {
-						resourceContents = []cards.RemoteContent{}
-					}
-					resourceContents = append(resourceContents, cards.RemoteContent{
-						URL:         url,
-						ContentType: resourceFile.Header.Get("Content-Type"),
-						Metadata:    resource.Metadata,
-					})
-
-					resources[*resource.Group] = resourceContents
-
+				resourceFile := form.Resources[*resourceMeta.Attachment]
+				resource, err := api.uploadRemoteResource(
+					ctx,
+					*resourceFile,
+					&resourceMeta,
+					fmt.Sprintf("%s-%s\n", form.Data.Name, *resourceMeta.Group),
+					"resource",
+				)
+				if err != nil {
+					c.Error(fmt.Errorf("could not upload the file: %w", err))
+					c.Status(http.StatusInternalServerError)
+					return
 				}
+
+				resourceContents, ok := resources[*resourceMeta.Group]
+				if !ok {
+					resourceContents = []cards.RemoteContent{}
+				}
+				resourceContents = append(resourceContents, *resource)
+
+				resources[*resourceMeta.Group] = resourceContents
+
 			}
 
 			if len(resources) > 0 {
@@ -162,7 +157,7 @@ func (api *CardsApi) CreateSubject() gin.HandlerFunc {
 
 		created, err := api.cards.CreateSubject(ctx, userID, subj)
 		if err != nil {
-			c.Error(err)
+			c.Error(fmt.Errorf("could not create the subject: %w", err))
 			c.JSON(err.(*errors.Error).Status, err)
 		} else {
 			c.JSON(http.StatusCreated, created)
@@ -307,7 +302,7 @@ func (api *CardsApi) DeleteSubject() gin.HandlerFunc {
 // @Tags cards, subject
 // @Accept */*
 // @Produce json
-// @Success 200 {array} cards.PartialSubjectResponse
+// @Success 200 {array} cards.PartialSubject
 // @Router /api/v1/subject [get]
 func (api *CardsApi) AllSubjects() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -328,23 +323,48 @@ func (api *CardsApi) AllSubjects() gin.HandlerFunc {
 	}
 }
 
-func (api *CardsApi) uploadRemoteResource(ctx context.Context, file multipart.FileHeader, contentName string, contentKind string) (string, error) {
-	contentType := file.Header.Get("Content-Type")
+func (api *CardsApi) uploadRemoteResource(
+	ctx context.Context,
+	file multipart.FileHeader,
+	meta *cards.ContentMeta,
+	name string,
+	kind string,
+) (*cards.RemoteContent, error) {
+
 	fileHandle, err := file.Open()
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+	defer fileHandle.Close()
+
+	namespace := "cards"
+	upname := fmt.Sprintf("%s-%s", ulid.Make(), name)
+
+	var contentType string
+	if meta.ContentType != nil {
+		contentType = *meta.ContentType
+	} else {
+		contentType = file.Header.Get("content-type")
 	}
 
 	log.Printf("file content-type: %q\n", contentType)
 
-	return uploadFile(ctx, api.files, fileHandle, files.FileInfo{
+	url, err := uploadFile(ctx, api.files, fileHandle, files.FileInfo{
 		Size:        file.Size,
-		Name:        fmt.Sprintf("%s-%s", ulid.Make(), contentName),
-		Namespace:   "cards",
-		Kind:        contentKind,
+		Name:        upname,
+		Namespace:   namespace,
+		Kind:        kind,
 		ContentType: contentType,
 	})
+	if err != nil {
+		return nil, err
+	}
 
+	return &cards.RemoteContent{
+		URL:         url,
+		ContentType: contentType,
+		Metadata:    meta.Metadata,
+	}, nil
 }
 
 func uploadFile(ctx context.Context, filesService *files_service.FilesRepository, f io.Reader, info files.FileInfo) (string, error) {
