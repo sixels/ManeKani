@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"sixels.io/manekani/core/domain/cards"
+	"sixels.io/manekani/ent/deck"
 	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
 )
@@ -45,6 +46,7 @@ type Subject struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SubjectQuery when eager-loading is set.
 	Edges         SubjectEdges `json:"edges"`
+	deck_subjects *uuid.UUID
 	user_subjects *string
 }
 
@@ -58,8 +60,8 @@ type SubjectEdges struct {
 	Dependencies []*Subject `json:"dependencies,omitempty"`
 	// Dependents holds the value of the dependents edge.
 	Dependents []*Subject `json:"dependents,omitempty"`
-	// Decks holds the value of the decks edge.
-	Decks []*Deck `json:"decks,omitempty"`
+	// Deck holds the value of the deck edge.
+	Deck *Deck `json:"deck,omitempty"`
 	// Owner holds the value of the owner edge.
 	Owner *User `json:"owner,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -103,13 +105,17 @@ func (e SubjectEdges) DependentsOrErr() ([]*Subject, error) {
 	return nil, &NotLoadedError{edge: "dependents"}
 }
 
-// DecksOrErr returns the Decks value or an error if the edge
-// was not loaded in eager-loading.
-func (e SubjectEdges) DecksOrErr() ([]*Deck, error) {
+// DeckOrErr returns the Deck value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SubjectEdges) DeckOrErr() (*Deck, error) {
 	if e.loadedTypes[4] {
-		return e.Decks, nil
+		if e.Deck == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: deck.Label}
+		}
+		return e.Deck, nil
 	}
-	return nil, &NotLoadedError{edge: "decks"}
+	return nil, &NotLoadedError{edge: "deck"}
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -140,7 +146,9 @@ func (*Subject) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case subject.FieldID:
 			values[i] = new(uuid.UUID)
-		case subject.ForeignKeys[0]: // user_subjects
+		case subject.ForeignKeys[0]: // deck_subjects
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case subject.ForeignKeys[1]: // user_subjects
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Subject", columns[i])
@@ -237,6 +245,13 @@ func (s *Subject) assignValues(columns []string, values []any) error {
 				}
 			}
 		case subject.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field deck_subjects", values[i])
+			} else if value.Valid {
+				s.deck_subjects = new(uuid.UUID)
+				*s.deck_subjects = *value.S.(*uuid.UUID)
+			}
+		case subject.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field user_subjects", values[i])
 			} else if value.Valid {
@@ -268,9 +283,9 @@ func (s *Subject) QueryDependents() *SubjectQuery {
 	return (&SubjectClient{config: s.config}).QueryDependents(s)
 }
 
-// QueryDecks queries the "decks" edge of the Subject entity.
-func (s *Subject) QueryDecks() *DeckQuery {
-	return (&SubjectClient{config: s.config}).QueryDecks(s)
+// QueryDeck queries the "deck" edge of the Subject entity.
+func (s *Subject) QueryDeck() *DeckQuery {
+	return (&SubjectClient{config: s.config}).QueryDeck(s)
 }
 
 // QueryOwner queries the "owner" edge of the Subject entity.

@@ -944,25 +944,25 @@ func HasDependentsWith(preds ...predicate.Subject) predicate.Subject {
 	})
 }
 
-// HasDecks applies the HasEdge predicate on the "decks" edge.
-func HasDecks() predicate.Subject {
+// HasDeck applies the HasEdge predicate on the "deck" edge.
+func HasDeck() predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(DecksTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, DecksTable, DecksPrimaryKey...),
+			sqlgraph.To(DeckTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, DeckTable, DeckColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasDecksWith applies the HasEdge predicate on the "decks" edge with a given conditions (other predicates).
-func HasDecksWith(preds ...predicate.Deck) predicate.Subject {
+// HasDeckWith applies the HasEdge predicate on the "deck" edge with a given conditions (other predicates).
+func HasDeckWith(preds ...predicate.Deck) predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(DecksInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, DecksTable, DecksPrimaryKey...),
+			sqlgraph.To(DeckInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, DeckTable, DeckColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

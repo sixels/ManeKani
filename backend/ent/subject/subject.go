@@ -4,6 +4,8 @@ package subject
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -41,8 +43,8 @@ const (
 	EdgeDependencies = "dependencies"
 	// EdgeDependents holds the string denoting the dependents edge name in mutations.
 	EdgeDependents = "dependents"
-	// EdgeDecks holds the string denoting the decks edge name in mutations.
-	EdgeDecks = "decks"
+	// EdgeDeck holds the string denoting the deck edge name in mutations.
+	EdgeDeck = "deck"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
 	// Table holds the table name of the subject in the database.
@@ -60,11 +62,13 @@ const (
 	DependenciesTable = "subject_dependents"
 	// DependentsTable is the table that holds the dependents relation/edge. The primary key declared below.
 	DependentsTable = "subject_dependents"
-	// DecksTable is the table that holds the decks relation/edge. The primary key declared below.
-	DecksTable = "deck_subjects"
-	// DecksInverseTable is the table name for the Deck entity.
+	// DeckTable is the table that holds the deck relation/edge.
+	DeckTable = "subjects"
+	// DeckInverseTable is the table name for the Deck entity.
 	// It exists in this package in order to avoid circular dependency with the "deck" package.
-	DecksInverseTable = "decks"
+	DeckInverseTable = "decks"
+	// DeckColumn is the table column denoting the deck relation/edge.
+	DeckColumn = "deck_subjects"
 	// OwnerTable is the table that holds the owner relation/edge.
 	OwnerTable = "subjects"
 	// OwnerInverseTable is the table name for the User entity.
@@ -93,6 +97,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "subjects"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"deck_subjects",
 	"user_subjects",
 }
 
@@ -106,9 +111,6 @@ var (
 	// DependentsPrimaryKey and DependentsColumn2 are the table columns denoting the
 	// primary key for the dependents relation (M2M).
 	DependentsPrimaryKey = []string{"subject_id", "dependency_id"}
-	// DecksPrimaryKey and DecksColumn2 are the table columns denoting the
-	// primary key for the decks relation (M2M).
-	DecksPrimaryKey = []string{"deck_id", "subject_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -141,4 +143,6 @@ var (
 	ValueValidator func(string) error
 	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
 	SlugValidator func(string) error
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
 )

@@ -121,6 +121,14 @@ func (sc *SubjectCreate) SetID(u uuid.UUID) *SubjectCreate {
 	return sc
 }
 
+// SetNillableID sets the "id" field if the given value is not nil.
+func (sc *SubjectCreate) SetNillableID(u *uuid.UUID) *SubjectCreate {
+	if u != nil {
+		sc.SetID(*u)
+	}
+	return sc
+}
+
 // AddCardIDs adds the "cards" edge to the Card entity by IDs.
 func (sc *SubjectCreate) AddCardIDs(ids ...uuid.UUID) *SubjectCreate {
 	sc.mutation.AddCardIDs(ids...)
@@ -181,19 +189,15 @@ func (sc *SubjectCreate) AddDependents(s ...*Subject) *SubjectCreate {
 	return sc.AddDependentIDs(ids...)
 }
 
-// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
-func (sc *SubjectCreate) AddDeckIDs(ids ...uuid.UUID) *SubjectCreate {
-	sc.mutation.AddDeckIDs(ids...)
+// SetDeckID sets the "deck" edge to the Deck entity by ID.
+func (sc *SubjectCreate) SetDeckID(id uuid.UUID) *SubjectCreate {
+	sc.mutation.SetDeckID(id)
 	return sc
 }
 
-// AddDecks adds the "decks" edges to the Deck entity.
-func (sc *SubjectCreate) AddDecks(d ...*Deck) *SubjectCreate {
-	ids := make([]uuid.UUID, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return sc.AddDeckIDs(ids...)
+// SetDeck sets the "deck" edge to the Deck entity.
+func (sc *SubjectCreate) SetDeck(d *Deck) *SubjectCreate {
+	return sc.SetDeckID(d.ID)
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by ID.
@@ -292,6 +296,10 @@ func (sc *SubjectCreate) defaults() {
 		v := subject.DefaultUpdatedAt()
 		sc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := sc.mutation.ID(); !ok {
+		v := subject.DefaultID()
+		sc.mutation.SetID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -339,6 +347,9 @@ func (sc *SubjectCreate) check() error {
 	}
 	if _, ok := sc.mutation.StudyData(); !ok {
 		return &ValidationError{Name: "study_data", err: errors.New(`ent: missing required field "Subject.study_data"`)}
+	}
+	if _, ok := sc.mutation.DeckID(); !ok {
+		return &ValidationError{Name: "deck", err: errors.New(`ent: missing required edge "Subject.deck"`)}
 	}
 	if _, ok := sc.mutation.OwnerID(); !ok {
 		return &ValidationError{Name: "owner", err: errors.New(`ent: missing required edge "Subject.owner"`)}
@@ -499,12 +510,12 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.DecksIDs(); len(nodes) > 0 {
+	if nodes := sc.mutation.DeckIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   subject.DecksTable,
-			Columns: subject.DecksPrimaryKey,
+			Table:   subject.DeckTable,
+			Columns: []string{subject.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -516,6 +527,7 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.deck_subjects = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := sc.mutation.OwnerIDs(); len(nodes) > 0 {

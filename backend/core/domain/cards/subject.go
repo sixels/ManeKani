@@ -29,7 +29,7 @@ type (
 		Dependencies []uuid.UUID `json:"dependencies"`
 		Dependents   []uuid.UUID `json:"dependents"`
 		Similars     []uuid.UUID `json:"similars"`
-		Decks        []uuid.UUID `json:"decks"`
+		Deck         uuid.UUID   `json:"deck"`
 
 		Owner string `json:"Owner"`
 	}
@@ -68,7 +68,7 @@ type (
 		Dependents   []uuid.UUID `json:"dependents,omitempty" form:"dependents"`
 		Similars     []uuid.UUID `json:"similars,omitempty" form:"similars"`
 
-		Deck uuid.UUID `json:"deck" form:"deck"`
+		Deck uuid.UUID `json:"deck" form:"deck" binding:"required"`
 	}
 
 	UpdateSubjectRequest struct {
@@ -107,9 +107,10 @@ type (
 		Metadata    *map[string]any `json:"metadata"`
 	}
 	ContentMeta struct {
-		Attachment *int            `json:"attachment,omitempty"`
-		Group      *string         `json:"group,omitempty"`
-		Metadata   *map[string]any `json:"metadata,omitempty"`
+		Attachment  *int            `json:"attachment,omitempty"`
+		Group       *string         `json:"group,omitempty"`
+		ContentType *string         `json:"content_type,omitempty"`
+		Metadata    *map[string]any `json:"metadata,omitempty"`
 	}
 
 	StudyData struct {

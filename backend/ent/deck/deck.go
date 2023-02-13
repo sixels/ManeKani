@@ -43,11 +43,13 @@ const (
 	OwnerInverseTable = "users"
 	// OwnerColumn is the table column denoting the owner relation/edge.
 	OwnerColumn = "user_decks"
-	// SubjectsTable is the table that holds the subjects relation/edge. The primary key declared below.
-	SubjectsTable = "deck_subjects"
+	// SubjectsTable is the table that holds the subjects relation/edge.
+	SubjectsTable = "subjects"
 	// SubjectsInverseTable is the table name for the Subject entity.
 	// It exists in this package in order to avoid circular dependency with the "subject" package.
 	SubjectsInverseTable = "subjects"
+	// SubjectsColumn is the table column denoting the subjects relation/edge.
+	SubjectsColumn = "deck_subjects"
 	// UsersProgressTable is the table that holds the users_progress relation/edge.
 	UsersProgressTable = "deck_progresses"
 	// UsersProgressInverseTable is the table name for the DeckProgress entity.
@@ -76,9 +78,6 @@ var (
 	// SubscribersPrimaryKey and SubscribersColumn2 are the table columns denoting the
 	// primary key for the subscribers relation (M2M).
 	SubscribersPrimaryKey = []string{"deck_id", "user_id"}
-	// SubjectsPrimaryKey and SubjectsColumn2 are the table columns denoting the
-	// primary key for the subjects relation (M2M).
-	SubjectsPrimaryKey = []string{"deck_id", "subject_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

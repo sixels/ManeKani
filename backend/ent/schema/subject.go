@@ -48,8 +48,10 @@ func (Subject) Edges() []ent.Edge {
 		edge.To("dependents", Subject.Type).
 			From("dependencies"),
 
-		edge.From("decks", Deck.Type).
-			Ref("subjects"),
+		edge.From("deck", Deck.Type).
+			Ref("subjects").
+			Unique().
+			Required(),
 
 		edge.From("owner", User.Type).
 			Ref("subjects").
@@ -58,11 +60,11 @@ func (Subject) Edges() []ent.Edge {
 	}
 }
 
-func (Subject) Index() []ent.Index {
+func (Subject) Indexes() []ent.Index {
 	return []ent.Index{
 		// prevent subject to have the same kind and slug in the same deck
 		index.Fields("kind", "slug").
-			Edges("decks").
+			Edges("deck").
 			Unique(),
 	}
 }

@@ -32,7 +32,7 @@ type SubjectQuery struct {
 	withSimilar      *SubjectQuery
 	withDependencies *SubjectQuery
 	withDependents   *SubjectQuery
-	withDecks        *DeckQuery
+	withDeck         *DeckQuery
 	withOwner        *UserQuery
 	withFKs          bool
 	// intermediate query (i.e. traversal path).
@@ -159,8 +159,8 @@ func (sq *SubjectQuery) QueryDependents() *SubjectQuery {
 	return query
 }
 
-// QueryDecks chains the current query on the "decks" edge.
-func (sq *SubjectQuery) QueryDecks() *DeckQuery {
+// QueryDeck chains the current query on the "deck" edge.
+func (sq *SubjectQuery) QueryDeck() *DeckQuery {
 	query := &DeckQuery{config: sq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := sq.prepareQuery(ctx); err != nil {
@@ -173,7 +173,7 @@ func (sq *SubjectQuery) QueryDecks() *DeckQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(subject.Table, subject.FieldID, selector),
 			sqlgraph.To(deck.Table, deck.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, subject.DecksTable, subject.DecksPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, subject.DeckTable, subject.DeckColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -388,7 +388,7 @@ func (sq *SubjectQuery) Clone() *SubjectQuery {
 		withSimilar:      sq.withSimilar.Clone(),
 		withDependencies: sq.withDependencies.Clone(),
 		withDependents:   sq.withDependents.Clone(),
-		withDecks:        sq.withDecks.Clone(),
+		withDeck:         sq.withDeck.Clone(),
 		withOwner:        sq.withOwner.Clone(),
 		// clone intermediate query.
 		sql:    sq.sql.Clone(),
@@ -441,14 +441,14 @@ func (sq *SubjectQuery) WithDependents(opts ...func(*SubjectQuery)) *SubjectQuer
 	return sq
 }
 
-// WithDecks tells the query-builder to eager-load the nodes that are connected to
-// the "decks" edge. The optional arguments are used to configure the query builder of the edge.
-func (sq *SubjectQuery) WithDecks(opts ...func(*DeckQuery)) *SubjectQuery {
+// WithDeck tells the query-builder to eager-load the nodes that are connected to
+// the "deck" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubjectQuery) WithDeck(opts ...func(*DeckQuery)) *SubjectQuery {
 	query := &DeckQuery{config: sq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	sq.withDecks = query
+	sq.withDeck = query
 	return sq
 }
 
@@ -542,11 +542,11 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Subj
 			sq.withSimilar != nil,
 			sq.withDependencies != nil,
 			sq.withDependents != nil,
-			sq.withDecks != nil,
+			sq.withDeck != nil,
 			sq.withOwner != nil,
 		}
 	)
-	if sq.withOwner != nil {
+	if sq.withDeck != nil || sq.withOwner != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -598,10 +598,9 @@ func (sq *SubjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Subj
 			return nil, err
 		}
 	}
-	if query := sq.withDecks; query != nil {
-		if err := sq.loadDecks(ctx, query, nodes,
-			func(n *Subject) { n.Edges.Decks = []*Deck{} },
-			func(n *Subject, e *Deck) { n.Edges.Decks = append(n.Edges.Decks, e) }); err != nil {
+	if query := sq.withDeck; query != nil {
+		if err := sq.loadDeck(ctx, query, nodes, nil,
+			func(n *Subject, e *Deck) { n.Edges.Deck = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -819,60 +818,31 @@ func (sq *SubjectQuery) loadDependents(ctx context.Context, query *SubjectQuery,
 	}
 	return nil
 }
-func (sq *SubjectQuery) loadDecks(ctx context.Context, query *DeckQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *Deck)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[uuid.UUID]*Subject)
-	nids := make(map[uuid.UUID]map[*Subject]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
-		if init != nil {
-			init(node)
+func (sq *SubjectQuery) loadDeck(ctx context.Context, query *DeckQuery, nodes []*Subject, init func(*Subject), assign func(*Subject, *Deck)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Subject)
+	for i := range nodes {
+		if nodes[i].deck_subjects == nil {
+			continue
 		}
+		fk := *nodes[i].deck_subjects
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(subject.DecksTable)
-		s.Join(joinT).On(s.C(deck.FieldID), joinT.C(subject.DecksPrimaryKey[0]))
-		s.Where(sql.InValues(joinT.C(subject.DecksPrimaryKey[1]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(subject.DecksPrimaryKey[1]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-		assign := spec.Assign
-		values := spec.ScanValues
-		spec.ScanValues = func(columns []string) ([]any, error) {
-			values, err := values(columns[1:])
-			if err != nil {
-				return nil, err
-			}
-			return append([]any{new(uuid.UUID)}, values...), nil
-		}
-		spec.Assign = func(columns []string, values []any) error {
-			outValue := *values[0].(*uuid.UUID)
-			inValue := *values[1].(*uuid.UUID)
-			if nids[inValue] == nil {
-				nids[inValue] = map[*Subject]struct{}{byID[outValue]: {}}
-				return assign(columns[1:], values[1:])
-			}
-			nids[inValue][byID[outValue]] = struct{}{}
-			return nil
-		}
-	})
+	query.Where(deck.IDIn(ids...))
+	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "decks" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "deck_subjects" returned %v`, n.ID)
 		}
-		for kn := range nodes {
-			assign(kn, n)
+		for i := range nodes {
+			assign(nodes[i], n)
 		}
 	}
 	return nil

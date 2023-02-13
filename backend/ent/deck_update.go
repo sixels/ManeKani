@@ -385,10 +385,10 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if du.mutation.SubjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   deck.SubjectsTable,
-			Columns: deck.SubjectsPrimaryKey,
+			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -401,10 +401,10 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := du.mutation.RemovedSubjectsIDs(); len(nodes) > 0 && !du.mutation.SubjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   deck.SubjectsTable,
-			Columns: deck.SubjectsPrimaryKey,
+			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -420,10 +420,10 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := du.mutation.SubjectsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   deck.SubjectsTable,
-			Columns: deck.SubjectsPrimaryKey,
+			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -893,10 +893,10 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 	}
 	if duo.mutation.SubjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   deck.SubjectsTable,
-			Columns: deck.SubjectsPrimaryKey,
+			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -909,10 +909,10 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 	}
 	if nodes := duo.mutation.RemovedSubjectsIDs(); len(nodes) > 0 && !duo.mutation.SubjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   deck.SubjectsTable,
-			Columns: deck.SubjectsPrimaryKey,
+			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -928,10 +928,10 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 	}
 	if nodes := duo.mutation.SubjectsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   deck.SubjectsTable,
-			Columns: deck.SubjectsPrimaryKey,
+			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

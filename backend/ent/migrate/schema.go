@@ -151,6 +151,7 @@ var (
 		{Name: "priority", Type: field.TypeUint8},
 		{Name: "resources", Type: field.TypeJSON, Nullable: true},
 		{Name: "study_data", Type: field.TypeJSON},
+		{Name: "deck_subjects", Type: field.TypeUUID},
 		{Name: "user_subjects", Type: field.TypeString},
 	}
 	// SubjectsTable holds the schema information for the "subjects" table.
@@ -160,10 +161,23 @@ var (
 		PrimaryKey: []*schema.Column{SubjectsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "subjects_users_subjects",
+				Symbol:     "subjects_decks_subjects",
 				Columns:    []*schema.Column{SubjectsColumns[12]},
+				RefColumns: []*schema.Column{DecksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "subjects_users_subjects",
+				Columns:    []*schema.Column{SubjectsColumns[13]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "subject_kind_slug_deck_subjects",
+				Unique:  true,
+				Columns: []*schema.Column{SubjectsColumns[3], SubjectsColumns[8], SubjectsColumns[12]},
 			},
 		},
 	}
@@ -201,31 +215,6 @@ var (
 				Symbol:     "deck_subscribers_user_id",
 				Columns:    []*schema.Column{DeckSubscribersColumns[1]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
-	// DeckSubjectsColumns holds the columns for the "deck_subjects" table.
-	DeckSubjectsColumns = []*schema.Column{
-		{Name: "deck_id", Type: field.TypeUUID},
-		{Name: "subject_id", Type: field.TypeUUID},
-	}
-	// DeckSubjectsTable holds the schema information for the "deck_subjects" table.
-	DeckSubjectsTable = &schema.Table{
-		Name:       "deck_subjects",
-		Columns:    DeckSubjectsColumns,
-		PrimaryKey: []*schema.Column{DeckSubjectsColumns[0], DeckSubjectsColumns[1]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "deck_subjects_deck_id",
-				Columns:    []*schema.Column{DeckSubjectsColumns[0]},
-				RefColumns: []*schema.Column{DecksColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "deck_subjects_subject_id",
-				Columns:    []*schema.Column{DeckSubjectsColumns[1]},
-				RefColumns: []*schema.Column{SubjectsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -290,7 +279,6 @@ var (
 		SubjectsTable,
 		UsersTable,
 		DeckSubscribersTable,
-		DeckSubjectsTable,
 		SubjectSimilarTable,
 		SubjectDependentsTable,
 	}
@@ -304,11 +292,10 @@ func init() {
 	DeckProgressesTable.ForeignKeys[0].RefTable = DecksTable
 	DeckProgressesTable.ForeignKeys[1].RefTable = UsersTable
 	ReviewsTable.ForeignKeys[0].RefTable = CardsTable
-	SubjectsTable.ForeignKeys[0].RefTable = UsersTable
+	SubjectsTable.ForeignKeys[0].RefTable = DecksTable
+	SubjectsTable.ForeignKeys[1].RefTable = UsersTable
 	DeckSubscribersTable.ForeignKeys[0].RefTable = DecksTable
 	DeckSubscribersTable.ForeignKeys[1].RefTable = UsersTable
-	DeckSubjectsTable.ForeignKeys[0].RefTable = DecksTable
-	DeckSubjectsTable.ForeignKeys[1].RefTable = SubjectsTable
 	SubjectSimilarTable.ForeignKeys[0].RefTable = SubjectsTable
 	SubjectSimilarTable.ForeignKeys[1].RefTable = SubjectsTable
 	SubjectDependentsTable.ForeignKeys[0].RefTable = SubjectsTable

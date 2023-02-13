@@ -34,7 +34,7 @@ func (repo *UsersRepository) GetUserCards(ctx context.Context, userID string, de
 			sq.WithSimilar(func(sq *ent.SubjectQuery) {
 				sq.Select(subject.FieldID)
 			})
-			sq.WithDecks(func(dq *ent.DeckQuery) {
+			sq.WithDeck(func(dq *ent.DeckQuery) {
 				sq.Select(deck.FieldID)
 			})
 		}).
@@ -56,7 +56,7 @@ func (repo *UsersRepository) UnsubscribeUserFromDeck(ctx context.Context, userID
 					user.IDEQ(userID),
 				)),
 				card.HasSubjectWith(
-					subject.HasDecksWith(deck.IDEQ(deckID))),
+					subject.HasDeckWith(deck.IDEQ(deckID))),
 			)).
 			Exec(ctx)
 		if err != nil {

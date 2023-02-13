@@ -200,19 +200,15 @@ func (su *SubjectUpdate) AddDependents(s ...*Subject) *SubjectUpdate {
 	return su.AddDependentIDs(ids...)
 }
 
-// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
-func (su *SubjectUpdate) AddDeckIDs(ids ...uuid.UUID) *SubjectUpdate {
-	su.mutation.AddDeckIDs(ids...)
+// SetDeckID sets the "deck" edge to the Deck entity by ID.
+func (su *SubjectUpdate) SetDeckID(id uuid.UUID) *SubjectUpdate {
+	su.mutation.SetDeckID(id)
 	return su
 }
 
-// AddDecks adds the "decks" edges to the Deck entity.
-func (su *SubjectUpdate) AddDecks(d ...*Deck) *SubjectUpdate {
-	ids := make([]uuid.UUID, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return su.AddDeckIDs(ids...)
+// SetDeck sets the "deck" edge to the Deck entity.
+func (su *SubjectUpdate) SetDeck(d *Deck) *SubjectUpdate {
+	return su.SetDeckID(d.ID)
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by ID.
@@ -315,25 +311,10 @@ func (su *SubjectUpdate) RemoveDependents(s ...*Subject) *SubjectUpdate {
 	return su.RemoveDependentIDs(ids...)
 }
 
-// ClearDecks clears all "decks" edges to the Deck entity.
-func (su *SubjectUpdate) ClearDecks() *SubjectUpdate {
-	su.mutation.ClearDecks()
+// ClearDeck clears the "deck" edge to the Deck entity.
+func (su *SubjectUpdate) ClearDeck() *SubjectUpdate {
+	su.mutation.ClearDeck()
 	return su
-}
-
-// RemoveDeckIDs removes the "decks" edge to Deck entities by IDs.
-func (su *SubjectUpdate) RemoveDeckIDs(ids ...uuid.UUID) *SubjectUpdate {
-	su.mutation.RemoveDeckIDs(ids...)
-	return su
-}
-
-// RemoveDecks removes "decks" edges to Deck entities.
-func (su *SubjectUpdate) RemoveDecks(d ...*Deck) *SubjectUpdate {
-	ids := make([]uuid.UUID, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return su.RemoveDeckIDs(ids...)
 }
 
 // ClearOwner clears the "owner" edge to the User entity.
@@ -432,6 +413,9 @@ func (su *SubjectUpdate) check() error {
 		if err := subject.SlugValidator(v); err != nil {
 			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Subject.slug": %w`, err)}
 		}
+	}
+	if _, ok := su.mutation.DeckID(); su.mutation.DeckCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Subject.deck"`)
 	}
 	if _, ok := su.mutation.OwnerID(); su.mutation.OwnerCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Subject.owner"`)
@@ -723,12 +707,12 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if su.mutation.DecksCleared() {
+	if su.mutation.DeckCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   subject.DecksTable,
-			Columns: subject.DecksPrimaryKey,
+			Table:   subject.DeckTable,
+			Columns: []string{subject.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -739,31 +723,12 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.RemovedDecksIDs(); len(nodes) > 0 && !su.mutation.DecksCleared() {
+	if nodes := su.mutation.DeckIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   subject.DecksTable,
-			Columns: subject.DecksPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := su.mutation.DecksIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   subject.DecksTable,
-			Columns: subject.DecksPrimaryKey,
+			Table:   subject.DeckTable,
+			Columns: []string{subject.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -997,19 +962,15 @@ func (suo *SubjectUpdateOne) AddDependents(s ...*Subject) *SubjectUpdateOne {
 	return suo.AddDependentIDs(ids...)
 }
 
-// AddDeckIDs adds the "decks" edge to the Deck entity by IDs.
-func (suo *SubjectUpdateOne) AddDeckIDs(ids ...uuid.UUID) *SubjectUpdateOne {
-	suo.mutation.AddDeckIDs(ids...)
+// SetDeckID sets the "deck" edge to the Deck entity by ID.
+func (suo *SubjectUpdateOne) SetDeckID(id uuid.UUID) *SubjectUpdateOne {
+	suo.mutation.SetDeckID(id)
 	return suo
 }
 
-// AddDecks adds the "decks" edges to the Deck entity.
-func (suo *SubjectUpdateOne) AddDecks(d ...*Deck) *SubjectUpdateOne {
-	ids := make([]uuid.UUID, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return suo.AddDeckIDs(ids...)
+// SetDeck sets the "deck" edge to the Deck entity.
+func (suo *SubjectUpdateOne) SetDeck(d *Deck) *SubjectUpdateOne {
+	return suo.SetDeckID(d.ID)
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by ID.
@@ -1112,25 +1073,10 @@ func (suo *SubjectUpdateOne) RemoveDependents(s ...*Subject) *SubjectUpdateOne {
 	return suo.RemoveDependentIDs(ids...)
 }
 
-// ClearDecks clears all "decks" edges to the Deck entity.
-func (suo *SubjectUpdateOne) ClearDecks() *SubjectUpdateOne {
-	suo.mutation.ClearDecks()
+// ClearDeck clears the "deck" edge to the Deck entity.
+func (suo *SubjectUpdateOne) ClearDeck() *SubjectUpdateOne {
+	suo.mutation.ClearDeck()
 	return suo
-}
-
-// RemoveDeckIDs removes the "decks" edge to Deck entities by IDs.
-func (suo *SubjectUpdateOne) RemoveDeckIDs(ids ...uuid.UUID) *SubjectUpdateOne {
-	suo.mutation.RemoveDeckIDs(ids...)
-	return suo
-}
-
-// RemoveDecks removes "decks" edges to Deck entities.
-func (suo *SubjectUpdateOne) RemoveDecks(d ...*Deck) *SubjectUpdateOne {
-	ids := make([]uuid.UUID, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return suo.RemoveDeckIDs(ids...)
 }
 
 // ClearOwner clears the "owner" edge to the User entity.
@@ -1242,6 +1188,9 @@ func (suo *SubjectUpdateOne) check() error {
 		if err := subject.SlugValidator(v); err != nil {
 			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Subject.slug": %w`, err)}
 		}
+	}
+	if _, ok := suo.mutation.DeckID(); suo.mutation.DeckCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Subject.deck"`)
 	}
 	if _, ok := suo.mutation.OwnerID(); suo.mutation.OwnerCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Subject.owner"`)
@@ -1550,12 +1499,12 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if suo.mutation.DecksCleared() {
+	if suo.mutation.DeckCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   subject.DecksTable,
-			Columns: subject.DecksPrimaryKey,
+			Table:   subject.DeckTable,
+			Columns: []string{subject.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -1566,31 +1515,12 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.RemovedDecksIDs(); len(nodes) > 0 && !suo.mutation.DecksCleared() {
+	if nodes := suo.mutation.DeckIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   subject.DecksTable,
-			Columns: subject.DecksPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := suo.mutation.DecksIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   subject.DecksTable,
-			Columns: subject.DecksPrimaryKey,
+			Table:   subject.DeckTable,
+			Columns: []string{subject.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

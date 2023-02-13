@@ -345,10 +345,10 @@ func (dc *DeckCreate) createSpec() (*Deck, *sqlgraph.CreateSpec) {
 	}
 	if nodes := dc.mutation.SubjectsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   deck.SubjectsTable,
-			Columns: deck.SubjectsPrimaryKey,
+			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

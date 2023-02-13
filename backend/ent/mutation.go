@@ -3676,9 +3676,8 @@ type SubjectMutation struct {
 	dependents          map[uuid.UUID]struct{}
 	removeddependents   map[uuid.UUID]struct{}
 	cleareddependents   bool
-	decks               map[uuid.UUID]struct{}
-	removeddecks        map[uuid.UUID]struct{}
-	cleareddecks        bool
+	deck                *uuid.UUID
+	cleareddeck         bool
 	owner               *string
 	clearedowner        bool
 	done                bool
@@ -4496,58 +4495,43 @@ func (m *SubjectMutation) ResetDependents() {
 	m.removeddependents = nil
 }
 
-// AddDeckIDs adds the "decks" edge to the Deck entity by ids.
-func (m *SubjectMutation) AddDeckIDs(ids ...uuid.UUID) {
-	if m.decks == nil {
-		m.decks = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.decks[ids[i]] = struct{}{}
-	}
+// SetDeckID sets the "deck" edge to the Deck entity by id.
+func (m *SubjectMutation) SetDeckID(id uuid.UUID) {
+	m.deck = &id
 }
 
-// ClearDecks clears the "decks" edge to the Deck entity.
-func (m *SubjectMutation) ClearDecks() {
-	m.cleareddecks = true
+// ClearDeck clears the "deck" edge to the Deck entity.
+func (m *SubjectMutation) ClearDeck() {
+	m.cleareddeck = true
 }
 
-// DecksCleared reports if the "decks" edge to the Deck entity was cleared.
-func (m *SubjectMutation) DecksCleared() bool {
-	return m.cleareddecks
+// DeckCleared reports if the "deck" edge to the Deck entity was cleared.
+func (m *SubjectMutation) DeckCleared() bool {
+	return m.cleareddeck
 }
 
-// RemoveDeckIDs removes the "decks" edge to the Deck entity by IDs.
-func (m *SubjectMutation) RemoveDeckIDs(ids ...uuid.UUID) {
-	if m.removeddecks == nil {
-		m.removeddecks = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.decks, ids[i])
-		m.removeddecks[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedDecks returns the removed IDs of the "decks" edge to the Deck entity.
-func (m *SubjectMutation) RemovedDecksIDs() (ids []uuid.UUID) {
-	for id := range m.removeddecks {
-		ids = append(ids, id)
+// DeckID returns the "deck" edge ID in the mutation.
+func (m *SubjectMutation) DeckID() (id uuid.UUID, exists bool) {
+	if m.deck != nil {
+		return *m.deck, true
 	}
 	return
 }
 
-// DecksIDs returns the "decks" edge IDs in the mutation.
-func (m *SubjectMutation) DecksIDs() (ids []uuid.UUID) {
-	for id := range m.decks {
-		ids = append(ids, id)
+// DeckIDs returns the "deck" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DeckID instead. It exists only for internal usage by the builders.
+func (m *SubjectMutation) DeckIDs() (ids []uuid.UUID) {
+	if id := m.deck; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetDecks resets all changes to the "decks" edge.
-func (m *SubjectMutation) ResetDecks() {
-	m.decks = nil
-	m.cleareddecks = false
-	m.removeddecks = nil
+// ResetDeck resets all changes to the "deck" edge.
+func (m *SubjectMutation) ResetDeck() {
+	m.deck = nil
+	m.cleareddeck = false
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by id.
@@ -4938,8 +4922,8 @@ func (m *SubjectMutation) AddedEdges() []string {
 	if m.dependents != nil {
 		edges = append(edges, subject.EdgeDependents)
 	}
-	if m.decks != nil {
-		edges = append(edges, subject.EdgeDecks)
+	if m.deck != nil {
+		edges = append(edges, subject.EdgeDeck)
 	}
 	if m.owner != nil {
 		edges = append(edges, subject.EdgeOwner)
@@ -4975,12 +4959,10 @@ func (m *SubjectMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case subject.EdgeDecks:
-		ids := make([]ent.Value, 0, len(m.decks))
-		for id := range m.decks {
-			ids = append(ids, id)
+	case subject.EdgeDeck:
+		if id := m.deck; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case subject.EdgeOwner:
 		if id := m.owner; id != nil {
 			return []ent.Value{*id}
@@ -5003,9 +4985,6 @@ func (m *SubjectMutation) RemovedEdges() []string {
 	}
 	if m.removeddependents != nil {
 		edges = append(edges, subject.EdgeDependents)
-	}
-	if m.removeddecks != nil {
-		edges = append(edges, subject.EdgeDecks)
 	}
 	return edges
 }
@@ -5038,12 +5017,6 @@ func (m *SubjectMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case subject.EdgeDecks:
-		ids := make([]ent.Value, 0, len(m.removeddecks))
-		for id := range m.removeddecks {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
@@ -5063,8 +5036,8 @@ func (m *SubjectMutation) ClearedEdges() []string {
 	if m.cleareddependents {
 		edges = append(edges, subject.EdgeDependents)
 	}
-	if m.cleareddecks {
-		edges = append(edges, subject.EdgeDecks)
+	if m.cleareddeck {
+		edges = append(edges, subject.EdgeDeck)
 	}
 	if m.clearedowner {
 		edges = append(edges, subject.EdgeOwner)
@@ -5084,8 +5057,8 @@ func (m *SubjectMutation) EdgeCleared(name string) bool {
 		return m.cleareddependencies
 	case subject.EdgeDependents:
 		return m.cleareddependents
-	case subject.EdgeDecks:
-		return m.cleareddecks
+	case subject.EdgeDeck:
+		return m.cleareddeck
 	case subject.EdgeOwner:
 		return m.clearedowner
 	}
@@ -5096,6 +5069,9 @@ func (m *SubjectMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *SubjectMutation) ClearEdge(name string) error {
 	switch name {
+	case subject.EdgeDeck:
+		m.ClearDeck()
+		return nil
 	case subject.EdgeOwner:
 		m.ClearOwner()
 		return nil
@@ -5119,8 +5095,8 @@ func (m *SubjectMutation) ResetEdge(name string) error {
 	case subject.EdgeDependents:
 		m.ResetDependents()
 		return nil
-	case subject.EdgeDecks:
-		m.ResetDecks()
+	case subject.EdgeDeck:
+		m.ResetDeck()
 		return nil
 	case subject.EdgeOwner:
 		m.ResetOwner()

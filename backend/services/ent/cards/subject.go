@@ -14,6 +14,17 @@ import (
 	"sixels.io/manekani/services/ent/util"
 )
 
+// check if there is a subject with the given `kind` and `name` in a deck.
+func (repo *CardsRepository) SubjectExists(ctx context.Context, kind string, name string, deckID uuid.UUID) (bool, error) {
+	return repo.client.Subject.Query().
+		Where(subject.And(
+			subject.KindEQ(kind),
+			subject.NameEQ(name),
+			subject.HasDeckWith(deck.IDEQ(deckID)),
+		)).
+		Exist(ctx)
+}
+
 func (repo *CardsRepository) QuerySubject(ctx context.Context, id uuid.UUID) (*cards.Subject, error) {
 	result, err := repo.client.Subject.
 		Query().
@@ -27,7 +38,7 @@ func (repo *CardsRepository) QuerySubject(ctx context.Context, id uuid.UUID) (*c
 		WithSimilar(func(sq *ent.SubjectQuery) {
 			sq.Select(subject.FieldID)
 		}).
-		WithDecks(func(dq *ent.DeckQuery) {
+		WithDeck(func(dq *ent.DeckQuery) {
 			dq.Select(deck.FieldID)
 		}).
 		Only(ctx)
@@ -40,7 +51,6 @@ func (repo *CardsRepository) QuerySubject(ctx context.Context, id uuid.UUID) (*c
 
 func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, req cards.CreateSubjectRequest) (*cards.Subject, error) {
 	query := repo.client.Subject.Create().
-		SetID(uuid.New()).
 		SetKind(req.Kind).
 		SetLevel(req.Level).
 		SetName(req.Name).
@@ -53,12 +63,15 @@ func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, 
 		AddDependencyIDs(req.Dependencies...).
 		AddDependentIDs(req.Dependents...).
 		AddSimilarIDs(req.Similars...).
+		SetDeckID(req.Deck).
 		SetOwnerID(ownerID)
 
 	created, err := query.Save(ctx)
 	if err != nil {
 		return nil, util.ParseEntError(err)
 	}
+
+	created.Edges.Deck = &ent.Deck{ID: req.Deck}
 	return SubjectFromEnt(created), nil
 }
 
@@ -103,7 +116,7 @@ func (repo *CardsRepository) AllSubjects(ctx context.Context, req cards.QueryMan
 	reqFilters = filters.ApplyFilter(reqFilters, req.Kinds.Separate(), subject.KindIn)
 	reqFilters = filters.ApplyFilter(reqFilters, req.Slugs.Separate(), subject.SlugIn)
 	reqFilters = filters.ApplyFilter(reqFilters, req.Decks.Separate(), func(ids ...uuid.UUID) predicate.Subject {
-		return subject.HasDecksWith(deck.IDIn(ids...))
+		return subject.HasDeckWith(deck.IDIn(ids...))
 	})
 	reqFilters = filters.ApplyFilter(reqFilters, req.Owners.Separate(), func(ids ...string) predicate.Subject {
 		return subject.HasOwnerWith(user.IDIn(ids...))
@@ -118,6 +131,9 @@ func (repo *CardsRepository) AllSubjects(ctx context.Context, req cards.QueryMan
 		Where(subject.And(reqFilters...)).
 		Limit(1000).
 		Offset(page).
+		WithDeck(func(dq *ent.DeckQuery) {
+			dq.Select(deck.FieldID)
+		}).
 		Select(
 			subject.FieldID,
 			subject.FieldKind,
@@ -167,9 +183,7 @@ func SubjectFromEnt(e *ent.Subject) *cards.Subject {
 		Similars: util.MapArray(e.Edges.Similar,
 			func(s *ent.Subject) uuid.UUID { return s.ID },
 		),
-		Decks: util.MapArray(e.Edges.Decks,
-			func(d *ent.Deck) uuid.UUID { return d.ID },
-		),
+		Deck: e.Edges.Deck.ID,
 	}
 }
 
