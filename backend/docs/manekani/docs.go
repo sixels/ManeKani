@@ -25,9 +25,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/kanji": {
+        "/api/v1/subject": {
             "get": {
-                "description": "Return a list of all kanji",
+                "description": "Return a list of all subjects",
                 "consumes": [
                     "*/*"
                 ],
@@ -36,294 +36,24 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "cards",
-                    "kanji"
+                    "subject"
                 ],
-                "summary": "Query all kanji",
-                "operationId": "get-kanji-all",
+                "summary": "Query all subjects",
+                "operationId": "get-subject-all",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/cards.PartialKanjiResponse"
+                                "$ref": "#/definitions/cards.PartialSubject"
                             }
                         }
                     }
                 }
             },
             "post": {
-                "description": "Creates a kanji with the given values",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "kanji"
-                ],
-                "summary": "Create a new kanji",
-                "operationId": "post-kanji-create",
-                "parameters": [
-                    {
-                        "description": "The kanji to be created",
-                        "name": "kanji",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/cards.CreateKanjiRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/cards.Kanji"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/kanji/{:symbol}/radicals": {
-            "get": {
-                "description": "Return a list of all radicals that composes the given kanji",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "kanji"
-                ],
-                "summary": "Query a kanji's radicals",
-                "operationId": "get-kanji-radicals",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Kanji symbol",
-                        "name": "symbol",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/cards.PartialRadicalResponse"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/kanji/{:symbol}/vocabularies": {
-            "get": {
-                "description": "Return a list of all vocabularies that are composed by the given kanji",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "kanji"
-                ],
-                "summary": "Query a kanji's vocabularies",
-                "operationId": "get-kanji-vocabularies",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Kanji symbol",
-                        "name": "symbol",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/cards.PartialVocabularyResponse"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/kanji/{symbol}": {
-            "get": {
-                "description": "Search a kanji by its symbol",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "kanji"
-                ],
-                "summary": "Query a kanji",
-                "operationId": "get-kanji-query",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Kanji symbol",
-                        "name": "symbol",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/cards.Kanji"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a kanji by its symbol",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "kanji"
-                ],
-                "summary": "Delete a kanji",
-                "operationId": "delete-kanji-delete",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Kanji symbol",
-                        "name": "symbol",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
-                "description": "Update a kanji with the given values",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "kanji"
-                ],
-                "summary": "Update a kanji",
-                "operationId": "patch-kanji-update",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Kanji symbol",
-                        "name": "symbol",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Kanji fields to update",
-                        "name": "kanji",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/cards.UpdateKanjiRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/cards.Kanji"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/level": {
-            "get": {
-                "description": "Return a list of all radicals, kanji and vocabularies by the given level",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "kanji",
-                    "radical",
-                    "vocabulary"
-                ],
-                "summary": "Query all radicals, kanji and vocabularies by level",
-                "operationId": "get-level-all",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/cards.Level"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/radical": {
-            "get": {
-                "description": "Return a list of all radicals",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "radical"
-                ],
-                "summary": "Query all radicals",
-                "operationId": "get-radical-all",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/cards.PartialRadicalResponse"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Creates a radical with the given values",
+                "description": "Creates a subject with the given values",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -332,18 +62,18 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "cards",
-                    "radical"
+                    "subject"
                 ],
-                "summary": "Create a new radical",
-                "operationId": "post-radical-create",
+                "summary": "Create a new subject",
+                "operationId": "post-subject-create",
                 "parameters": [
                     {
-                        "description": "The radical to be created",
-                        "name": "radical",
+                        "description": "The subject to be created",
+                        "name": "subject",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/cards.CreateRadicalRequest"
+                            "$ref": "#/definitions/cards.CreateSubjectForm"
                         }
                     }
                 ],
@@ -351,15 +81,15 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/cards.Radical"
+                            "$ref": "#/definitions/cards.Subject"
                         }
                     }
                 }
             }
         },
-        "/api/v1/radical/{:name}/kanji": {
+        "/api/v1/subject/{name}": {
             "get": {
-                "description": "Return a list of all kanji that are composed by the given radical",
+                "description": "Search a subject by its name",
                 "consumes": [
                     "*/*"
                 ],
@@ -368,14 +98,14 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "cards",
-                    "radical"
+                    "subject"
                 ],
-                "summary": "Query kanjis from radical",
-                "operationId": "get-radical-kanji",
+                "summary": "Query a subject",
+                "operationId": "get-subject-query",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Radical name",
+                        "description": "Subject name",
                         "name": "name",
                         "in": "path",
                         "required": true
@@ -385,50 +115,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/cards.PartialKanjiResponse"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/radical/{name}": {
-            "get": {
-                "description": "Search a radical by its name",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "radical"
-                ],
-                "summary": "Query a radical",
-                "operationId": "get-radical-query",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Radical name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/cards.Radical"
+                            "$ref": "#/definitions/cards.Subject"
                         }
                     }
                 }
             },
             "delete": {
-                "description": "Delete a radical by its name",
+                "description": "Delete a subject by its name",
                 "consumes": [
                     "*/*"
                 ],
@@ -437,14 +130,14 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "cards",
-                    "radical"
+                    "subject"
                 ],
-                "summary": "Delete a radical",
-                "operationId": "delete-radical-delete",
+                "summary": "Delete a subject",
+                "operationId": "delete-subject-delete",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Radical name",
+                        "description": "Subject name",
                         "name": "name",
                         "in": "path",
                         "required": true
@@ -457,7 +150,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Update a radical with the given values",
+                "description": "Update a subject with the given values",
                 "consumes": [
                     "application/json"
                 ],
@@ -466,25 +159,25 @@ const docTemplate = `{
                 ],
                 "tags": [
                     "cards",
-                    "radical"
+                    "subject"
                 ],
-                "summary": "Update a radical",
-                "operationId": "patch-radical-update",
+                "summary": "Update a subject",
+                "operationId": "patch-subject-update",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Radical name",
+                        "description": "Subject name",
                         "name": "name",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Radical fields to update",
-                        "name": "radical",
+                        "description": "Subject fields to update",
+                        "name": "subject",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/cards.UpdateRadicalRequest"
+                            "$ref": "#/definitions/cards.UpdateSubjectRequest"
                         }
                     }
                 ],
@@ -492,210 +185,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/cards.Radical"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/vocabulary": {
-            "get": {
-                "description": "Return a list of all vocabulary",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "vocabulary"
-                ],
-                "summary": "Query all vocabulary",
-                "operationId": "get-vocabulary-all",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/cards.PartialVocabularyResponse"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Creates a vocabulary with the given values",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "vocabulary"
-                ],
-                "summary": "Create a new vocabulary",
-                "operationId": "post-vocabulary-create",
-                "parameters": [
-                    {
-                        "description": "The vocabulary to be created",
-                        "name": "vocabulary",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/cards.CreateVocabularyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/cards.Vocabulary"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/vocabulary/{:word}/kanji": {
-            "get": {
-                "description": "Return a list of all kanji that composes the given vocabulary",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "vocabulary"
-                ],
-                "summary": "Query kanjis from vocabulary",
-                "operationId": "get-vocabulary-kanji",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Vocabulary word",
-                        "name": "word",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/cards.PartialKanjiResponse"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/vocabulary/{word}": {
-            "get": {
-                "description": "Search a vocabulary by its word",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "vocabulary"
-                ],
-                "summary": "Query a vocabulary",
-                "operationId": "get-vocabulary-query",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Vocabulary word",
-                        "name": "word",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/cards.Vocabulary"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a vocabulary by its word",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "vocabulary"
-                ],
-                "summary": "Delete a vocabulary",
-                "operationId": "delete-vocabulary-delete",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Vocabulary word",
-                        "name": "word",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
-                "description": "Update a vocabulary with the given values",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cards",
-                    "vocabulary"
-                ],
-                "summary": "Update a vocabulary",
-                "operationId": "patch-vocabulary-update",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Vocabulary word",
-                        "name": "word",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Vocabulary fields to update",
-                        "name": "vocabulary",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/cards.UpdateVocabularyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/cards.Vocabulary"
+                            "$ref": "#/definitions/cards.Subject"
                         }
                     }
                 }
@@ -728,231 +218,218 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "cards.CreateKanjiRequest": {
+        "cards.ContentMeta": {
             "type": "object",
             "properties": {
-                "alt_names": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
+                "attachment": {
+                    "type": "integer"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                }
+            }
+        },
+        "cards.CreateSubjectForm": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "deck",
+                        "level",
+                        "name",
+                        "slug"
+                    ],
+                    "properties": {
+                        "deck": {
+                            "type": "string"
+                        },
+                        "dependencies": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "dependents": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "kind": {
+                            "type": "string"
+                        },
+                        "level": {
+                            "type": "integer"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "priority": {
+                            "type": "integer"
+                        },
+                        "resources": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/cards.RemoteContent"
+                                }
+                            }
+                        },
+                        "similars": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "slug": {
+                            "type": "string"
+                        },
+                        "study_data": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/cards.StudyData"
+                            }
+                        },
+                        "value": {
+                            "type": "string"
+                        },
+                        "value_image": {
+                            "$ref": "#/definitions/cards.RemoteContent"
+                        }
                     }
                 },
-                "kunyomi": {
+                "resource_meta[]": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/cards.ContentMeta"
                     }
+                },
+                "value_image_meta": {
+                    "$ref": "#/definitions/cards.ContentMeta"
+                }
+            }
+        },
+        "cards.PartialSubject": {
+            "type": "object",
+            "properties": {
+                "Owner": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
                 },
                 "level": {
                     "type": "integer"
                 },
-                "meaning_mnemonic": {
-                    "type": "string"
-                },
                 "name": {
                     "type": "string"
                 },
-                "nanori": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "onyomi": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "radical_composition": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "reading": {
-                    "type": "string"
-                },
-                "reading_mnemonic": {
-                    "type": "string"
-                },
-                "similar": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "symbol": {
-                    "type": "string"
-                }
-            }
-        },
-        "cards.CreateRadicalRequest": {
-            "type": "object",
-            "properties": {
-                "level": {
+                "priority": {
                     "type": "integer"
                 },
-                "meaning_mnemonic": {
-                    "description": "SymbolImage     *[]byte ` + "`" + `json:\"symbol_image,omitempty\" form:\"symbol_image\"` + "`" + `",
+                "slug": {
                     "type": "string"
                 },
-                "name": {
+                "study_data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/cards.StudyData"
+                    }
+                },
+                "value": {
                     "type": "string"
                 },
-                "symbol": {
+                "value_image": {
+                    "$ref": "#/definitions/cards.RemoteContent"
+                }
+            }
+        },
+        "cards.RemoteContent": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "url": {
                     "type": "string"
                 }
             }
         },
-        "cards.CreateVocabularyRequest": {
+        "cards.StudyData": {
             "type": "object",
             "properties": {
-                "alt_names": {
+                "items": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/cards.StudyItem"
                     }
                 },
-                "alt_readings": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "kanji_composition": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "level": {
-                    "type": "integer"
-                },
-                "meaning_mnemonic": {
+                "kind": {
                     "type": "string"
                 },
-                "name": {
+                "mnemonic": {
                     "type": "string"
-                },
-                "patterns": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schema.Pattern"
-                    }
-                },
-                "reading": {
-                    "type": "string"
-                },
-                "reading_mnemonic": {
-                    "type": "string"
-                },
-                "sentences": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schema.Sentence"
-                    }
-                },
-                "word": {
-                    "type": "string"
-                },
-                "word_type": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 }
             }
         },
-        "cards.Kanji": {
+        "cards.StudyItem": {
             "type": "object",
             "properties": {
-                "alt_names": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "category": {
+                    "type": "string"
+                },
+                "is_hidden": {
+                    "type": "boolean"
+                },
+                "is_primary": {
+                    "type": "boolean"
+                },
+                "is_valid_answer": {
+                    "type": "boolean"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "cards.Subject": {
+            "type": "object",
+            "properties": {
+                "Owner": {
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
                 },
-                "id": {
+                "deck": {
                     "type": "string"
                 },
-                "kunyomi": {
+                "dependencies": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "level": {
-                    "type": "integer"
-                },
-                "meaning_mnemonic": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "nanori": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "onyomi": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "reading": {
-                    "type": "string"
-                },
-                "reading_mnemonic": {
-                    "type": "string"
-                },
-                "similar": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "symbol": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "cards.Level": {
-            "type": "object",
-            "properties": {
-                "kanji": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/cards.PartialKanjiResponse"
-                    }
-                },
-                "radical": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/cards.PartialRadicalResponse"
-                    }
-                },
-                "vocabulary": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/cards.PartialVocabularyResponse"
-                    }
-                }
-            }
-        },
-        "cards.PartialKanjiResponse": {
-            "type": "object",
-            "properties": {
-                "alt_names": {
+                "dependents": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -961,299 +438,110 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "level": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "reading": {
-                    "type": "string"
-                },
-                "symbol": {
-                    "type": "string"
-                }
-            }
-        },
-        "cards.PartialRadicalResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
+                "kind": {
                     "type": "string"
                 },
                 "level": {
                     "type": "integer"
                 },
                 "name": {
+                    "description": "e.g. \"ground\", \"一\", nil, \"一\", 2",
                     "type": "string"
                 },
-                "symbol": {
-                    "type": "string"
-                }
-            }
-        },
-        "cards.PartialVocabularyResponse": {
-            "type": "object",
-            "properties": {
-                "alt_names": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "id": {
-                    "type": "string"
-                },
-                "level": {
+                "priority": {
                     "type": "integer"
                 },
-                "name": {
-                    "type": "string"
+                "resources": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/cards.RemoteContent"
+                        }
+                    }
                 },
-                "reading": {
-                    "type": "string"
-                },
-                "word": {
-                    "type": "string"
-                }
-            }
-        },
-        "cards.Radical": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "level": {
-                    "type": "integer"
-                },
-                "meaning_mnemonic": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "symbol": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "cards.UpdateKanjiRequest": {
-            "type": "object",
-            "properties": {
-                "alt_names": {
+                "similars": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "kunyomi": {
+                "slug": {
+                    "type": "string"
+                },
+                "study_data": {
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    }
-                },
-                "level": {
-                    "type": "integer"
-                },
-                "meaning_mnemonic": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "nanori": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "onyomi": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "radical_composition": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "reading": {
-                    "type": "string"
-                },
-                "reading_mnemonic": {
-                    "type": "string"
-                },
-                "similar": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "cards.UpdateRadicalRequest": {
-            "type": "object",
-            "properties": {
-                "level": {
-                    "type": "integer"
-                },
-                "meaning_mnemonic": {
-                    "type": "string"
-                },
-                "symbol": {
-                    "type": "string"
-                }
-            }
-        },
-        "cards.UpdateVocabularyRequest": {
-            "type": "object",
-            "properties": {
-                "alt_names": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "alt_readings": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "kanji_composition": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "level": {
-                    "type": "integer"
-                },
-                "meaning_mnemonic": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "patterns": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schema.Pattern"
-                    }
-                },
-                "reading": {
-                    "type": "string"
-                },
-                "reading_mnemonic": {
-                    "type": "string"
-                },
-                "sentences": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schema.Sentence"
-                    }
-                },
-                "word_type": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "cards.Vocabulary": {
-            "type": "object",
-            "properties": {
-                "alt_names": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "alt_readings": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "level": {
-                    "type": "integer"
-                },
-                "meaning_mnemonic": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "patterns": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schema.Pattern"
-                    }
-                },
-                "reading": {
-                    "type": "string"
-                },
-                "reading_mnemonic": {
-                    "type": "string"
-                },
-                "sentences": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schema.Sentence"
+                        "$ref": "#/definitions/cards.StudyData"
                     }
                 },
                 "updated_at": {
                     "type": "string"
                 },
-                "word": {
+                "value": {
                     "type": "string"
                 },
-                "word_type": {
+                "value_image": {
+                    "$ref": "#/definitions/cards.RemoteContent"
+                }
+            }
+        },
+        "cards.UpdateSubjectRequest": {
+            "type": "object",
+            "properties": {
+                "dependencies": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
-                }
-            }
-        },
-        "schema.Pattern": {
-            "type": "object",
-            "properties": {
+                },
+                "dependents": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
-                "sentences": {
+                "priority": {
+                    "type": "integer"
+                },
+                "resources": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/cards.RemoteContent"
+                        }
+                    }
+                },
+                "similars": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schema.Sentence"
+                        "type": "string"
                     }
-                }
-            }
-        },
-        "schema.Sentence": {
-            "type": "object",
-            "properties": {
-                "meaning": {
+                },
+                "slug": {
                     "type": "string"
                 },
-                "sentence": {
+                "study_data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/cards.StudyData"
+                    }
+                },
+                "value": {
                     "type": "string"
+                },
+                "value_image": {
+                    "$ref": "#/definitions/cards.RemoteContent"
                 }
             }
         }
