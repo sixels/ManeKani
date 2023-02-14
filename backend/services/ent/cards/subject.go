@@ -72,7 +72,9 @@ func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, 
 		return nil, util.ParseEntError(err)
 	}
 
+	// TODO: fetch the edges from ent
 	created.Edges.Deck = &ent.Deck{ID: req.Deck}
+	created.Edges.Owner = &ent.User{ID: ownerID}
 	return SubjectFromEnt(created), nil
 }
 
@@ -132,6 +134,18 @@ func (repo *CardsRepository) AllSubjects(ctx context.Context, req cards.QueryMan
 		Where(subject.And(reqFilters...)).
 		Limit(1000).
 		Offset(page).
+		WithOwner(func(uq *ent.UserQuery) {
+			uq.Select(user.FieldID)
+		}).
+		WithDependencies(func(sq *ent.SubjectQuery) {
+			sq.Select(subject.FieldID)
+		}).
+		WithDependents(func(sq *ent.SubjectQuery) {
+			sq.Select(subject.FieldID)
+		}).
+		WithSimilar(func(sq *ent.SubjectQuery) {
+			sq.Select(subject.FieldID)
+		}).
 		WithDeck(func(dq *ent.DeckQuery) {
 			dq.Select(deck.FieldID)
 		}).
