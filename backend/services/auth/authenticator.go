@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/supertokens/supertokens-golang/recipe/dashboard"
@@ -80,6 +81,7 @@ func StartAuthenticator(users ports.UserRepository) error {
 							if response.OK != nil {
 								created, err := signUpHook(ctx, users, response.OK.User, formFields)
 								if err != nil {
+									log.Println(err.Error())
 									return response, err
 								}
 								log.Printf("created user %s\n", created.Email)
@@ -123,7 +125,7 @@ func signUpHook(
 		Username: username,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not create the user: %w", err)
 	}
 	return created, nil
 }
