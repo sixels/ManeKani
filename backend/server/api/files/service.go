@@ -18,5 +18,5 @@ func New(filesService *files.FilesRepository) *FilesApi {
 func (api *FilesApi) SetupRoutes(router *gin.Engine) {
 	r := router.Group("/files")
 
-	r.GET("/:kind/:namespace/:name", api.QueryFile())
+	r.GET("/*path", api.QueryFile())
 }

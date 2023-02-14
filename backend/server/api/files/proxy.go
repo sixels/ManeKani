@@ -5,18 +5,18 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"sixels.io/manekani/services/ent/util"
 )
 
 // TODO: swagger comment
 func (api *FilesApi) QueryFile() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		paramKind := c.Param("kind")
-		paramNamespace := c.Param("namespace")
-		paramName := c.Param("name")
+		params := util.MapArray(c.Params, func(params gin.Param) string {
+			return params.Value
+		})
 
-		key := strings.Join([]string{paramKind, paramNamespace, paramName}, "/")
-
-		object, err := api.files.QueryFile(c.Request.Context(), key)
+		key := strings.Join(params, "/")
+		object, err := api.files.QueryFile(c.Request.Context(), key[1:])
 		if err != nil {
 			c.Error(err)
 			c.Status(http.StatusNotFound)
