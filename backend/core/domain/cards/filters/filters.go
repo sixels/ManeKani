@@ -62,6 +62,8 @@ func (c *CommaSeparatedInt32) Separate() (nums []int32) {
 	for _, v := range values {
 		if number, err := strconv.Atoi(v); err == nil {
 			nums = append(nums, int32(number))
+		} else {
+			nums = append(nums, -1)
 		}
 	}
 	return nums
@@ -72,6 +74,8 @@ func (c *CommaSeparatedUUID) Separate() (uuids []uuid.UUID) {
 	for _, v := range values {
 		if id, err := uuid.Parse(v); err == nil {
 			uuids = append(uuids, id)
+		} else {
+			uuids = append(uuids, uuid.Nil)
 		}
 	}
 	return uuids
