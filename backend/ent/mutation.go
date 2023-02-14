@@ -3646,43 +3646,44 @@ func (m *ReviewMutation) ResetEdge(name string) error {
 // SubjectMutation represents an operation that mutates the Subject nodes in the graph.
 type SubjectMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uuid.UUID
-	created_at          *time.Time
-	updated_at          *time.Time
-	kind                *string
-	level               *int32
-	addlevel            *int32
-	name                *string
-	value               *string
-	value_image         **cards.RemoteContent
-	slug                *string
-	priority            *uint8
-	addpriority         *int8
-	resources           **map[string][]cards.RemoteContent
-	study_data          *[]cards.StudyData
-	appendstudy_data    []cards.StudyData
-	clearedFields       map[string]struct{}
-	cards               map[uuid.UUID]struct{}
-	removedcards        map[uuid.UUID]struct{}
-	clearedcards        bool
-	similar             map[uuid.UUID]struct{}
-	removedsimilar      map[uuid.UUID]struct{}
-	clearedsimilar      bool
-	dependencies        map[uuid.UUID]struct{}
-	removeddependencies map[uuid.UUID]struct{}
-	cleareddependencies bool
-	dependents          map[uuid.UUID]struct{}
-	removeddependents   map[uuid.UUID]struct{}
-	cleareddependents   bool
-	deck                *uuid.UUID
-	cleareddeck         bool
-	owner               *string
-	clearedowner        bool
-	done                bool
-	oldValue            func(context.Context) (*Subject, error)
-	predicates          []predicate.Subject
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	created_at               *time.Time
+	updated_at               *time.Time
+	kind                     *string
+	level                    *int32
+	addlevel                 *int32
+	name                     *string
+	value                    *string
+	value_image              **cards.RemoteContent
+	slug                     *string
+	priority                 *uint8
+	addpriority              *int8
+	resources                **map[string][]cards.RemoteContent
+	study_data               *[]cards.StudyData
+	appendstudy_data         []cards.StudyData
+	complimentary_study_data **[]map[string]string
+	clearedFields            map[string]struct{}
+	cards                    map[uuid.UUID]struct{}
+	removedcards             map[uuid.UUID]struct{}
+	clearedcards             bool
+	similar                  map[uuid.UUID]struct{}
+	removedsimilar           map[uuid.UUID]struct{}
+	clearedsimilar           bool
+	dependencies             map[uuid.UUID]struct{}
+	removeddependencies      map[uuid.UUID]struct{}
+	cleareddependencies      bool
+	dependents               map[uuid.UUID]struct{}
+	removeddependents        map[uuid.UUID]struct{}
+	cleareddependents        bool
+	deck                     *uuid.UUID
+	cleareddeck              bool
+	owner                    *string
+	clearedowner             bool
+	done                     bool
+	oldValue                 func(context.Context) (*Subject, error)
+	predicates               []predicate.Subject
 }
 
 var _ ent.Mutation = (*SubjectMutation)(nil)
@@ -4279,6 +4280,42 @@ func (m *SubjectMutation) ResetStudyData() {
 	m.appendstudy_data = nil
 }
 
+// SetComplimentaryStudyData sets the "complimentary_study_data" field.
+func (m *SubjectMutation) SetComplimentaryStudyData(value *[]map[string]string) {
+	m.complimentary_study_data = &value
+}
+
+// ComplimentaryStudyData returns the value of the "complimentary_study_data" field in the mutation.
+func (m *SubjectMutation) ComplimentaryStudyData() (r *[]map[string]string, exists bool) {
+	v := m.complimentary_study_data
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComplimentaryStudyData returns the old "complimentary_study_data" field's value of the Subject entity.
+// If the Subject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubjectMutation) OldComplimentaryStudyData(ctx context.Context) (v *[]map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComplimentaryStudyData is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComplimentaryStudyData requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComplimentaryStudyData: %w", err)
+	}
+	return oldValue.ComplimentaryStudyData, nil
+}
+
+// ResetComplimentaryStudyData resets all changes to the "complimentary_study_data" field.
+func (m *SubjectMutation) ResetComplimentaryStudyData() {
+	m.complimentary_study_data = nil
+}
+
 // AddCardIDs adds the "cards" edge to the Card entity by ids.
 func (m *SubjectMutation) AddCardIDs(ids ...uuid.UUID) {
 	if m.cards == nil {
@@ -4592,7 +4629,7 @@ func (m *SubjectMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SubjectMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, subject.FieldCreatedAt)
 	}
@@ -4626,6 +4663,9 @@ func (m *SubjectMutation) Fields() []string {
 	if m.study_data != nil {
 		fields = append(fields, subject.FieldStudyData)
 	}
+	if m.complimentary_study_data != nil {
+		fields = append(fields, subject.FieldComplimentaryStudyData)
+	}
 	return fields
 }
 
@@ -4656,6 +4696,8 @@ func (m *SubjectMutation) Field(name string) (ent.Value, bool) {
 		return m.Resources()
 	case subject.FieldStudyData:
 		return m.StudyData()
+	case subject.FieldComplimentaryStudyData:
+		return m.ComplimentaryStudyData()
 	}
 	return nil, false
 }
@@ -4687,6 +4729,8 @@ func (m *SubjectMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldResources(ctx)
 	case subject.FieldStudyData:
 		return m.OldStudyData(ctx)
+	case subject.FieldComplimentaryStudyData:
+		return m.OldComplimentaryStudyData(ctx)
 	}
 	return nil, fmt.Errorf("unknown Subject field %s", name)
 }
@@ -4772,6 +4816,13 @@ func (m *SubjectMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStudyData(v)
+		return nil
+	case subject.FieldComplimentaryStudyData:
+		v, ok := value.(*[]map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComplimentaryStudyData(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Subject field %s", name)
@@ -4902,6 +4953,9 @@ func (m *SubjectMutation) ResetField(name string) error {
 		return nil
 	case subject.FieldStudyData:
 		m.ResetStudyData()
+		return nil
+	case subject.FieldComplimentaryStudyData:
+		m.ResetComplimentaryStudyData()
 		return nil
 	}
 	return fmt.Errorf("unknown Subject field %s", name)

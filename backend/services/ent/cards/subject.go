@@ -192,6 +192,8 @@ func SubjectFromEnt(e *ent.Subject) *cards.Subject {
 		Priority:   e.Priority,
 		Resources:  e.Resources,
 		StudyData:  e.StudyData,
+
+		ComplimentaryStudyData: e.ComplimentaryStudyData,
 		Dependencies: util.MapArray(e.Edges.Dependencies,
 			func(s *ent.Subject) uuid.UUID { return s.ID },
 		),

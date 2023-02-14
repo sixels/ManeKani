@@ -35,6 +35,8 @@ const (
 	FieldResources = "resources"
 	// FieldStudyData holds the string denoting the study_data field in the database.
 	FieldStudyData = "study_data"
+	// FieldComplimentaryStudyData holds the string denoting the complimentary_study_data field in the database.
+	FieldComplimentaryStudyData = "complimentary_study_data"
 	// EdgeCards holds the string denoting the cards edge name in mutations.
 	EdgeCards = "cards"
 	// EdgeSimilar holds the string denoting the similar edge name in mutations.
@@ -92,6 +94,7 @@ var Columns = []string{
 	FieldPriority,
 	FieldResources,
 	FieldStudyData,
+	FieldComplimentaryStudyData,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "subjects"

@@ -115,6 +115,12 @@ func (sc *SubjectCreate) SetStudyData(cd []cards.StudyData) *SubjectCreate {
 	return sc
 }
 
+// SetComplimentaryStudyData sets the "complimentary_study_data" field.
+func (sc *SubjectCreate) SetComplimentaryStudyData(m *[]map[string]string) *SubjectCreate {
+	sc.mutation.SetComplimentaryStudyData(m)
+	return sc
+}
+
 // SetID sets the "id" field.
 func (sc *SubjectCreate) SetID(u uuid.UUID) *SubjectCreate {
 	sc.mutation.SetID(u)
@@ -348,6 +354,9 @@ func (sc *SubjectCreate) check() error {
 	if _, ok := sc.mutation.StudyData(); !ok {
 		return &ValidationError{Name: "study_data", err: errors.New(`ent: missing required field "Subject.study_data"`)}
 	}
+	if _, ok := sc.mutation.ComplimentaryStudyData(); !ok {
+		return &ValidationError{Name: "complimentary_study_data", err: errors.New(`ent: missing required field "Subject.complimentary_study_data"`)}
+	}
 	if _, ok := sc.mutation.DeckID(); !ok {
 		return &ValidationError{Name: "deck", err: errors.New(`ent: missing required edge "Subject.deck"`)}
 	}
@@ -433,6 +442,10 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 	if value, ok := sc.mutation.StudyData(); ok {
 		_spec.SetField(subject.FieldStudyData, field.TypeJSON, value)
 		_node.StudyData = value
+	}
+	if value, ok := sc.mutation.ComplimentaryStudyData(); ok {
+		_spec.SetField(subject.FieldComplimentaryStudyData, field.TypeJSON, value)
+		_node.ComplimentaryStudyData = value
 	}
 	if nodes := sc.mutation.CardsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

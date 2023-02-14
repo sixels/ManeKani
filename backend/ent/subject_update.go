@@ -140,6 +140,12 @@ func (su *SubjectUpdate) AppendStudyData(cd []cards.StudyData) *SubjectUpdate {
 	return su
 }
 
+// SetComplimentaryStudyData sets the "complimentary_study_data" field.
+func (su *SubjectUpdate) SetComplimentaryStudyData(m *[]map[string]string) *SubjectUpdate {
+	su.mutation.SetComplimentaryStudyData(m)
+	return su
+}
+
 // AddCardIDs adds the "cards" edge to the Card entity by IDs.
 func (su *SubjectUpdate) AddCardIDs(ids ...uuid.UUID) *SubjectUpdate {
 	su.mutation.AddCardIDs(ids...)
@@ -490,6 +496,9 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, subject.FieldStudyData, value)
 		})
+	}
+	if value, ok := su.mutation.ComplimentaryStudyData(); ok {
+		_spec.SetField(subject.FieldComplimentaryStudyData, field.TypeJSON, value)
 	}
 	if su.mutation.CardsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -902,6 +911,12 @@ func (suo *SubjectUpdateOne) AppendStudyData(cd []cards.StudyData) *SubjectUpdat
 	return suo
 }
 
+// SetComplimentaryStudyData sets the "complimentary_study_data" field.
+func (suo *SubjectUpdateOne) SetComplimentaryStudyData(m *[]map[string]string) *SubjectUpdateOne {
+	suo.mutation.SetComplimentaryStudyData(m)
+	return suo
+}
+
 // AddCardIDs adds the "cards" edge to the Card entity by IDs.
 func (suo *SubjectUpdateOne) AddCardIDs(ids ...uuid.UUID) *SubjectUpdateOne {
 	suo.mutation.AddCardIDs(ids...)
@@ -1282,6 +1297,9 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, subject.FieldStudyData, value)
 		})
+	}
+	if value, ok := suo.mutation.ComplimentaryStudyData(); ok {
+		_spec.SetField(subject.FieldComplimentaryStudyData, field.TypeJSON, value)
 	}
 	if suo.mutation.CardsCleared() {
 		edge := &sqlgraph.EdgeSpec{

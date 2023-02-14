@@ -151,6 +151,7 @@ var (
 		{Name: "priority", Type: field.TypeUint8},
 		{Name: "resources", Type: field.TypeJSON, Nullable: true},
 		{Name: "study_data", Type: field.TypeJSON},
+		{Name: "complimentary_study_data", Type: field.TypeJSON},
 		{Name: "deck_subjects", Type: field.TypeUUID},
 		{Name: "user_subjects", Type: field.TypeString},
 	}
@@ -162,13 +163,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "subjects_decks_subjects",
-				Columns:    []*schema.Column{SubjectsColumns[12]},
+				Columns:    []*schema.Column{SubjectsColumns[13]},
 				RefColumns: []*schema.Column{DecksColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "subjects_users_subjects",
-				Columns:    []*schema.Column{SubjectsColumns[13]},
+				Columns:    []*schema.Column{SubjectsColumns[14]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -177,7 +178,7 @@ var (
 			{
 				Name:    "subject_kind_slug_deck_subjects",
 				Unique:  true,
-				Columns: []*schema.Column{SubjectsColumns[3], SubjectsColumns[8], SubjectsColumns[12]},
+				Columns: []*schema.Column{SubjectsColumns[3], SubjectsColumns[8], SubjectsColumns[13]},
 			},
 		},
 	}

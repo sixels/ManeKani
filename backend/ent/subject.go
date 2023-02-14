@@ -43,6 +43,8 @@ type Subject struct {
 	Resources *map[string][]cards.RemoteContent `json:"resources,omitempty"`
 	// StudyData holds the value of the "study_data" field.
 	StudyData []cards.StudyData `json:"study_data,omitempty"`
+	// ComplimentaryStudyData holds the value of the "complimentary_study_data" field.
+	ComplimentaryStudyData *[]map[string]string `json:"complimentary_study_data,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SubjectQuery when eager-loading is set.
 	Edges         SubjectEdges `json:"edges"`
@@ -136,7 +138,7 @@ func (*Subject) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case subject.FieldValueImage, subject.FieldResources, subject.FieldStudyData:
+		case subject.FieldValueImage, subject.FieldResources, subject.FieldStudyData, subject.FieldComplimentaryStudyData:
 			values[i] = new([]byte)
 		case subject.FieldLevel, subject.FieldPriority:
 			values[i] = new(sql.NullInt64)
@@ -242,6 +244,14 @@ func (s *Subject) assignValues(columns []string, values []any) error {
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &s.StudyData); err != nil {
 					return fmt.Errorf("unmarshal field study_data: %w", err)
+				}
+			}
+		case subject.FieldComplimentaryStudyData:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field complimentary_study_data", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &s.ComplimentaryStudyData); err != nil {
+					return fmt.Errorf("unmarshal field complimentary_study_data: %w", err)
 				}
 			}
 		case subject.ForeignKeys[0]:
@@ -350,6 +360,9 @@ func (s *Subject) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("study_data=")
 	builder.WriteString(fmt.Sprintf("%v", s.StudyData))
+	builder.WriteString(", ")
+	builder.WriteString("complimentary_study_data=")
+	builder.WriteString(fmt.Sprintf("%v", s.ComplimentaryStudyData))
 	builder.WriteByte(')')
 	return builder.String()
 }
