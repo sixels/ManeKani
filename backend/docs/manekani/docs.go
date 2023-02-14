@@ -251,6 +251,15 @@ const docTemplate = `{
                         "slug"
                     ],
                     "properties": {
+                        "complimentary_study_data": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        },
                         "deck": {
                             "type": "string"
                         },
@@ -324,8 +333,20 @@ const docTemplate = `{
         "cards.PartialSubject": {
             "type": "object",
             "properties": {
-                "Owner": {
+                "deck": {
                     "type": "string"
+                },
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dependents": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "id": {
                     "type": "string"
@@ -339,8 +360,17 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "owner": {
+                    "type": "string"
+                },
                 "priority": {
                     "type": "integer"
+                },
+                "similars": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "slug": {
                     "type": "string"
@@ -406,6 +436,9 @@ const docTemplate = `{
                 "is_valid_answer": {
                     "type": "boolean"
                 },
+                "resource": {
+                    "type": "string"
+                },
                 "value": {
                     "type": "string"
                 }
@@ -414,8 +447,14 @@ const docTemplate = `{
         "cards.Subject": {
             "type": "object",
             "properties": {
-                "Owner": {
-                    "type": "string"
+                "complimentary_study_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
                 },
                 "created_at": {
                     "type": "string"
@@ -446,6 +485,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "e.g. \"ground\", \"一\", nil, \"一\", 2",
+                    "type": "string"
+                },
+                "owner": {
                     "type": "string"
                 },
                 "priority": {
@@ -489,6 +531,15 @@ const docTemplate = `{
         "cards.UpdateSubjectRequest": {
             "type": "object",
             "properties": {
+                "complimentary_study_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "dependencies": {
                     "type": "array",
                     "items": {

@@ -247,6 +247,15 @@
                         "slug"
                     ],
                     "properties": {
+                        "complimentary_study_data": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        },
                         "deck": {
                             "type": "string"
                         },
@@ -320,8 +329,20 @@
         "cards.PartialSubject": {
             "type": "object",
             "properties": {
-                "Owner": {
+                "deck": {
                     "type": "string"
+                },
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dependents": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "id": {
                     "type": "string"
@@ -335,8 +356,17 @@
                 "name": {
                     "type": "string"
                 },
+                "owner": {
+                    "type": "string"
+                },
                 "priority": {
                     "type": "integer"
+                },
+                "similars": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "slug": {
                     "type": "string"
@@ -402,6 +432,9 @@
                 "is_valid_answer": {
                     "type": "boolean"
                 },
+                "resource": {
+                    "type": "string"
+                },
                 "value": {
                     "type": "string"
                 }
@@ -410,8 +443,14 @@
         "cards.Subject": {
             "type": "object",
             "properties": {
-                "Owner": {
-                    "type": "string"
+                "complimentary_study_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
                 },
                 "created_at": {
                     "type": "string"
@@ -442,6 +481,9 @@
                 },
                 "name": {
                     "description": "e.g. \"ground\", \"一\", nil, \"一\", 2",
+                    "type": "string"
+                },
+                "owner": {
                     "type": "string"
                 },
                 "priority": {
@@ -485,6 +527,15 @@
         "cards.UpdateSubjectRequest": {
             "type": "object",
             "properties": {
+                "complimentary_study_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "dependencies": {
                     "type": "array",
                     "items": {
