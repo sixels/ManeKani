@@ -20,6 +20,11 @@ func (api *UserApi) GetBasicUserInfo() gin.HandlerFunc {
 			return
 		}
 
+		if currentSession == nil {
+			c.Status(http.StatusUnauthorized)
+			return
+		}
+
 		authUser, err := emailpassword.GetUserByID(currentSession.GetUserID())
 		if err != nil {
 			c.Error(err)
