@@ -7,6 +7,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"strings"
 
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/errors"
@@ -338,7 +339,7 @@ func (api *CardsApi) uploadRemoteResource(
 	defer fileHandle.Close()
 
 	namespace := "cards"
-	upname := fmt.Sprintf("%s-%s", ulid.Make(), name)
+	upname := strings.Trim(fmt.Sprintf("%s-%s", ulid.Make(), name), " \n\t\r")
 
 	var contentType string
 	if meta.ContentType != nil {
