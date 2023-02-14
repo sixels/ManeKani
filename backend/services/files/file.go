@@ -32,18 +32,19 @@ func (repo FilesRepository) CreateFile(ctx context.Context, req files.CreateFile
 	return uploadInfo.Key, nil
 }
 
-func (repo FilesRepository) QueryFile(ctx context.Context, name string) (*files.ObjectWrapperResponse, error) {
-	log.Printf("querying file '%s'\n", name)
-	object, err := repo.minio_client.GetObject(ctx, BUCKET_NAME, name, minio.GetObjectOptions{})
+func (repo FilesRepository) QueryFile(ctx context.Context, key string) (*files.ObjectWrapperResponse, error) {
+	log.Printf("querying file '%s'\n", key)
+	object, err := repo.minio_client.GetObject(ctx, BUCKET_NAME, key, minio.GetObjectOptions{})
 	if err != nil {
-		log.Printf("query file '%s' failed with error: %v\n", name, err)
+		log.Printf("query file '%s' failed with error: %v\n", key, err)
 		return nil, errors.Unknown(err)
 	}
 
 	info, err := object.Stat()
 	if err != nil {
 		// NOT FOUND
-		return nil, errors.NotFound(fmt.Sprintf("no such file: '%s'", name))
+		log.Println(err)
+		return nil, errors.NotFound(fmt.Sprintf("no such file: '%s': %v", key, err))
 	}
 
 	return &files.ObjectWrapperResponse{
