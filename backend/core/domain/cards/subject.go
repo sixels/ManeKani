@@ -31,7 +31,7 @@ type (
 		Similars     []uuid.UUID `json:"similars"`
 		Deck         uuid.UUID   `json:"deck"`
 
-		Owner string `json:"Owner"`
+		Owner string `json:"owner"`
 	}
 
 	PartialSubject struct {
@@ -48,7 +48,12 @@ type (
 
 		StudyData []StudyData `json:"study_data"`
 
-		Owner string `json:"Owner"`
+		Dependencies []uuid.UUID `json:"dependencies"`
+		Dependents   []uuid.UUID `json:"dependents"`
+		Similars     []uuid.UUID `json:"similars"`
+		Deck         uuid.UUID   `json:"deck"`
+
+		Owner string `json:"owner"`
 	}
 
 	CreateSubjectRequest struct {

@@ -39,6 +39,9 @@ func (repo *CardsRepository) QuerySubject(ctx context.Context, id uuid.UUID) (*c
 		WithSimilar(func(sq *ent.SubjectQuery) {
 			sq.Select(subject.FieldID)
 		}).
+		WithOwner(func(uq *ent.UserQuery) {
+			uq.Select(user.FieldID)
+		}).
 		WithDeck(func(dq *ent.DeckQuery) {
 			dq.Select(deck.FieldID)
 		}).
@@ -198,7 +201,8 @@ func SubjectFromEnt(e *ent.Subject) *cards.Subject {
 		Similars: util.MapArray(e.Edges.Similar,
 			func(s *ent.Subject) uuid.UUID { return s.ID },
 		),
-		Deck: e.Edges.Deck.ID,
+		Deck:  e.Edges.Deck.ID,
+		Owner: e.Edges.Owner.ID,
 	}
 }
 
@@ -207,11 +211,22 @@ func PartialSubjectFromEnt(e *ent.Subject) *cards.PartialSubject {
 		ID:         e.ID,
 		Kind:       e.Kind,
 		Level:      e.Level,
-		Priority:   e.Priority,
 		Name:       e.Name,
 		Value:      e.Value,
 		ValueImage: e.ValueImage,
 		Slug:       e.Slug,
+		Priority:   e.Priority,
 		StudyData:  e.StudyData,
+		Dependencies: util.MapArray(e.Edges.Dependencies,
+			func(s *ent.Subject) uuid.UUID { return s.ID },
+		),
+		Dependents: util.MapArray(e.Edges.Dependents,
+			func(s *ent.Subject) uuid.UUID { return s.ID },
+		),
+		Similars: util.MapArray(e.Edges.Similar,
+			func(s *ent.Subject) uuid.UUID { return s.ID },
+		),
+		Deck:  e.Edges.Deck.ID,
+		Owner: e.Edges.Owner.ID,
 	}
 }
