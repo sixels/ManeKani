@@ -22,7 +22,8 @@ func (User) Fields() []ent.Field {
 		field.String("username").
 			MinLen(4).MaxLen(20).
 			Unique(),
-		field.JSON("pending_actions", []PendingAction{}),
+		field.JSON("pending_actions", []PendingAction{}).
+			Optional(),
 		field.String("email").
 			MinLen(3).MaxLen(255).
 			Unique(),

@@ -20,7 +20,7 @@ func (repo *UsersRepository) CreateUser(ctx context.Context, req domain.CreateUs
 		SetID(req.ID).
 		SetEmail(req.Email).
 		SetUsername(req.Username).
-		SetPendingActions([]schema.PendingAction{}).
+		// SetPendingActions([]schema.PendingAction{}).
 		Save(ctx)
 
 	if err != nil {
