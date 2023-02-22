@@ -16,8 +16,6 @@ func New(repo *users.UsersRepository, jwtService *mkjwt.JWTService) *UserApi {
 }
 
 func (api *UserApi) SetupRoutes(router *gin.Engine) {
-	router.GET("/user", api.GetBasicUserInfo())
+	router.GET("/user", api.RequiresUser(), api.GetBasicUserInfo())
 	// router.GET("/user/decks", api.RequiresUser(), api.GetSRSInfo())
-	router.GET("/user/decks/:deck-id", api.RequiresUser(), api.GetSRSInfo())
-	router.DELETE("/user/decks/:deck-id", api.RequiresUser(), api.UnsubscribeUserFromDeck())
 }

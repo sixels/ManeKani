@@ -15,8 +15,9 @@ type User struct {
 }
 
 type UserBasic struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
+	Email    string      `json:"email"`
+	Username string      `json:"username"`
+	Decks    []uuid.UUID `json:"decks"`
 }
 
 type CreateUserRequest struct {

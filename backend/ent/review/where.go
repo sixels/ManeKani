@@ -89,20 +89,6 @@ func CreatedAt(v time.Time) predicate.Review {
 	})
 }
 
-// MeaningErrors applies equality check predicate on the "meaning_errors" field. It's identical to MeaningErrorsEQ.
-func MeaningErrors(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMeaningErrors), v))
-	})
-}
-
-// ReadingErrors applies equality check predicate on the "reading_errors" field. It's identical to ReadingErrorsEQ.
-func ReadingErrors(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldReadingErrors), v))
-	})
-}
-
 // StartProgress applies equality check predicate on the "start_progress" field. It's identical to StartProgressEQ.
 func StartProgress(v uint8) predicate.Review {
 	return predicate.Review(func(s *sql.Selector) {
@@ -181,131 +167,17 @@ func CreatedAtLTE(v time.Time) predicate.Review {
 	})
 }
 
-// MeaningErrorsEQ applies the EQ predicate on the "meaning_errors" field.
-func MeaningErrorsEQ(v int) predicate.Review {
+// ErrorsIsNil applies the IsNil predicate on the "errors" field.
+func ErrorsIsNil() predicate.Review {
 	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMeaningErrors), v))
+		s.Where(sql.IsNull(s.C(FieldErrors)))
 	})
 }
 
-// MeaningErrorsNEQ applies the NEQ predicate on the "meaning_errors" field.
-func MeaningErrorsNEQ(v int) predicate.Review {
+// ErrorsNotNil applies the NotNil predicate on the "errors" field.
+func ErrorsNotNil() predicate.Review {
 	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldMeaningErrors), v))
-	})
-}
-
-// MeaningErrorsIn applies the In predicate on the "meaning_errors" field.
-func MeaningErrorsIn(vs ...int) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldMeaningErrors), v...))
-	})
-}
-
-// MeaningErrorsNotIn applies the NotIn predicate on the "meaning_errors" field.
-func MeaningErrorsNotIn(vs ...int) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldMeaningErrors), v...))
-	})
-}
-
-// MeaningErrorsGT applies the GT predicate on the "meaning_errors" field.
-func MeaningErrorsGT(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldMeaningErrors), v))
-	})
-}
-
-// MeaningErrorsGTE applies the GTE predicate on the "meaning_errors" field.
-func MeaningErrorsGTE(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldMeaningErrors), v))
-	})
-}
-
-// MeaningErrorsLT applies the LT predicate on the "meaning_errors" field.
-func MeaningErrorsLT(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldMeaningErrors), v))
-	})
-}
-
-// MeaningErrorsLTE applies the LTE predicate on the "meaning_errors" field.
-func MeaningErrorsLTE(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldMeaningErrors), v))
-	})
-}
-
-// ReadingErrorsEQ applies the EQ predicate on the "reading_errors" field.
-func ReadingErrorsEQ(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldReadingErrors), v))
-	})
-}
-
-// ReadingErrorsNEQ applies the NEQ predicate on the "reading_errors" field.
-func ReadingErrorsNEQ(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldReadingErrors), v))
-	})
-}
-
-// ReadingErrorsIn applies the In predicate on the "reading_errors" field.
-func ReadingErrorsIn(vs ...int) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldReadingErrors), v...))
-	})
-}
-
-// ReadingErrorsNotIn applies the NotIn predicate on the "reading_errors" field.
-func ReadingErrorsNotIn(vs ...int) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldReadingErrors), v...))
-	})
-}
-
-// ReadingErrorsGT applies the GT predicate on the "reading_errors" field.
-func ReadingErrorsGT(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldReadingErrors), v))
-	})
-}
-
-// ReadingErrorsGTE applies the GTE predicate on the "reading_errors" field.
-func ReadingErrorsGTE(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldReadingErrors), v))
-	})
-}
-
-// ReadingErrorsLT applies the LT predicate on the "reading_errors" field.
-func ReadingErrorsLT(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldReadingErrors), v))
-	})
-}
-
-// ReadingErrorsLTE applies the LTE predicate on the "reading_errors" field.
-func ReadingErrorsLTE(v int) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldReadingErrors), v))
+		s.Where(sql.NotNull(s.C(FieldErrors)))
 	})
 }
 

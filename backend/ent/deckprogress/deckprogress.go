@@ -69,6 +69,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultLevel holds the default value on creation for the "level" field.
+	DefaultLevel uint32
 	// LevelValidator is a validator for the "level" field. It is called by the builders before save.
 	LevelValidator func(uint32) error
 )

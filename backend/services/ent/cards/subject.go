@@ -63,6 +63,7 @@ func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, 
 		SetSlug(req.Slug).
 		SetPriority(req.Priority).
 		SetStudyData(req.StudyData).
+		SetComplimentaryStudyData(req.ComplimentaryStudyData).
 		SetResources(req.Resources).
 		AddDependencyIDs(req.Dependencies...).
 		AddDependentIDs(req.Dependents...).

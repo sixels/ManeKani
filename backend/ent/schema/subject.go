@@ -36,7 +36,7 @@ func (Subject) Fields() []ent.Field {
 
 		field.JSON("resources", &map[string][]cards.RemoteContent{}).Optional(),
 		field.JSON("study_data", []cards.StudyData{}),
-		field.JSON("complimentary_study_data", &[]map[string]string{}),
+		field.JSON("complimentary_study_data", &map[string]any{}).Optional(),
 	}
 }
 

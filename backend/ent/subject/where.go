@@ -832,6 +832,20 @@ func ResourcesNotNil() predicate.Subject {
 	})
 }
 
+// ComplimentaryStudyDataIsNil applies the IsNil predicate on the "complimentary_study_data" field.
+func ComplimentaryStudyDataIsNil() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldComplimentaryStudyData)))
+	})
+}
+
+// ComplimentaryStudyDataNotNil applies the NotNil predicate on the "complimentary_study_data" field.
+func ComplimentaryStudyDataNotNil() predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldComplimentaryStudyData)))
+	})
+}
+
 // HasCards applies the HasEdge predicate on the "cards" edge.
 func HasCards() predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {

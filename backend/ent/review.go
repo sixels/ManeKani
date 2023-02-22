@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -20,10 +21,8 @@ type Review struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
-	// MeaningErrors holds the value of the "meaning_errors" field.
-	MeaningErrors int `json:"meaning_errors,omitempty"`
-	// ReadingErrors holds the value of the "reading_errors" field.
-	ReadingErrors int `json:"reading_errors,omitempty"`
+	// Errors holds the value of the "errors" field.
+	Errors map[string]int32 `json:"errors,omitempty"`
 	// StartProgress holds the value of the "start_progress" field.
 	StartProgress uint8 `json:"start_progress,omitempty"`
 	// EndProgress holds the value of the "end_progress" field.
@@ -61,7 +60,9 @@ func (*Review) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case review.FieldMeaningErrors, review.FieldReadingErrors, review.FieldStartProgress, review.FieldEndProgress:
+		case review.FieldErrors:
+			values[i] = new([]byte)
+		case review.FieldStartProgress, review.FieldEndProgress:
 			values[i] = new(sql.NullInt64)
 		case review.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -96,17 +97,13 @@ func (r *Review) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				r.CreatedAt = value.Time
 			}
-		case review.FieldMeaningErrors:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field meaning_errors", values[i])
-			} else if value.Valid {
-				r.MeaningErrors = int(value.Int64)
-			}
-		case review.FieldReadingErrors:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field reading_errors", values[i])
-			} else if value.Valid {
-				r.ReadingErrors = int(value.Int64)
+		case review.FieldErrors:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field errors", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &r.Errors); err != nil {
+					return fmt.Errorf("unmarshal field errors: %w", err)
+				}
 			}
 		case review.FieldStartProgress:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -163,11 +160,8 @@ func (r *Review) String() string {
 	builder.WriteString("created_at=")
 	builder.WriteString(r.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("meaning_errors=")
-	builder.WriteString(fmt.Sprintf("%v", r.MeaningErrors))
-	builder.WriteString(", ")
-	builder.WriteString("reading_errors=")
-	builder.WriteString(fmt.Sprintf("%v", r.ReadingErrors))
+	builder.WriteString("errors=")
+	builder.WriteString(fmt.Sprintf("%v", r.Errors))
 	builder.WriteString(", ")
 	builder.WriteString("start_progress=")
 	builder.WriteString(fmt.Sprintf("%v", r.StartProgress))

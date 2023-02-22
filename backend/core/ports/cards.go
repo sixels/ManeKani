@@ -7,6 +7,7 @@ import (
 	domain "sixels.io/manekani/core/domain/cards"
 )
 
+// TODO: update repository methods
 type (
 	SubjectRepository interface {
 		CreateSubject(ctx context.Context, req domain.CreateSubjectRequest) (*domain.Subject, error)

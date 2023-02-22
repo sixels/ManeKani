@@ -15,10 +15,8 @@ const (
 	FieldID = "id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-	// FieldMeaningErrors holds the string denoting the meaning_errors field in the database.
-	FieldMeaningErrors = "meaning_errors"
-	// FieldReadingErrors holds the string denoting the reading_errors field in the database.
-	FieldReadingErrors = "reading_errors"
+	// FieldErrors holds the string denoting the errors field in the database.
+	FieldErrors = "errors"
 	// FieldStartProgress holds the string denoting the start_progress field in the database.
 	FieldStartProgress = "start_progress"
 	// FieldEndProgress holds the string denoting the end_progress field in the database.
@@ -40,8 +38,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
-	FieldMeaningErrors,
-	FieldReadingErrors,
+	FieldErrors,
 	FieldStartProgress,
 	FieldEndProgress,
 }
@@ -70,10 +67,6 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
-	// DefaultMeaningErrors holds the default value on creation for the "meaning_errors" field.
-	DefaultMeaningErrors int
-	// DefaultReadingErrors holds the default value on creation for the "reading_errors" field.
-	DefaultReadingErrors int
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )

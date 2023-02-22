@@ -170,6 +170,14 @@ func (cc *CardCreate) SetDeckProgressID(id int) *CardCreate {
 	return cc
 }
 
+// SetNillableDeckProgressID sets the "deck_progress" edge to the DeckProgress entity by ID if the given value is not nil.
+func (cc *CardCreate) SetNillableDeckProgressID(id *int) *CardCreate {
+	if id != nil {
+		cc = cc.SetDeckProgressID(*id)
+	}
+	return cc
+}
+
 // SetDeckProgress sets the "deck_progress" edge to the DeckProgress entity.
 func (cc *CardCreate) SetDeckProgress(d *DeckProgress) *CardCreate {
 	return cc.SetDeckProgressID(d.ID)
@@ -313,9 +321,6 @@ func (cc *CardCreate) check() error {
 	}
 	if _, ok := cc.mutation.TotalErrors(); !ok {
 		return &ValidationError{Name: "total_errors", err: errors.New(`ent: missing required field "Card.total_errors"`)}
-	}
-	if _, ok := cc.mutation.DeckProgressID(); !ok {
-		return &ValidationError{Name: "deck_progress", err: errors.New(`ent: missing required edge "Card.deck_progress"`)}
 	}
 	if _, ok := cc.mutation.SubjectID(); !ok {
 		return &ValidationError{Name: "subject", err: errors.New(`ent: missing required edge "Card.subject"`)}

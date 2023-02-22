@@ -36,31 +36,9 @@ func (rc *ReviewCreate) SetNillableCreatedAt(t *time.Time) *ReviewCreate {
 	return rc
 }
 
-// SetMeaningErrors sets the "meaning_errors" field.
-func (rc *ReviewCreate) SetMeaningErrors(i int) *ReviewCreate {
-	rc.mutation.SetMeaningErrors(i)
-	return rc
-}
-
-// SetNillableMeaningErrors sets the "meaning_errors" field if the given value is not nil.
-func (rc *ReviewCreate) SetNillableMeaningErrors(i *int) *ReviewCreate {
-	if i != nil {
-		rc.SetMeaningErrors(*i)
-	}
-	return rc
-}
-
-// SetReadingErrors sets the "reading_errors" field.
-func (rc *ReviewCreate) SetReadingErrors(i int) *ReviewCreate {
-	rc.mutation.SetReadingErrors(i)
-	return rc
-}
-
-// SetNillableReadingErrors sets the "reading_errors" field if the given value is not nil.
-func (rc *ReviewCreate) SetNillableReadingErrors(i *int) *ReviewCreate {
-	if i != nil {
-		rc.SetReadingErrors(*i)
-	}
+// SetErrors sets the "errors" field.
+func (rc *ReviewCreate) SetErrors(m map[string]int32) *ReviewCreate {
+	rc.mutation.SetErrors(m)
 	return rc
 }
 
@@ -182,14 +160,6 @@ func (rc *ReviewCreate) defaults() {
 		v := review.DefaultCreatedAt()
 		rc.mutation.SetCreatedAt(v)
 	}
-	if _, ok := rc.mutation.MeaningErrors(); !ok {
-		v := review.DefaultMeaningErrors
-		rc.mutation.SetMeaningErrors(v)
-	}
-	if _, ok := rc.mutation.ReadingErrors(); !ok {
-		v := review.DefaultReadingErrors
-		rc.mutation.SetReadingErrors(v)
-	}
 	if _, ok := rc.mutation.ID(); !ok {
 		v := review.DefaultID()
 		rc.mutation.SetID(v)
@@ -200,12 +170,6 @@ func (rc *ReviewCreate) defaults() {
 func (rc *ReviewCreate) check() error {
 	if _, ok := rc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Review.created_at"`)}
-	}
-	if _, ok := rc.mutation.MeaningErrors(); !ok {
-		return &ValidationError{Name: "meaning_errors", err: errors.New(`ent: missing required field "Review.meaning_errors"`)}
-	}
-	if _, ok := rc.mutation.ReadingErrors(); !ok {
-		return &ValidationError{Name: "reading_errors", err: errors.New(`ent: missing required field "Review.reading_errors"`)}
 	}
 	if _, ok := rc.mutation.StartProgress(); !ok {
 		return &ValidationError{Name: "start_progress", err: errors.New(`ent: missing required field "Review.start_progress"`)}
@@ -256,13 +220,9 @@ func (rc *ReviewCreate) createSpec() (*Review, *sqlgraph.CreateSpec) {
 		_spec.SetField(review.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := rc.mutation.MeaningErrors(); ok {
-		_spec.SetField(review.FieldMeaningErrors, field.TypeInt, value)
-		_node.MeaningErrors = value
-	}
-	if value, ok := rc.mutation.ReadingErrors(); ok {
-		_spec.SetField(review.FieldReadingErrors, field.TypeInt, value)
-		_node.ReadingErrors = value
+	if value, ok := rc.mutation.Errors(); ok {
+		_spec.SetField(review.FieldErrors, field.TypeJSON, value)
+		_node.Errors = value
 	}
 	if value, ok := rc.mutation.StartProgress(); ok {
 		_spec.SetField(review.FieldStartProgress, field.TypeUint8, value)

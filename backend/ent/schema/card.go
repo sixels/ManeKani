@@ -41,7 +41,6 @@ func (Card) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("deck_progress", DeckProgress.Type).
 			Ref("cards").
-			Required().
 			Unique(),
 
 		edge.From("subject", Subject.Type).

@@ -38,6 +38,14 @@ func (dpu *DeckProgressUpdate) SetLevel(u uint32) *DeckProgressUpdate {
 	return dpu
 }
 
+// SetNillableLevel sets the "level" field if the given value is not nil.
+func (dpu *DeckProgressUpdate) SetNillableLevel(u *uint32) *DeckProgressUpdate {
+	if u != nil {
+		dpu.SetLevel(*u)
+	}
+	return dpu
+}
+
 // AddLevel adds u to the "level" field.
 func (dpu *DeckProgressUpdate) AddLevel(u int32) *DeckProgressUpdate {
 	dpu.mutation.AddLevel(u)
@@ -366,6 +374,14 @@ type DeckProgressUpdateOne struct {
 func (dpuo *DeckProgressUpdateOne) SetLevel(u uint32) *DeckProgressUpdateOne {
 	dpuo.mutation.ResetLevel()
 	dpuo.mutation.SetLevel(u)
+	return dpuo
+}
+
+// SetNillableLevel sets the "level" field if the given value is not nil.
+func (dpuo *DeckProgressUpdateOne) SetNillableLevel(u *uint32) *DeckProgressUpdateOne {
+	if u != nil {
+		dpuo.SetLevel(*u)
+	}
 	return dpuo
 }
 

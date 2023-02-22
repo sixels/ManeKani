@@ -40,7 +40,7 @@ var (
 		{Name: "passed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "available_at", Type: field.TypeTime, Nullable: true},
 		{Name: "burned_at", Type: field.TypeTime, Nullable: true},
-		{Name: "deck_progress_cards", Type: field.TypeInt},
+		{Name: "deck_progress_cards", Type: field.TypeInt, Nullable: true},
 		{Name: "subject_cards", Type: field.TypeUUID},
 	}
 	// CardsTable holds the schema information for the "cards" table.
@@ -53,7 +53,7 @@ var (
 				Symbol:     "cards_deck_progresses_cards",
 				Columns:    []*schema.Column{CardsColumns[10]},
 				RefColumns: []*schema.Column{DeckProgressesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "cards_subjects_cards",
@@ -89,7 +89,7 @@ var (
 	// DeckProgressesColumns holds the columns for the "deck_progresses" table.
 	DeckProgressesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "level", Type: field.TypeUint32},
+		{Name: "level", Type: field.TypeUint32, Default: 1},
 		{Name: "deck_users_progress", Type: field.TypeUUID},
 		{Name: "user_decks_progress", Type: field.TypeString},
 	}
@@ -117,8 +117,7 @@ var (
 	ReviewsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "meaning_errors", Type: field.TypeInt, Default: 0},
-		{Name: "reading_errors", Type: field.TypeInt, Default: 0},
+		{Name: "errors", Type: field.TypeJSON, Nullable: true},
 		{Name: "start_progress", Type: field.TypeUint8},
 		{Name: "end_progress", Type: field.TypeUint8},
 		{Name: "card_reviews", Type: field.TypeUUID},
@@ -131,7 +130,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "reviews_cards_reviews",
-				Columns:    []*schema.Column{ReviewsColumns[6]},
+				Columns:    []*schema.Column{ReviewsColumns[5]},
 				RefColumns: []*schema.Column{CardsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -151,7 +150,7 @@ var (
 		{Name: "priority", Type: field.TypeUint8},
 		{Name: "resources", Type: field.TypeJSON, Nullable: true},
 		{Name: "study_data", Type: field.TypeJSON},
-		{Name: "complimentary_study_data", Type: field.TypeJSON},
+		{Name: "complimentary_study_data", Type: field.TypeJSON, Nullable: true},
 		{Name: "deck_subjects", Type: field.TypeUUID},
 		{Name: "user_subjects", Type: field.TypeString},
 	}
@@ -186,7 +185,7 @@ var (
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 20},
-		{Name: "pending_actions", Type: field.TypeJSON},
+		{Name: "pending_actions", Type: field.TypeJSON, Nullable: true},
 		{Name: "email", Type: field.TypeString, Unique: true, Size: 255},
 	}
 	// UsersTable holds the schema information for the "users" table.

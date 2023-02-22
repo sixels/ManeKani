@@ -2915,10 +2915,7 @@ type ReviewMutation struct {
 	typ               string
 	id                *uuid.UUID
 	created_at        *time.Time
-	meaning_errors    *int
-	addmeaning_errors *int
-	reading_errors    *int
-	addreading_errors *int
+	errors            *map[string]int32
 	start_progress    *uint8
 	addstart_progress *int8
 	end_progress      *uint8
@@ -3071,116 +3068,53 @@ func (m *ReviewMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
-// SetMeaningErrors sets the "meaning_errors" field.
-func (m *ReviewMutation) SetMeaningErrors(i int) {
-	m.meaning_errors = &i
-	m.addmeaning_errors = nil
+// SetErrors sets the "errors" field.
+func (m *ReviewMutation) SetErrors(value map[string]int32) {
+	m.errors = &value
 }
 
-// MeaningErrors returns the value of the "meaning_errors" field in the mutation.
-func (m *ReviewMutation) MeaningErrors() (r int, exists bool) {
-	v := m.meaning_errors
+// Errors returns the value of the "errors" field in the mutation.
+func (m *ReviewMutation) Errors() (r map[string]int32, exists bool) {
+	v := m.errors
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldMeaningErrors returns the old "meaning_errors" field's value of the Review entity.
+// OldErrors returns the old "errors" field's value of the Review entity.
 // If the Review object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ReviewMutation) OldMeaningErrors(ctx context.Context) (v int, err error) {
+func (m *ReviewMutation) OldErrors(ctx context.Context) (v map[string]int32, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMeaningErrors is only allowed on UpdateOne operations")
+		return v, errors.New("OldErrors is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMeaningErrors requires an ID field in the mutation")
+		return v, errors.New("OldErrors requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMeaningErrors: %w", err)
+		return v, fmt.Errorf("querying old value for OldErrors: %w", err)
 	}
-	return oldValue.MeaningErrors, nil
+	return oldValue.Errors, nil
 }
 
-// AddMeaningErrors adds i to the "meaning_errors" field.
-func (m *ReviewMutation) AddMeaningErrors(i int) {
-	if m.addmeaning_errors != nil {
-		*m.addmeaning_errors += i
-	} else {
-		m.addmeaning_errors = &i
-	}
+// ClearErrors clears the value of the "errors" field.
+func (m *ReviewMutation) ClearErrors() {
+	m.errors = nil
+	m.clearedFields[review.FieldErrors] = struct{}{}
 }
 
-// AddedMeaningErrors returns the value that was added to the "meaning_errors" field in this mutation.
-func (m *ReviewMutation) AddedMeaningErrors() (r int, exists bool) {
-	v := m.addmeaning_errors
-	if v == nil {
-		return
-	}
-	return *v, true
+// ErrorsCleared returns if the "errors" field was cleared in this mutation.
+func (m *ReviewMutation) ErrorsCleared() bool {
+	_, ok := m.clearedFields[review.FieldErrors]
+	return ok
 }
 
-// ResetMeaningErrors resets all changes to the "meaning_errors" field.
-func (m *ReviewMutation) ResetMeaningErrors() {
-	m.meaning_errors = nil
-	m.addmeaning_errors = nil
-}
-
-// SetReadingErrors sets the "reading_errors" field.
-func (m *ReviewMutation) SetReadingErrors(i int) {
-	m.reading_errors = &i
-	m.addreading_errors = nil
-}
-
-// ReadingErrors returns the value of the "reading_errors" field in the mutation.
-func (m *ReviewMutation) ReadingErrors() (r int, exists bool) {
-	v := m.reading_errors
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldReadingErrors returns the old "reading_errors" field's value of the Review entity.
-// If the Review object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ReviewMutation) OldReadingErrors(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldReadingErrors is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldReadingErrors requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldReadingErrors: %w", err)
-	}
-	return oldValue.ReadingErrors, nil
-}
-
-// AddReadingErrors adds i to the "reading_errors" field.
-func (m *ReviewMutation) AddReadingErrors(i int) {
-	if m.addreading_errors != nil {
-		*m.addreading_errors += i
-	} else {
-		m.addreading_errors = &i
-	}
-}
-
-// AddedReadingErrors returns the value that was added to the "reading_errors" field in this mutation.
-func (m *ReviewMutation) AddedReadingErrors() (r int, exists bool) {
-	v := m.addreading_errors
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetReadingErrors resets all changes to the "reading_errors" field.
-func (m *ReviewMutation) ResetReadingErrors() {
-	m.reading_errors = nil
-	m.addreading_errors = nil
+// ResetErrors resets all changes to the "errors" field.
+func (m *ReviewMutation) ResetErrors() {
+	m.errors = nil
+	delete(m.clearedFields, review.FieldErrors)
 }
 
 // SetStartProgress sets the "start_progress" field.
@@ -3353,15 +3287,12 @@ func (m *ReviewMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ReviewMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 4)
 	if m.created_at != nil {
 		fields = append(fields, review.FieldCreatedAt)
 	}
-	if m.meaning_errors != nil {
-		fields = append(fields, review.FieldMeaningErrors)
-	}
-	if m.reading_errors != nil {
-		fields = append(fields, review.FieldReadingErrors)
+	if m.errors != nil {
+		fields = append(fields, review.FieldErrors)
 	}
 	if m.start_progress != nil {
 		fields = append(fields, review.FieldStartProgress)
@@ -3379,10 +3310,8 @@ func (m *ReviewMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case review.FieldCreatedAt:
 		return m.CreatedAt()
-	case review.FieldMeaningErrors:
-		return m.MeaningErrors()
-	case review.FieldReadingErrors:
-		return m.ReadingErrors()
+	case review.FieldErrors:
+		return m.Errors()
 	case review.FieldStartProgress:
 		return m.StartProgress()
 	case review.FieldEndProgress:
@@ -3398,10 +3327,8 @@ func (m *ReviewMutation) OldField(ctx context.Context, name string) (ent.Value, 
 	switch name {
 	case review.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case review.FieldMeaningErrors:
-		return m.OldMeaningErrors(ctx)
-	case review.FieldReadingErrors:
-		return m.OldReadingErrors(ctx)
+	case review.FieldErrors:
+		return m.OldErrors(ctx)
 	case review.FieldStartProgress:
 		return m.OldStartProgress(ctx)
 	case review.FieldEndProgress:
@@ -3422,19 +3349,12 @@ func (m *ReviewMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCreatedAt(v)
 		return nil
-	case review.FieldMeaningErrors:
-		v, ok := value.(int)
+	case review.FieldErrors:
+		v, ok := value.(map[string]int32)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetMeaningErrors(v)
-		return nil
-	case review.FieldReadingErrors:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetReadingErrors(v)
+		m.SetErrors(v)
 		return nil
 	case review.FieldStartProgress:
 		v, ok := value.(uint8)
@@ -3458,12 +3378,6 @@ func (m *ReviewMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *ReviewMutation) AddedFields() []string {
 	var fields []string
-	if m.addmeaning_errors != nil {
-		fields = append(fields, review.FieldMeaningErrors)
-	}
-	if m.addreading_errors != nil {
-		fields = append(fields, review.FieldReadingErrors)
-	}
 	if m.addstart_progress != nil {
 		fields = append(fields, review.FieldStartProgress)
 	}
@@ -3478,10 +3392,6 @@ func (m *ReviewMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *ReviewMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case review.FieldMeaningErrors:
-		return m.AddedMeaningErrors()
-	case review.FieldReadingErrors:
-		return m.AddedReadingErrors()
 	case review.FieldStartProgress:
 		return m.AddedStartProgress()
 	case review.FieldEndProgress:
@@ -3495,20 +3405,6 @@ func (m *ReviewMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ReviewMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case review.FieldMeaningErrors:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddMeaningErrors(v)
-		return nil
-	case review.FieldReadingErrors:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddReadingErrors(v)
-		return nil
 	case review.FieldStartProgress:
 		v, ok := value.(int8)
 		if !ok {
@@ -3530,7 +3426,11 @@ func (m *ReviewMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ReviewMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(review.FieldErrors) {
+		fields = append(fields, review.FieldErrors)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -3543,6 +3443,11 @@ func (m *ReviewMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ReviewMutation) ClearField(name string) error {
+	switch name {
+	case review.FieldErrors:
+		m.ClearErrors()
+		return nil
+	}
 	return fmt.Errorf("unknown Review nullable field %s", name)
 }
 
@@ -3553,11 +3458,8 @@ func (m *ReviewMutation) ResetField(name string) error {
 	case review.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
-	case review.FieldMeaningErrors:
-		m.ResetMeaningErrors()
-		return nil
-	case review.FieldReadingErrors:
-		m.ResetReadingErrors()
+	case review.FieldErrors:
+		m.ResetErrors()
 		return nil
 	case review.FieldStartProgress:
 		m.ResetStartProgress()
@@ -3663,7 +3565,7 @@ type SubjectMutation struct {
 	resources                **map[string][]cards.RemoteContent
 	study_data               *[]cards.StudyData
 	appendstudy_data         []cards.StudyData
-	complimentary_study_data **[]map[string]string
+	complimentary_study_data **map[string]interface{}
 	clearedFields            map[string]struct{}
 	cards                    map[uuid.UUID]struct{}
 	removedcards             map[uuid.UUID]struct{}
@@ -4281,12 +4183,12 @@ func (m *SubjectMutation) ResetStudyData() {
 }
 
 // SetComplimentaryStudyData sets the "complimentary_study_data" field.
-func (m *SubjectMutation) SetComplimentaryStudyData(value *[]map[string]string) {
+func (m *SubjectMutation) SetComplimentaryStudyData(value *map[string]interface{}) {
 	m.complimentary_study_data = &value
 }
 
 // ComplimentaryStudyData returns the value of the "complimentary_study_data" field in the mutation.
-func (m *SubjectMutation) ComplimentaryStudyData() (r *[]map[string]string, exists bool) {
+func (m *SubjectMutation) ComplimentaryStudyData() (r *map[string]interface{}, exists bool) {
 	v := m.complimentary_study_data
 	if v == nil {
 		return
@@ -4297,7 +4199,7 @@ func (m *SubjectMutation) ComplimentaryStudyData() (r *[]map[string]string, exis
 // OldComplimentaryStudyData returns the old "complimentary_study_data" field's value of the Subject entity.
 // If the Subject object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SubjectMutation) OldComplimentaryStudyData(ctx context.Context) (v *[]map[string]string, err error) {
+func (m *SubjectMutation) OldComplimentaryStudyData(ctx context.Context) (v *map[string]interface{}, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldComplimentaryStudyData is only allowed on UpdateOne operations")
 	}
@@ -4311,9 +4213,22 @@ func (m *SubjectMutation) OldComplimentaryStudyData(ctx context.Context) (v *[]m
 	return oldValue.ComplimentaryStudyData, nil
 }
 
+// ClearComplimentaryStudyData clears the value of the "complimentary_study_data" field.
+func (m *SubjectMutation) ClearComplimentaryStudyData() {
+	m.complimentary_study_data = nil
+	m.clearedFields[subject.FieldComplimentaryStudyData] = struct{}{}
+}
+
+// ComplimentaryStudyDataCleared returns if the "complimentary_study_data" field was cleared in this mutation.
+func (m *SubjectMutation) ComplimentaryStudyDataCleared() bool {
+	_, ok := m.clearedFields[subject.FieldComplimentaryStudyData]
+	return ok
+}
+
 // ResetComplimentaryStudyData resets all changes to the "complimentary_study_data" field.
 func (m *SubjectMutation) ResetComplimentaryStudyData() {
 	m.complimentary_study_data = nil
+	delete(m.clearedFields, subject.FieldComplimentaryStudyData)
 }
 
 // AddCardIDs adds the "cards" edge to the Card entity by ids.
@@ -4818,7 +4733,7 @@ func (m *SubjectMutation) SetField(name string, value ent.Value) error {
 		m.SetStudyData(v)
 		return nil
 	case subject.FieldComplimentaryStudyData:
-		v, ok := value.(*[]map[string]string)
+		v, ok := value.(*map[string]interface{})
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -4890,6 +4805,9 @@ func (m *SubjectMutation) ClearedFields() []string {
 	if m.FieldCleared(subject.FieldResources) {
 		fields = append(fields, subject.FieldResources)
 	}
+	if m.FieldCleared(subject.FieldComplimentaryStudyData) {
+		fields = append(fields, subject.FieldComplimentaryStudyData)
+	}
 	return fields
 }
 
@@ -4912,6 +4830,9 @@ func (m *SubjectMutation) ClearField(name string) error {
 		return nil
 	case subject.FieldResources:
 		m.ClearResources()
+		return nil
+	case subject.FieldComplimentaryStudyData:
+		m.ClearComplimentaryStudyData()
 		return nil
 	}
 	return fmt.Errorf("unknown Subject nullable field %s", name)
@@ -5375,10 +5296,24 @@ func (m *UserMutation) AppendedPendingActions() ([]schema.PendingAction, bool) {
 	return m.appendpending_actions, true
 }
 
+// ClearPendingActions clears the value of the "pending_actions" field.
+func (m *UserMutation) ClearPendingActions() {
+	m.pending_actions = nil
+	m.appendpending_actions = nil
+	m.clearedFields[user.FieldPendingActions] = struct{}{}
+}
+
+// PendingActionsCleared returns if the "pending_actions" field was cleared in this mutation.
+func (m *UserMutation) PendingActionsCleared() bool {
+	_, ok := m.clearedFields[user.FieldPendingActions]
+	return ok
+}
+
 // ResetPendingActions resets all changes to the "pending_actions" field.
 func (m *UserMutation) ResetPendingActions() {
 	m.pending_actions = nil
 	m.appendpending_actions = nil
+	delete(m.clearedFields, user.FieldPendingActions)
 }
 
 // SetEmail sets the "email" field.
@@ -5804,7 +5739,11 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UserMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(user.FieldPendingActions) {
+		fields = append(fields, user.FieldPendingActions)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -5817,6 +5756,11 @@ func (m *UserMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UserMutation) ClearField(name string) error {
+	switch name {
+	case user.FieldPendingActions:
+		m.ClearPendingActions()
+		return nil
+	}
 	return fmt.Errorf("unknown User nullable field %s", name)
 }
 

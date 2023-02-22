@@ -6,11 +6,15 @@ import (
 )
 
 const (
-	SUBSCRIBE_TO_DECK schema.Action = iota
+	ActionCheckCardUnlocks schema.Action = iota
+	ActionCheckDeckLevelUp schema.Action = iota // TODO
 )
 
 type (
 	CreateLevelCardsMeta struct {
 		Deck uuid.UUID
+	}
+	CheckCardUnlocksMeta struct {
+		Card uuid.UUID
 	}
 )

@@ -29,6 +29,14 @@ func (dpc *DeckProgressCreate) SetLevel(u uint32) *DeckProgressCreate {
 	return dpc
 }
 
+// SetNillableLevel sets the "level" field if the given value is not nil.
+func (dpc *DeckProgressCreate) SetNillableLevel(u *uint32) *DeckProgressCreate {
+	if u != nil {
+		dpc.SetLevel(*u)
+	}
+	return dpc
+}
+
 // AddCardIDs adds the "cards" edge to the Card entity by IDs.
 func (dpc *DeckProgressCreate) AddCardIDs(ids ...uuid.UUID) *DeckProgressCreate {
 	dpc.mutation.AddCardIDs(ids...)
@@ -77,6 +85,7 @@ func (dpc *DeckProgressCreate) Save(ctx context.Context) (*DeckProgress, error) 
 		err  error
 		node *DeckProgress
 	)
+	dpc.defaults()
 	if len(dpc.hooks) == 0 {
 		if err = dpc.check(); err != nil {
 			return nil, err
@@ -137,6 +146,14 @@ func (dpc *DeckProgressCreate) Exec(ctx context.Context) error {
 func (dpc *DeckProgressCreate) ExecX(ctx context.Context) {
 	if err := dpc.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (dpc *DeckProgressCreate) defaults() {
+	if _, ok := dpc.mutation.Level(); !ok {
+		v := deckprogress.DefaultLevel
+		dpc.mutation.SetLevel(v)
 	}
 }
 
@@ -263,6 +280,7 @@ func (dpcb *DeckProgressCreateBulk) Save(ctx context.Context) ([]*DeckProgress, 
 	for i := range dpcb.builders {
 		func(i int, root context.Context) {
 			builder := dpcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*DeckProgressMutation)
 				if !ok {

@@ -17,17 +17,17 @@ const (
 	// actions are restricted to the user's properties
 	TokenScopeUser APITokenScope = "user"
 
-	TokenCapabiltyDeckCreate          APITokenCapability = "deck:create"
-	TokenCapabiltyDeckDelete          APITokenCapability = "deck:delete"
-	TokenCapabiltyDeckUpdate          APITokenCapability = "deck:update"
-	TokenCababiltySubjectCreate       APITokenCapability = "subject:create"
-	TokenCababiltySubjectUpdate       APITokenCapability = "subject:update"
-	TokenCababiltySubjectDelete       APITokenCapability = "subject:delete"
-	TokenCababiltyReviewCreate        APITokenCapability = "review:create"
-	TokenCababiltyStudyMaterialCreate APITokenCapability = "study_material:create"
-	TokenCababiltyStudyMaterialUpdate APITokenCapability = "study_material:update"
-	TokenCababiltyUserUpdate          APITokenCapability = "user:update"
-	TokenCababiltyUserDelete          APITokenCapability = "user:delete"
+	TokenCapabiltyDeckCreate           APITokenCapability = "deck:create"
+	TokenCapabiltyDeckDelete           APITokenCapability = "deck:delete"
+	TokenCapabiltyDeckUpdate           APITokenCapability = "deck:update"
+	TokenCapabilitySubjectCreate       APITokenCapability = "subject:create"
+	TokenCapabilitySubjectUpdate       APITokenCapability = "subject:update"
+	TokenCapabilitySubjectDelete       APITokenCapability = "subject:delete"
+	TokenCapabilityReviewCreate        APITokenCapability = "review:create"
+	TokenCapabilityStudyMaterialCreate APITokenCapability = "study_material:create"
+	TokenCapabilityStudyMaterialUpdate APITokenCapability = "study_material:update"
+	TokenCapabilityUserUpdate          APITokenCapability = "user:update"
+	TokenCapabilityUserDelete          APITokenCapability = "user:delete"
 )
 
 type APITokenOptions struct {
@@ -38,17 +38,17 @@ type APITokenOptions struct {
 }
 
 type APITokenCapabilities struct {
-	TokenCapabiltyDeckCreate          bool `json:"deck:create"`
-	TokenCapabiltyDeckDelete          bool `json:"deck:delete"`
-	TokenCapabiltyDeckUpdate          bool `json:"deck:update"`
-	TokenCababiltySubjectCreate       bool `json:"subject:create"`
-	TokenCababiltySubjectUpdate       bool `json:"subject:update"`
-	TokenCababiltySubjectDelete       bool `json:"subject:delete"`
-	TokenCababiltyReviewCreate        bool `json:"review:create"`
-	TokenCababiltyStudyMaterialCreate bool `json:"study_material:create"`
-	TokenCababiltyStudyMaterialUpdate bool `json:"study_material:update"`
-	TokenCababiltyUserUpdate          bool `json:"user:update"`
-	TokenCababiltyUserDelete          bool `json:"user:delete"`
+	TokenCapabiltyDeckCreate           bool `json:"deck:create"`
+	TokenCapabiltyDeckDelete           bool `json:"deck:delete"`
+	TokenCapabiltyDeckUpdate           bool `json:"deck:update"`
+	TokenCapabilitySubjectCreate       bool `json:"subject:create"`
+	TokenCapabilitySubjectUpdate       bool `json:"subject:update"`
+	TokenCapabilitySubjectDelete       bool `json:"subject:delete"`
+	TokenCapabilityReviewCreate        bool `json:"review:create"`
+	TokenCapabilityStudyMaterialCreate bool `json:"study_material:create"`
+	TokenCapabilityStudyMaterialUpdate bool `json:"study_material:update"`
+	TokenCapabilityUserUpdate          bool `json:"user:update"`
+	TokenCapabilityUserDelete          bool `json:"user:delete"`
 }
 
 type APITokenClaims struct {
@@ -62,31 +62,31 @@ type APITokenClaims struct {
 
 func MapCapabilities(claims APITokenClaims) map[APITokenCapability]bool {
 	return map[APITokenCapability]bool{
-		TokenCapabiltyDeckCreate:          claims.TokenCapabiltyDeckCreate,
-		TokenCapabiltyDeckDelete:          claims.TokenCapabiltyDeckDelete,
-		TokenCapabiltyDeckUpdate:          claims.TokenCapabiltyDeckUpdate,
-		TokenCababiltySubjectCreate:       claims.TokenCababiltySubjectCreate,
-		TokenCababiltySubjectUpdate:       claims.TokenCababiltySubjectUpdate,
-		TokenCababiltySubjectDelete:       claims.TokenCababiltySubjectDelete,
-		TokenCababiltyReviewCreate:        claims.TokenCababiltyReviewCreate,
-		TokenCababiltyStudyMaterialCreate: claims.TokenCababiltyStudyMaterialCreate,
-		TokenCababiltyStudyMaterialUpdate: claims.TokenCababiltyStudyMaterialUpdate,
-		TokenCababiltyUserUpdate:          claims.TokenCababiltyUserUpdate,
-		TokenCababiltyUserDelete:          claims.TokenCababiltyUserDelete,
+		TokenCapabiltyDeckCreate:           claims.TokenCapabiltyDeckCreate,
+		TokenCapabiltyDeckDelete:           claims.TokenCapabiltyDeckDelete,
+		TokenCapabiltyDeckUpdate:           claims.TokenCapabiltyDeckUpdate,
+		TokenCapabilitySubjectCreate:       claims.TokenCapabilitySubjectCreate,
+		TokenCapabilitySubjectUpdate:       claims.TokenCapabilitySubjectUpdate,
+		TokenCapabilitySubjectDelete:       claims.TokenCapabilitySubjectDelete,
+		TokenCapabilityReviewCreate:        claims.TokenCapabilityReviewCreate,
+		TokenCapabilityStudyMaterialCreate: claims.TokenCapabilityStudyMaterialCreate,
+		TokenCapabilityStudyMaterialUpdate: claims.TokenCapabilityStudyMaterialUpdate,
+		TokenCapabilityUserUpdate:          claims.TokenCapabilityUserUpdate,
+		TokenCapabilityUserDelete:          claims.TokenCapabilityUserDelete,
 	}
 }
 func MapCapabilitiesRef(claims *APITokenClaims) map[APITokenCapability]*bool {
 	return map[APITokenCapability]*bool{
-		TokenCapabiltyDeckCreate:          &claims.TokenCababiltyReviewCreate,
-		TokenCapabiltyDeckDelete:          &claims.TokenCapabiltyDeckDelete,
-		TokenCapabiltyDeckUpdate:          &claims.TokenCapabiltyDeckUpdate,
-		TokenCababiltySubjectCreate:       &claims.TokenCababiltySubjectCreate,
-		TokenCababiltySubjectUpdate:       &claims.TokenCababiltySubjectUpdate,
-		TokenCababiltySubjectDelete:       &claims.TokenCababiltySubjectDelete,
-		TokenCababiltyReviewCreate:        &claims.TokenCababiltyReviewCreate,
-		TokenCababiltyStudyMaterialCreate: &claims.TokenCababiltyStudyMaterialCreate,
-		TokenCababiltyStudyMaterialUpdate: &claims.TokenCababiltyStudyMaterialUpdate,
-		TokenCababiltyUserUpdate:          &claims.TokenCababiltyUserUpdate,
-		TokenCababiltyUserDelete:          &claims.TokenCababiltyUserDelete,
+		TokenCapabiltyDeckCreate:           &claims.TokenCapabilityReviewCreate,
+		TokenCapabiltyDeckDelete:           &claims.TokenCapabiltyDeckDelete,
+		TokenCapabiltyDeckUpdate:           &claims.TokenCapabiltyDeckUpdate,
+		TokenCapabilitySubjectCreate:       &claims.TokenCapabilitySubjectCreate,
+		TokenCapabilitySubjectUpdate:       &claims.TokenCapabilitySubjectUpdate,
+		TokenCapabilitySubjectDelete:       &claims.TokenCapabilitySubjectDelete,
+		TokenCapabilityReviewCreate:        &claims.TokenCapabilityReviewCreate,
+		TokenCapabilityStudyMaterialCreate: &claims.TokenCapabilityStudyMaterialCreate,
+		TokenCapabilityStudyMaterialUpdate: &claims.TokenCapabilityStudyMaterialUpdate,
+		TokenCapabilityUserUpdate:          &claims.TokenCapabilityUserUpdate,
+		TokenCapabilityUserDelete:          &claims.TokenCapabilityUserDelete,
 	}
 }

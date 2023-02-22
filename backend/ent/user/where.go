@@ -192,6 +192,20 @@ func UsernameContainsFold(v string) predicate.User {
 	})
 }
 
+// PendingActionsIsNil applies the IsNil predicate on the "pending_actions" field.
+func PendingActionsIsNil() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldPendingActions)))
+	})
+}
+
+// PendingActionsNotNil applies the NotNil predicate on the "pending_actions" field.
+func PendingActionsNotNil() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldPendingActions)))
+	})
+}
+
 // EmailEQ applies the EQ predicate on the "email" field.
 func EmailEQ(v string) predicate.User {
 	return predicate.User(func(s *sql.Selector) {

@@ -52,6 +52,12 @@ func (uu *UserUpdate) AppendPendingActions(sa []schema.PendingAction) *UserUpdat
 	return uu
 }
 
+// ClearPendingActions clears the value of the "pending_actions" field.
+func (uu *UserUpdate) ClearPendingActions() *UserUpdate {
+	uu.mutation.ClearPendingActions()
+	return uu
+}
+
 // SetEmail sets the "email" field.
 func (uu *UserUpdate) SetEmail(s string) *UserUpdate {
 	uu.mutation.SetEmail(s)
@@ -346,6 +352,9 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, user.FieldPendingActions, value)
 		})
+	}
+	if uu.mutation.PendingActionsCleared() {
+		_spec.ClearField(user.FieldPendingActions, field.TypeJSON)
 	}
 	if value, ok := uu.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
@@ -654,6 +663,12 @@ func (uuo *UserUpdateOne) SetPendingActions(sa []schema.PendingAction) *UserUpda
 // AppendPendingActions appends sa to the "pending_actions" field.
 func (uuo *UserUpdateOne) AppendPendingActions(sa []schema.PendingAction) *UserUpdateOne {
 	uuo.mutation.AppendPendingActions(sa)
+	return uuo
+}
+
+// ClearPendingActions clears the value of the "pending_actions" field.
+func (uuo *UserUpdateOne) ClearPendingActions() *UserUpdateOne {
+	uuo.mutation.ClearPendingActions()
 	return uuo
 }
 
@@ -981,6 +996,9 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, user.FieldPendingActions, value)
 		})
+	}
+	if uuo.mutation.PendingActionsCleared() {
+		_spec.ClearField(user.FieldPendingActions, field.TypeJSON)
 	}
 	if value, ok := uuo.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)

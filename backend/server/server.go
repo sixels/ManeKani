@@ -16,7 +16,7 @@ import (
 	_ "sixels.io/manekani/docs/manekani"
 
 	auth_api "sixels.io/manekani/server/api/auth"
-	cards_api_v1 "sixels.io/manekani/server/api/cards/v1"
+	cards_api "sixels.io/manekani/server/api/cards"
 	files_api "sixels.io/manekani/server/api/files"
 	users_api "sixels.io/manekani/server/api/users"
 
@@ -61,7 +61,7 @@ func New() *Server {
 		log.Fatalf("Could not setup the 'file' repository: %v", err)
 	}
 
-	cardsV1 := cards_api_v1.New(cardsRepo, filesRepo, jwtService)
+	cardsV1 := cards_api.New(cardsRepo, filesRepo, usersRepo, jwtService)
 	filesAPI := files_api.New(filesRepo)
 	usersAPI := users_api.New(usersRepo, jwtService)
 
@@ -79,7 +79,7 @@ func (server *Server) Start(logFile io.Writer) {
 	corsConfig := cors.Config{
 		AllowCredentials: true,
 		AllowOrigins:     []string{"http://localhost:8082", fmt.Sprintf("http://%s:8082", hostname), "http://192.168.15.9:8082"},
-		AllowMethods:     []string{"GET", "POST", "DELETE", "PUT", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "DELETE", "PUT", "OPTIONS", "PATCH"},
 		AllowHeaders: append([]string{"Content-Type"},
 			supertokens.GetAllCORSHeaders()...),
 	}

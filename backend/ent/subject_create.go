@@ -116,7 +116,7 @@ func (sc *SubjectCreate) SetStudyData(cd []cards.StudyData) *SubjectCreate {
 }
 
 // SetComplimentaryStudyData sets the "complimentary_study_data" field.
-func (sc *SubjectCreate) SetComplimentaryStudyData(m *[]map[string]string) *SubjectCreate {
+func (sc *SubjectCreate) SetComplimentaryStudyData(m *map[string]interface{}) *SubjectCreate {
 	sc.mutation.SetComplimentaryStudyData(m)
 	return sc
 }
@@ -353,9 +353,6 @@ func (sc *SubjectCreate) check() error {
 	}
 	if _, ok := sc.mutation.StudyData(); !ok {
 		return &ValidationError{Name: "study_data", err: errors.New(`ent: missing required field "Subject.study_data"`)}
-	}
-	if _, ok := sc.mutation.ComplimentaryStudyData(); !ok {
-		return &ValidationError{Name: "complimentary_study_data", err: errors.New(`ent: missing required field "Subject.complimentary_study_data"`)}
 	}
 	if _, ok := sc.mutation.DeckID(); !ok {
 		return &ValidationError{Name: "deck", err: errors.New(`ent: missing required edge "Subject.deck"`)}

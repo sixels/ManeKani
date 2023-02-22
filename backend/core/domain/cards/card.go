@@ -1,11 +1,9 @@
-package srs
+package cards
 
 import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/cards/filters"
 )
 
@@ -15,7 +13,7 @@ type (
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 
-		Subject cards.Subject `json:"subject"`
+		Subject PartialSubject `json:"subject"`
 
 		Progress    uint8 `json:"progress"`
 		TotalErrors int32 `json:"total_errors"`
@@ -27,7 +25,7 @@ type (
 		BurnedAt    *time.Time `json:"burned_at"`
 	}
 
-	CardRaw struct {
+	PartialCard struct {
 		Id        uuid.UUID `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
@@ -43,13 +41,18 @@ type (
 	}
 
 	QueryManyCardsRequest struct {
+		AvailableAfter  *time.Time `query:"available_after"`
+		AvailableBefore *time.Time `query:"available_before"`
+
+		IsUnlocked *bool `query:"is_unlocked" binding:"-"`
+		IsBurned   *bool `query:"is_burned" binding:"-"`
+
+		ProgressAfter  *uint8 `query:"progress_after"`
+		ProgressBefore *uint8 `query:"progress_before"`
+
 		filters.FilterIDs
+		filters.FilterDecks
 		filters.FilterLevels
-		FilterUser
+		filters.FilterPagination
 	}
 )
-
-type FilterUser struct {
-	userID   []string
-	username []string
-}

@@ -44,7 +44,7 @@ type Subject struct {
 	// StudyData holds the value of the "study_data" field.
 	StudyData []cards.StudyData `json:"study_data,omitempty"`
 	// ComplimentaryStudyData holds the value of the "complimentary_study_data" field.
-	ComplimentaryStudyData *[]map[string]string `json:"complimentary_study_data,omitempty"`
+	ComplimentaryStudyData *map[string]interface{} `json:"complimentary_study_data,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SubjectQuery when eager-loading is set.
 	Edges         SubjectEdges `json:"edges"`

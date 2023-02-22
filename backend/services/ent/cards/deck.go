@@ -2,12 +2,15 @@ package cards
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/cards/filters"
 	"sixels.io/manekani/ent"
+	"sixels.io/manekani/ent/card"
 	"sixels.io/manekani/ent/deck"
+	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/predicate"
 	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
@@ -70,6 +73,94 @@ func (repo *CardsRepository) DeckOwner(ctx context.Context, deckID uuid.UUID) (s
 		Where(deck.IDEQ(deckID)).
 		QueryOwner().
 		OnlyID(ctx)
+}
+
+func (repo *CardsRepository) SubscribeUserToDeck(ctx context.Context, userID string, deckID uuid.UUID) error {
+	_, err := util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (*struct{}, error) {
+		// create the first level cards for now
+		deckSubjects, err := repo.client.Deck.Query().
+			Where(deck.IDEQ(deckID)).
+			QuerySubjects().
+			Where(subject.LevelEQ(1)).
+			Select(subject.FieldID).
+			WithDependencies(func(sq *ent.SubjectQuery) {
+				sq.Select(subject.FieldID)
+			}).
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		createdCards, err := tx.Card.
+			CreateBulk(
+				util.MapArray(deckSubjects, func(subj *ent.Subject) *ent.CardCreate {
+					create := tx.Card.Create().
+						SetSubjectID(subj.ID)
+					if len(subj.Edges.Dependencies) == 0 {
+						now := time.Now()
+						create = create.
+							SetAvailableAt(now).
+							SetUnlockedAt(now)
+					}
+					return create
+				})...,
+			).
+			Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// add the progress and subscribe the user
+		if err := tx.DeckProgress.Create().
+			AddCards(createdCards...).
+			SetUserID(userID).
+			SetDeckID(deckID).
+			Exec(ctx); err != nil {
+			return nil, err
+		}
+		if err := tx.Deck.UpdateOneID(deckID).
+			AddSubscriberIDs(userID).
+			Exec(ctx); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+
+	})
+
+	if err != nil {
+		return util.ParseEntError(err)
+	}
+	return nil
+}
+
+func (repo *CardsRepository) UnsubscribeUserFromDeck(ctx context.Context, userID string, deckID uuid.UUID) error {
+	_, err := util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (_ *struct{}, err error) {
+		// delete cards
+		_, err = repo.client.Card.Delete().
+			Where(card.And(
+				card.HasDeckProgressWith(deckprogress.HasUserWith(
+					user.IDEQ(userID),
+				)),
+				card.HasSubjectWith(
+					subject.HasDeckWith(deck.IDEQ(deckID))),
+			)).
+			Exec(ctx)
+		if err != nil {
+			return
+		}
+		// delete progress
+		_, err = repo.client.DeckProgress.Delete().
+			Where(
+				deckprogress.And(
+					deckprogress.HasUserWith(user.IDEQ(userID)),
+					deckprogress.HasDeckWith(deck.IDEQ(deckID)),
+				),
+			).
+			Exec(ctx)
+		return
+	})
+	return err
 }
 
 func DeckFromEnt(e *ent.Deck) *cards.Deck {

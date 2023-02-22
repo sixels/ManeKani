@@ -14,7 +14,7 @@ type DeckProgress struct {
 // Fields of the DeckProgress.
 func (DeckProgress) Fields() []ent.Field {
 	return []ent.Field{
-		field.Uint32("level").Min(1),
+		field.Uint32("level").Min(1).Default(1),
 	}
 }
 

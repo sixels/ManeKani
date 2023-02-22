@@ -25,7 +25,7 @@ type (
 
 		Resources              *map[string][]RemoteContent `json:"resources"`
 		StudyData              []StudyData                 `json:"study_data"`
-		ComplimentaryStudyData *[]map[string]string        `json:"complimentary_study_data"`
+		ComplimentaryStudyData *map[string]any             `json:"complimentary_study_data"`
 
 		Dependencies []uuid.UUID `json:"dependencies"`
 		Dependents   []uuid.UUID `json:"dependents"`
@@ -57,8 +57,23 @@ type (
 		Owner string `json:"owner"`
 	}
 
+	MinimalSubject struct {
+		ID uuid.UUID `json:"id"`
+
+		Kind  string `json:"kind"`
+		Level int32  `json:"level"`
+
+		Name       string         `json:"name"`
+		Value      *string        `json:"value"`
+		ValueImage *RemoteContent `json:"value_image"`
+		Slug       string         `json:"slug"`
+		Priority   uint8          `json:"priority"`
+
+		Deck uuid.UUID `json:"deck"`
+	}
+
 	CreateSubjectRequest struct {
-		Kind  string `json:"kind,omitempty" form:"kind"`
+		Kind  string `json:"kind,omitempty" form:"kind" binding:"required"`
 		Level int32  `json:"level,omitempty" form:"level" binding:"required"`
 
 		Name       string         `json:"name" form:"name" binding:"required"`
@@ -69,7 +84,7 @@ type (
 
 		StudyData              []StudyData                 `json:"study_data,omitempty" form:"study_data" binding:"-"`
 		Resources              *map[string][]RemoteContent `json:"resources,omitempty" form:"resources" binding:"-"`
-		ComplimentaryStudyData *[]map[string]string        `json:"complimentary_study_data" form:"complimentary_study_data" binding:"-"`
+		ComplimentaryStudyData *map[string]any             `json:"complimentary_study_data" form:"complimentary_study_data" binding:"-"`
 
 		Dependencies []uuid.UUID `json:"dependencies,omitempty" form:"dependencies"`
 		Dependents   []uuid.UUID `json:"dependents,omitempty" form:"dependents"`
@@ -90,7 +105,7 @@ type (
 
 		StudyData              *[]StudyData                `json:"study_data,omitempty" form:"study_data"`
 		Resources              *map[string][]RemoteContent `json:"resources,omitempty" form:"resources"`
-		ComplimentaryStudyData *[]map[string]string        `json:"complimentary_study_data" form:"complimentary_study_data" binding:"-"`
+		ComplimentaryStudyData *map[string]any             `json:"complimentary_study_data" form:"complimentary_study_data" binding:"-"`
 
 		Dependencies *[]uuid.UUID `json:"dependencies,omitempty" form:"dependencies"`
 		Dependents   *[]uuid.UUID `json:"dependents,omitempty" form:"dependents"`

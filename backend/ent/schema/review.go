@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sixels.io/manekani/core/domain/cards"
 )
 
 // Review holds the schema definition for the Review entity.
@@ -21,8 +22,7 @@ func (Review) Fields() []ent.Field {
 
 		field.Time("created_at").Default(time.Now).Immutable(),
 
-		field.Int("meaning_errors").Default(0).Immutable(),
-		field.Int("reading_errors").Default(0).Immutable(),
+		field.JSON("errors", cards.ReviewErrors{}).Immutable(),
 
 		field.Uint8("start_progress").Immutable(),
 		field.Uint8("end_progress").Immutable(),

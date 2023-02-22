@@ -141,8 +141,14 @@ func (su *SubjectUpdate) AppendStudyData(cd []cards.StudyData) *SubjectUpdate {
 }
 
 // SetComplimentaryStudyData sets the "complimentary_study_data" field.
-func (su *SubjectUpdate) SetComplimentaryStudyData(m *[]map[string]string) *SubjectUpdate {
+func (su *SubjectUpdate) SetComplimentaryStudyData(m *map[string]interface{}) *SubjectUpdate {
 	su.mutation.SetComplimentaryStudyData(m)
+	return su
+}
+
+// ClearComplimentaryStudyData clears the value of the "complimentary_study_data" field.
+func (su *SubjectUpdate) ClearComplimentaryStudyData() *SubjectUpdate {
+	su.mutation.ClearComplimentaryStudyData()
 	return su
 }
 
@@ -499,6 +505,9 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := su.mutation.ComplimentaryStudyData(); ok {
 		_spec.SetField(subject.FieldComplimentaryStudyData, field.TypeJSON, value)
+	}
+	if su.mutation.ComplimentaryStudyDataCleared() {
+		_spec.ClearField(subject.FieldComplimentaryStudyData, field.TypeJSON)
 	}
 	if su.mutation.CardsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -912,8 +921,14 @@ func (suo *SubjectUpdateOne) AppendStudyData(cd []cards.StudyData) *SubjectUpdat
 }
 
 // SetComplimentaryStudyData sets the "complimentary_study_data" field.
-func (suo *SubjectUpdateOne) SetComplimentaryStudyData(m *[]map[string]string) *SubjectUpdateOne {
+func (suo *SubjectUpdateOne) SetComplimentaryStudyData(m *map[string]interface{}) *SubjectUpdateOne {
 	suo.mutation.SetComplimentaryStudyData(m)
+	return suo
+}
+
+// ClearComplimentaryStudyData clears the value of the "complimentary_study_data" field.
+func (suo *SubjectUpdateOne) ClearComplimentaryStudyData() *SubjectUpdateOne {
+	suo.mutation.ClearComplimentaryStudyData()
 	return suo
 }
 
@@ -1300,6 +1315,9 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 	}
 	if value, ok := suo.mutation.ComplimentaryStudyData(); ok {
 		_spec.SetField(subject.FieldComplimentaryStudyData, field.TypeJSON, value)
+	}
+	if suo.mutation.ComplimentaryStudyDataCleared() {
+		_spec.ClearField(subject.FieldComplimentaryStudyData, field.TypeJSON)
 	}
 	if suo.mutation.CardsCleared() {
 		edge := &sqlgraph.EdgeSpec{

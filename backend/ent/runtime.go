@@ -84,6 +84,8 @@ func init() {
 	_ = deckprogressFields
 	// deckprogressDescLevel is the schema descriptor for level field.
 	deckprogressDescLevel := deckprogressFields[0].Descriptor()
+	// deckprogress.DefaultLevel holds the default value on creation for the level field.
+	deckprogress.DefaultLevel = deckprogressDescLevel.Default.(uint32)
 	// deckprogress.LevelValidator is a validator for the "level" field. It is called by the builders before save.
 	deckprogress.LevelValidator = deckprogressDescLevel.Validators[0].(func(uint32) error)
 	reviewFields := schema.Review{}.Fields()
@@ -92,14 +94,6 @@ func init() {
 	reviewDescCreatedAt := reviewFields[1].Descriptor()
 	// review.DefaultCreatedAt holds the default value on creation for the created_at field.
 	review.DefaultCreatedAt = reviewDescCreatedAt.Default.(func() time.Time)
-	// reviewDescMeaningErrors is the schema descriptor for meaning_errors field.
-	reviewDescMeaningErrors := reviewFields[2].Descriptor()
-	// review.DefaultMeaningErrors holds the default value on creation for the meaning_errors field.
-	review.DefaultMeaningErrors = reviewDescMeaningErrors.Default.(int)
-	// reviewDescReadingErrors is the schema descriptor for reading_errors field.
-	reviewDescReadingErrors := reviewFields[3].Descriptor()
-	// review.DefaultReadingErrors holds the default value on creation for the reading_errors field.
-	review.DefaultReadingErrors = reviewDescReadingErrors.Default.(int)
 	// reviewDescID is the schema descriptor for id field.
 	reviewDescID := reviewFields[0].Descriptor()
 	// review.DefaultID holds the default value on creation for the id field.

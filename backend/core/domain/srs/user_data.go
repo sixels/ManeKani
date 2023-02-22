@@ -1,5 +1,7 @@
 package srs
 
+import "sixels.io/manekani/core/domain/cards"
+
 type SRSUserData struct {
-	Cards []*Card `json:"cards"`
+	Cards []*cards.Card `json:"cards"`
 }
