@@ -2,10 +2,6 @@
     min-height: calc(100vh - 80px);
 }
 
-body {
-    background-color: #f5f5f5 !important;
-    padding-top: 60px;
-}
 
 .radical-tag, .kanji-tag, .vocabulary-tag, .reading-tag {
     border-radius: 3px;
