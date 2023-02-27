@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/sixels/manekani/core/domain/user"
 	"github.com/sixels/manekani/core/ports"
@@ -18,10 +19,10 @@ import (
 func StartAuthenticator(users ports.UserRepository) error {
 	var (
 		// TODO: get these values from env var
-		supertokensURL    string = "http://localhost:3567"
-		supertokensSecret string = "60f98a9e-ce60-48c2-bfa2-8c4f623874af"
-		websiteDomain     string = "http://192.168.15.9:8082"
-		apiDomain         string = "http://192.168.15.9:8081"
+		supertokensURL    string = os.Getenv("MANEKANI_AUTH_URL")
+		supertokensSecret string = os.Getenv("MANEKANI_AUTH_SECRET")
+		apiDomain         string = os.Getenv("MANEKANI_SERVER_URL") + ":" + os.Getenv("MANEKANI_SERVER_PORT")
+		websiteDomain     string = os.Getenv("MANEKANI_CLIENT_URL") + ":" + os.Getenv("MANEKANI_CLIENT_PORT")
 		apiBasePath       string = "/auth"
 		websiteBasePath   string = "/auth"
 	)

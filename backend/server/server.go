@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/gob"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -75,12 +74,20 @@ func New() *Server {
 }
 
 func (server *Server) Start(logFile io.Writer) {
-	// cors
-	hostname, _ := os.Hostname()
+	clientURL := os.Getenv("MANEKANI_CLIENT_URL")
+	clientPort := os.Getenv("MANEKANI_CLIENT_URL")
+	serverPort := os.Getenv("MANEKANI_SERVER_PORT")
+
+	trustedOrigins := []string{
+		clientURL + ":" + clientPort,
+		"localhost:" + clientPort,
+	}
+
 	corsConfig := cors.Config{
 		AllowCredentials: true,
-		AllowOrigins:     []string{"http://localhost:8082", fmt.Sprintf("http://%s:8082", hostname), "http://192.168.15.9:8082"},
-		AllowMethods:     []string{"GET", "POST", "DELETE", "PUT", "OPTIONS", "PATCH"},
+		AllowOrigins:     trustedOrigins,
+		// AllowOrigins:     []string{fmt.Sprintf(":8082"), fmt.Sprintf("http://%s:8082", hostname), "http://192.168.15.9:8082"},
+		AllowMethods: []string{"GET", "POST", "DELETE", "PUT", "OPTIONS", "PATCH"},
 		AllowHeaders: append([]string{"Content-Type"},
 			supertokens.GetAllCORSHeaders()...),
 	}
@@ -91,5 +98,5 @@ func (server *Server) Start(logFile io.Writer) {
 
 	server.bindRoutes()
 
-	log.Fatal(server.router.Run(":8081"))
+	log.Fatal(server.router.Run(":" + serverPort))
 }
