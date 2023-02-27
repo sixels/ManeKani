@@ -46,7 +46,9 @@ func main() {
 		log.Println("warn: could not load the .env file")
 	}
 	logFile := setLogFile()
-	defer logFile.Close()
+	if logFile != nil {
+		defer logFile.Close()
+	}
 
 	fmt.Println("Starting the server")
 
@@ -57,17 +59,14 @@ func main() {
 func setLogFile() *os.File {
 	// TODO: check XDG_DATA_HOME directory too
 	dataDir := os.Getenv("MANEKANI_DATA_HOME")
-	if dataDir == "" {
-		dataDir = "/data/"
+	if dataDir != "" {
+		logFile := path.Join(dataDir, "manekani.log")
+		f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("error opening log file: %v", err)
+		}
+		log.SetOutput(f)
+		return f
 	}
-
-	logFile := path.Join(dataDir, "manekani.log")
-
-	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening log file: %v", err)
-	}
-
-	log.SetOutput(f)
-	return f
+	return nil
 }
