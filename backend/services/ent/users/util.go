@@ -11,7 +11,7 @@ import (
 )
 
 func (repo *UsersRepository) IsUsernameAvailable(ctx context.Context, username string) (bool, error) {
-	doExists, err := repo.client.User.Query().Where(user.UsernameEQ(username)).Exist(ctx)
+	doExists, err := repo.client.UserClient().Query().Where(user.UsernameEQ(username)).Exist(ctx)
 	if err != nil {
 		log.Printf("error checking username %v\n", err)
 		return false, util.ParseEntError(err)

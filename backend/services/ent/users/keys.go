@@ -13,7 +13,7 @@ import (
 	mkjwt "sixels.io/manekani/services/jwt"
 )
 
-func (repo *UsersRepository) CreateUserAPITokenTX(ctx context.Context, tx *ent.Tx, userID string, options mkjwt.APITokenOptions) (string, error) {
+func (repo *UsersRepository) CreateUserAPITokenTX(ctx context.Context, userID string, options mkjwt.APITokenOptions) (string, error) {
 	signedToken, err := repo.jwt.CreateAPIToken(options)
 	if err != nil {
 		return "", fmt.Errorf("could not generate the api token: %w", err)
@@ -24,7 +24,7 @@ func (repo *UsersRepository) CreateUserAPITokenTX(ctx context.Context, tx *ent.T
 		return "", fmt.Errorf("could not encrypt the api token: %w", err)
 	}
 
-	if err := tx.ApiToken.Create().
+	if err := repo.client.ApiTokenClient().Create().
 		SetToken(encryptedToken).
 		SetUserID(userID).
 		Exec(ctx); err != nil {
@@ -35,7 +35,7 @@ func (repo *UsersRepository) CreateUserAPITokenTX(ctx context.Context, tx *ent.T
 }
 
 func (repo *UsersRepository) DumpUserAPITokens(ctx context.Context, userID string) ([]*jwt.Token, error) {
-	tokens, err := repo.client.User.Query().
+	tokens, err := repo.client.UserClient().Query().
 		Where(user.IDEQ(userID)).
 		QueryAPITokens().
 		All(ctx)

@@ -64,31 +64,24 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 			return
 		}
 
-		if status, err :=
-			checkResourceOwner(ctx, userID, form.Data.Deck, api.Cards.DeckOwner); err != nil {
-			c.Error(fmt.Errorf("authorization error: %w", err))
-			c.Status(status)
-			return
-		}
-
-		// check if the subject violates the uniqueness constraint inside the deck.
-		// NOTE: this is only done now to prevent uploading resources of an invalid
-		// card. A better approach would be:
-		// TODO: return a pre-signed url to the client
-		// so they can upload resources after the subject is successfully created.
-		// That also removes the need of using `multipart/form-data`.
-		exists, err := api.Cards.SubjectExists(
-			ctx, form.Data.Kind, form.Data.Name, form.Data.Slug, form.Data.Deck,
-		)
-		if err != nil {
-			c.Error(fmt.Errorf("could not check if subject exists: %w", err))
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-		if exists {
-			c.Status(http.StatusConflict)
-			return
-		}
+		// // check if the subject violates the uniqueness constraint inside the deck.
+		// // NOTE: this is only done now to prevent uploading resources of an invalid
+		// // card. A better approach would be:
+		// // TODO: return a pre-signed url to the client
+		// // so they can upload resources after the subject is successfully created.
+		// // That also removes the need of using `multipart/form-data`.
+		// exists, err := api.Cards.SubjectExists(
+		// 	ctx, form.Data.Kind, form.Data.Name, form.Data.Slug, form.Data.Deck,
+		// )
+		// if err != nil {
+		// 	c.Error(fmt.Errorf("could not check if subject exists: %w", err))
+		// 	c.Status(http.StatusInternalServerError)
+		// 	return
+		// }
+		// if exists {
+		// 	c.Status(http.StatusConflict)
+		// 	return
+		// }
 
 		log.Println(form.Data.ComplimentaryStudyData)
 
@@ -190,8 +183,7 @@ func (api *CardsApiV1) QuerySubject() gin.HandlerFunc {
 			return
 		}
 
-		ctx := c.Request.Context()
-		queried, err := api.Cards.QuerySubject(ctx, id)
+		queried, err := api.Cards.QuerySubject(c.Request.Context(), id)
 		if err != nil {
 			c.Error(err)
 			c.JSON(err.(*errors.Error).Status, err)
@@ -231,20 +223,13 @@ func (api *CardsApiV1) UpdateSubject() gin.HandlerFunc {
 			return
 		}
 
-		if status, err :=
-			checkResourceOwner(ctx, userID, subjectID, api.Cards.SubjectOwner); err != nil {
-			c.Error(err)
-			c.Status(status)
-			return
-		}
-
-		subject := new(cards.UpdateSubjectRequest)
-		if err := c.Bind(subject); err != nil {
+		var subject cards.UpdateSubjectRequest
+		if err := c.Bind(&subject); err != nil {
 			c.Error(err)
 			return
 		}
 
-		updated, err := api.Cards.UpdateSubject(ctx, subjectID, *subject)
+		updated, err := api.Cards.UpdateSubject(ctx, subjectID, userID, subject)
 		if err != nil {
 			c.Error(err)
 			c.JSON(err.(*errors.Error).Status, err)
@@ -284,14 +269,7 @@ func (api *CardsApiV1) DeleteSubject() gin.HandlerFunc {
 			return
 		}
 
-		if status, err :=
-			checkResourceOwner(ctx, userID, subjectID, api.Cards.SubjectOwner); err != nil {
-			c.Error(err)
-			c.Status(status)
-			return
-		}
-
-		if err := api.Cards.DeleteSubject(ctx, subjectID); err != nil {
+		if err := api.Cards.DeleteSubject(ctx, subjectID, userID); err != nil {
 			c.Error(err)
 			c.JSON(err.(*errors.Error).Status, err)
 		} else {

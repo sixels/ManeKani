@@ -18,13 +18,13 @@ func (api *CardsApiV1) AllUserCards() gin.HandlerFunc {
 			return
 		}
 
-		filters := new(cards.QueryManyCardsRequest)
-		if err := c.BindQuery(filters); err != nil {
+		var filters cards.QueryManyCardsRequest
+		if err := c.BindQuery(&filters); err != nil {
 			c.Error(err)
 			return
 		}
 
-		cards, err := api.Cards.AllUserCards(
+		cards, err := api.Cards.AllCards(
 			c.Request.Context(), userID, filters,
 		)
 		if err != nil {

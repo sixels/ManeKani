@@ -1,0 +1,24 @@
+{{/* The line below tells Intellij/GoLand to enable the autocompletion based on the *gen.Graph type. */}}
+{{/* gotype: entgo.io/ent/entc/gen.Graph */}}
+
+{{ define "any_client" }}
+
+{{/* Add the base header for the generated file */}}
+{{ $pkg := base $.Config.Package }}
+{{ template "header" $ }}
+
+type AnyClient interface {
+{{ range $n := $.Nodes }}
+    {{ $n.Name }}Client() *{{ $n.Name }}Client {{ end }}
+}
+
+{{ range $n := $.Nodes }}
+func (c *Client) {{ $n.Name }}Client() *{{ $n.Name }}Client {
+    return c.{{ $n.Name }}
+}
+func (c *Tx) {{ $n.Name }}Client() *{{ $n.Name }}Client {
+    return c.{{ $n.Name }}
+}
+{{ end }}
+
+{{ end }}

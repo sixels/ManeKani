@@ -17,10 +17,16 @@ type (
 		Card          uuid.UUID    `json:"card"`
 	}
 
-	CreateReviewRequest struct {
-		Card        filters.CommaSeparatedUUID `json:"card" form:"card" binding:"required"`
+	CreateReviewAPIRequest struct {
+		CardID      filters.CommaSeparatedUUID `json:"card" form:"card" binding:"required"`
 		Errors      ReviewErrors               `json:"errors" form:"errors" binding:"required"`
-		SessionType SessionType                `json:"session_type" form:"session_type" binding:"required"`
+		SessionType SessionType                `json:"session_type" query:"session_type" form:"session_type"`
+	}
+	CreateReviewRequest struct {
+		CardID        uuid.UUID    `json:"card" form:"card" binding:"required"`
+		Errors        ReviewErrors `json:"errors" form:"errors" binding:"required"`
+		StartProgress uint8        `json:"start_progress" form:"start_progress" binding:"required"`
+		EndProgress   uint8        `json:"end_progress" form:"end_progress" binding:"required"`
 	}
 
 	QueryManyReviewsRequest struct {

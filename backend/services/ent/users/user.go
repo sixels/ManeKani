@@ -8,7 +8,7 @@ import (
 )
 
 func (repo *UsersRepository) CreateUser(ctx context.Context, req domain.CreateUserRequest) (*domain.User, error) {
-	created, err := repo.client.User.Create().
+	created, err := repo.client.UserClient().Create().
 		SetID(req.ID).
 		SetEmail(req.Email).
 		SetUsername(req.Username).
@@ -23,7 +23,7 @@ func (repo *UsersRepository) CreateUser(ctx context.Context, req domain.CreateUs
 }
 
 func (repo *UsersRepository) QueryUser(ctx context.Context, id string) (*domain.User, error) {
-	queried, err := repo.client.User.Get(ctx, id)
+	queried, err := repo.client.UserClient().Get(ctx, id)
 	if err != nil {
 		return nil, util.ParseEntError(err)
 	}

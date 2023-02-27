@@ -3,56 +3,54 @@ package users
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"time"
 
 	user_domain "sixels.io/manekani/core/domain/user"
 	"sixels.io/manekani/ent"
 	"sixels.io/manekani/ent/card"
 	"sixels.io/manekani/ent/deckprogress"
-	"sixels.io/manekani/ent/schema"
 	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
-	"sixels.io/manekani/services/ent/util"
 )
 
 func (repo *UsersRepository) ResolveActions(ctx context.Context, userID string) error {
-	usr, err := repo.client.User.Query().
-		Where(user.IDEQ(userID)).
-		Select(user.FieldID, user.FieldPendingActions).
-		Only(ctx)
-	if err != nil {
-		return err
-	}
+	panic("legacy")
+	// usr, err := repo.client.UserClient().Query().
+	// 	Where(user.IDEQ(userID)).
+	// 	Select(user.FieldID, user.FieldPendingActions).
+	// 	Only(ctx)
+	// if err != nil {
+	// 	return err
+	// }
 
-	actions := usr.PendingActions
-	failedActions := []schema.PendingAction{}
-	for _, action := range actions {
-		if _, err := util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (*struct{}, error) {
-			switch action.Action {
-			case user_domain.ActionCheckCardUnlocks:
-				meta, err := redoEncoding[user_domain.CheckCardUnlocksMeta](action.Metadata)
-				if err != nil {
-					return nil, err
-				}
-				return nil, actionCheckCardUnlocks(
-					ctx, tx, userID, *meta)
-			}
+	// actions := usr.PendingActions
+	// failedActions := []schema.PendingAction{}
+	// for _, action := range actions {
+	// 	if _, err := util.WithTx(ctx, repo.client.Client.(*ent.Client), func(tx *ent.Tx) (*struct{}, error) {
+	// 		switch action.Action {
+	// 		case user_domain.ActionCheckCardUnlocks:
+	// 			meta, err := redoEncoding[user_domain.CheckCardUnlocksMeta](action.Metadata)
+	// 			if err != nil {
+	// 				return nil, err
+	// 			}
+	// 			return nil, actionCheckCardUnlocks(
+	// 				ctx, tx, userID, *meta)
+	// 		}
 
-			return nil, nil
-		}); err != nil {
-			log.Printf("user action failed: %v (%+v): %v \n", action.Action, err, action.Metadata)
-			failedActions = append(failedActions, action)
-		}
-	}
+	// 		return nil, nil
+	// 	}); err != nil {
+	// 		log.Printf("user action failed: %v (%+v): %v \n", action.Action, err, action.Metadata)
+	// 		failedActions = append(failedActions, action)
+	// 	}
+	// }
 
-	if err := repo.client.User.UpdateOneID(userID).
-		SetPendingActions(failedActions).
-		Exec(ctx); err != nil {
-		return err
-	}
+	// if err := repo.client.UserClient().UpdateOneID(userID).
+	// 	SetPendingActions(failedActions).
+	// 	Exec(ctx); err != nil {
+	// 	return err
+	// }
 
-	return nil
+	// return nil
 }
 
 func actionCheckCardUnlocks(

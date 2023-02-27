@@ -167,20 +167,6 @@ func CreatedAtLTE(v time.Time) predicate.Review {
 	})
 }
 
-// ErrorsIsNil applies the IsNil predicate on the "errors" field.
-func ErrorsIsNil() predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldErrors)))
-	})
-}
-
-// ErrorsNotNil applies the NotNil predicate on the "errors" field.
-func ErrorsNotNil() predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldErrors)))
-	})
-}
-
 // StartProgressEQ applies the EQ predicate on the "start_progress" field.
 func StartProgressEQ(v uint8) predicate.Review {
 	return predicate.Review(func(s *sql.Selector) {

@@ -18,13 +18,13 @@ func (api *CardsApiV1) AllUserReviews() gin.HandlerFunc {
 			return
 		}
 
-		filters := new(cards.QueryManyReviewsRequest)
-		if err := c.BindQuery(filters); err != nil {
+		var filters cards.QueryManyReviewsRequest
+		if err := c.BindQuery(&filters); err != nil {
 			c.Error(err)
 			return
 		}
 
-		cards, err := api.Cards.AllUserReviews(
+		cards, err := api.Cards.AllReviews(
 			c.Request.Context(), userID, filters,
 		)
 		if err != nil {
@@ -47,23 +47,18 @@ func (api *CardsApiV1) CreateReview() gin.HandlerFunc {
 			return
 		}
 
-		var req cards.CreateReviewRequest
+		var req cards.CreateReviewAPIRequest
 		if err := c.Bind(&req); err != nil {
 			c.Error(fmt.Errorf("create review bind error: %w", err))
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		review, err := api.Cards.CreateReview(c.Request.Context(), userID, &req)
+		review, err := api.Cards.CreateReview(c.Request.Context(), userID, req)
 		if err != nil {
 			c.Error(err)
 			c.Status(http.StatusBadRequest)
 			return
-		}
-
-		if err := api.Users.ResolveActions(c.Request.Context(), userID); err != nil {
-			c.Error(err)
-			c.Status(http.StatusInternalServerError)
 		}
 
 		c.JSON(http.StatusCreated, review)

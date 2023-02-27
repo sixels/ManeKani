@@ -21,7 +21,7 @@ type (
 	}
 
 	SessionQueue struct {
-		Cards []*QueueItem `json:"cards"`
+		Cards []QueueItem `json:"cards"`
 	}
 	QueueItem struct {
 		CardID  uuid.UUID          `json:"card_id"`

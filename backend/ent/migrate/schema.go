@@ -117,7 +117,7 @@ var (
 	ReviewsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "errors", Type: field.TypeJSON, Nullable: true},
+		{Name: "errors", Type: field.TypeJSON},
 		{Name: "start_progress", Type: field.TypeUint8},
 		{Name: "end_progress", Type: field.TypeUint8},
 		{Name: "card_reviews", Type: field.TypeUUID},

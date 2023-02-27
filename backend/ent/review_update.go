@@ -137,9 +137,6 @@ func (ru *ReviewUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if ru.mutation.ErrorsCleared() {
-		_spec.ClearField(review.FieldErrors, field.TypeJSON)
-	}
 	if ru.mutation.CardCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -331,9 +328,6 @@ func (ruo *ReviewUpdateOne) sqlSave(ctx context.Context) (_node *Review, err err
 				ps[i](selector)
 			}
 		}
-	}
-	if ruo.mutation.ErrorsCleared() {
-		_spec.ClearField(review.FieldErrors, field.TypeJSON)
 	}
 	if ruo.mutation.CardCleared() {
 		edge := &sqlgraph.EdgeSpec{

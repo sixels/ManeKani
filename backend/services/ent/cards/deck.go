@@ -2,15 +2,12 @@ package cards
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"sixels.io/manekani/core/domain/cards"
 	"sixels.io/manekani/core/domain/cards/filters"
 	"sixels.io/manekani/ent"
-	"sixels.io/manekani/ent/card"
 	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/deckprogress"
 	"sixels.io/manekani/ent/predicate"
 	"sixels.io/manekani/ent/subject"
 	"sixels.io/manekani/ent/user"
@@ -18,7 +15,7 @@ import (
 )
 
 func (repo *CardsRepository) QueryDeck(ctx context.Context, deckID uuid.UUID) (*cards.Deck, error) {
-	deck, err := repo.client.Deck.Query().
+	deck, err := repo.client.DeckClient().Query().
 		WithOwner(func(uq *ent.UserQuery) {
 			uq.Select(user.FieldID)
 		}).
@@ -29,10 +26,10 @@ func (repo *CardsRepository) QueryDeck(ctx context.Context, deckID uuid.UUID) (*
 	if err != nil {
 		return nil, err
 	}
-	return DeckFromEnt(deck), nil
+	return util.Ptr(DeckFromEnt(deck)), nil
 }
 
-func (repo *CardsRepository) AllDecks(ctx context.Context, req cards.QueryManyDecksRequest) ([]*cards.DeckPartial, error) {
+func (repo *CardsRepository) AllDecks(ctx context.Context, req cards.QueryManyDecksRequest) ([]cards.DeckPartial, error) {
 	var reqFilters []predicate.Deck
 	reqFilters = filters.ApplyFilter(reqFilters, req.IDs.Separate(), deck.IDIn)
 	reqFilters = filters.ApplyFilter(reqFilters, req.Owners.Separate(), func(ids ...string) predicate.Deck {
@@ -48,7 +45,7 @@ func (repo *CardsRepository) AllDecks(ctx context.Context, req cards.QueryManyDe
 		page = int(*req.Page)
 	}
 
-	queried, err := repo.client.Deck.Query().
+	queried, err := repo.client.DeckClient().Query().
 		Limit(500).
 		Offset(page).
 		WithOwner(func(uq *ent.UserQuery) {
@@ -69,102 +66,54 @@ func (repo *CardsRepository) AllDecks(ctx context.Context, req cards.QueryManyDe
 }
 
 func (repo *CardsRepository) DeckOwner(ctx context.Context, deckID uuid.UUID) (string, error) {
-	return repo.client.Deck.Query().
+	return repo.client.DeckClient().Query().
 		Where(deck.IDEQ(deckID)).
 		QueryOwner().
 		OnlyID(ctx)
 }
 
-func (repo *CardsRepository) SubscribeUserToDeck(ctx context.Context, userID string, deckID uuid.UUID) error {
-	_, err := util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (*struct{}, error) {
-		// create the first level cards for now
-		deckSubjects, err := repo.client.Deck.Query().
-			Where(deck.IDEQ(deckID)).
-			QuerySubjects().
-			Where(subject.LevelEQ(1)).
-			Select(subject.FieldID).
-			WithDependencies(func(sq *ent.SubjectQuery) {
-				sq.Select(subject.FieldID)
-			}).
-			All(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		createdCards, err := tx.Card.
-			CreateBulk(
-				util.MapArray(deckSubjects, func(subj *ent.Subject) *ent.CardCreate {
-					create := tx.Card.Create().
-						SetSubjectID(subj.ID)
-					if len(subj.Edges.Dependencies) == 0 {
-						now := time.Now()
-						create = create.
-							SetAvailableAt(now).
-							SetUnlockedAt(now)
-					}
-					return create
-				})...,
-			).
-			Save(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// add the progress and subscribe the user
-		if err := tx.DeckProgress.Create().
-			AddCards(createdCards...).
-			SetUserID(userID).
-			SetDeckID(deckID).
-			Exec(ctx); err != nil {
-			return nil, err
-		}
-		if err := tx.Deck.UpdateOneID(deckID).
-			AddSubscriberIDs(userID).
-			Exec(ctx); err != nil {
-			return nil, err
-		}
-
-		return nil, nil
-
-	})
-
-	if err != nil {
-		return util.ParseEntError(err)
-	}
-	return nil
+func (repo *CardsRepository) AddDeckSubscriber(ctx context.Context, deckID uuid.UUID, userID string) error {
+	return repo.client.DeckClient().UpdateOneID(deckID).
+		AddSubscriberIDs(userID).
+		Exec(ctx)
 }
 
-func (repo *CardsRepository) UnsubscribeUserFromDeck(ctx context.Context, userID string, deckID uuid.UUID) error {
-	_, err := util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (_ *struct{}, err error) {
-		// delete cards
-		_, err = repo.client.Card.Delete().
-			Where(card.And(
-				card.HasDeckProgressWith(deckprogress.HasUserWith(
-					user.IDEQ(userID),
-				)),
-				card.HasSubjectWith(
-					subject.HasDeckWith(deck.IDEQ(deckID))),
-			)).
-			Exec(ctx)
-		if err != nil {
-			return
-		}
-		// delete progress
-		_, err = repo.client.DeckProgress.Delete().
-			Where(
-				deckprogress.And(
-					deckprogress.HasUserWith(user.IDEQ(userID)),
-					deckprogress.HasDeckWith(deck.IDEQ(deckID)),
-				),
-			).
-			Exec(ctx)
-		return
-	})
-	return err
+func (repo *CardsRepository) RemoveDeckSubscriber(ctx context.Context, deckID uuid.UUID, userID string) error {
+	return repo.client.DeckClient().UpdateOneID(deckID).
+		AddSubscriberIDs(userID).
+		Exec(ctx)
 }
 
-func DeckFromEnt(e *ent.Deck) *cards.Deck {
-	return &cards.Deck{
+// 	_, err := util.WithTx(ctx, repo.client.Client.(*ent.Client), func(_ *ent.Tx) (_ *struct{}, err error) {
+// 		// delete cards
+// 		_, err = repo.client.CardClient().Delete().
+// 			Where(card.And(
+// 				card.HasDeckProgressWith(deckprogress.HasUserWith(
+// 					user.IDEQ(userID),
+// 				)),
+// 				card.HasSubjectWith(
+// 					subject.HasDeckWith(deck.IDEQ(deckID))),
+// 			)).
+// 			Exec(ctx)
+// 		if err != nil {
+// 			return
+// 		}
+// 		// delete progress
+// 		_, err = repo.client.DeckProgressClient().Delete().
+// 			Where(
+// 				deckprogress.And(
+// 					deckprogress.HasUserWith(user.IDEQ(userID)),
+// 					deckprogress.HasDeckWith(deck.IDEQ(deckID)),
+// 				),
+// 			).
+// 			Exec(ctx)
+// 		return
+// 	})
+// 	return err
+// }
+
+func DeckFromEnt(e *ent.Deck) cards.Deck {
+	return cards.Deck{
 		ID:          e.ID,
 		CreatedAt:   e.CreatedAt,
 		UpdatedAt:   e.UpdatedAt,
@@ -177,8 +126,8 @@ func DeckFromEnt(e *ent.Deck) *cards.Deck {
 	}
 }
 
-func PartialDeckFromEnt(e *ent.Deck) *cards.DeckPartial {
-	return &cards.DeckPartial{
+func PartialDeckFromEnt(e *ent.Deck) cards.DeckPartial {
+	return cards.DeckPartial{
 		ID:          e.ID,
 		Name:        e.Name,
 		Description: e.Description,

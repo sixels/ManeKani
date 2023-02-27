@@ -7,89 +7,111 @@ import (
 	"os"
 	"time"
 
-	"sixels.io/manekani/ent"
+	"sixels.io/manekani/core/ports/transactions"
 	"sixels.io/manekani/ent/schema"
 	"sixels.io/manekani/ent/user"
-	client "sixels.io/manekani/services/ent"
-	"sixels.io/manekani/services/ent/util"
+	ent_repo "sixels.io/manekani/services/ent"
 	"sixels.io/manekani/services/jwt"
 	mkjwt "sixels.io/manekani/services/jwt"
 )
 
 type UsersRepository struct {
-	client             *client.EntRepository
+	client             *ent_repo.EntRepository
 	tokenEncryptionKey []byte
 
 	jwt *mkjwt.JWTService
 }
 
-func NewRepository(ctx context.Context, client *client.EntRepository, jwtService *mkjwt.JWTService) (*UsersRepository, error) {
+func NewRepository(ctx context.Context, client *ent_repo.EntRepository, jwtService *mkjwt.JWTService) (*UsersRepository, error) {
 	repo := UsersRepository{
 		client:             client,
 		jwt:                jwtService,
 		tokenEncryptionKey: []byte(os.Getenv("TOKEN_ENCRYPTION_KEY")),
 	}
 
-	if err := createManeKaniUser(ctx, &repo); err != nil {
+	tx := transactions.Begin(ctx)
+	txRepo, err := transactions.MakeTransactional(tx, &repo)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := createAdminUser(ctx, txRepo); err != nil {
 		return nil, err
 	}
 
 	return &repo, nil
 }
 
-func createManeKaniUser(ctx context.Context, repo *UsersRepository) error {
-	if exists, err := repo.client.User.Query().
+func createAdminUser(ctx context.Context, repo *UsersRepository) error {
+	if exists, err := repo.client.UserClient().Query().
 		Where(user.UsernameEQ("manekani")).
 		Exist(ctx); err != nil || exists {
 		return err
 	}
 	log.Println("creating admin user")
 
-	_, err := util.WithTx(ctx, repo.client.Client, func(tx *ent.Tx) (*struct{}, error) {
+	usr, err := repo.client.UserClient().Create().
+		SetEmail("admin@manekani.io").
+		SetUsername("manekani").
+		SetPendingActions([]schema.PendingAction{}).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("could not create the manekani user: %w", err)
+	}
 
-		usr, err := tx.User.Create().
-			SetEmail("admin@manekani.io").
-			SetUsername("manekani").
-			SetPendingActions([]schema.PendingAction{}).
-			Save(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("could not create the manekani user: %w", err)
-		}
-
-		tokenExpiration := time.Now().AddDate(10, 0, 0)
-		_, err = repo.CreateUserAPITokenTX(ctx, tx, usr.ID, mkjwt.APITokenOptions{
-			UserID: usr.ID,
-			Scope:  jwt.TokenScopeGlobal,
-			Capabilities: []jwt.APITokenCapability{
-				mkjwt.TokenCapabiltyDeckCreate,
-				mkjwt.TokenCapabiltyDeckDelete,
-				mkjwt.TokenCapabiltyDeckUpdate,
-				mkjwt.TokenCapabilitySubjectCreate,
-				mkjwt.TokenCapabilitySubjectUpdate,
-				mkjwt.TokenCapabilitySubjectDelete,
-				mkjwt.TokenCapabilityReviewCreate,
-			},
-			ExpiresAt: &tokenExpiration,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		// create the default deck
-		err = tx.Deck.Create().
-			SetName("WaniKani").
-			SetDescription("All WaniKani cards to help you learn japanese fast!").
-			SetOwnerID(usr.ID).
-			Exec(ctx)
-
-		return nil, err
+	tokenExpiration := time.Now().AddDate(10, 0, 0)
+	_, err = repo.CreateUserAPITokenTX(ctx, usr.ID, mkjwt.APITokenOptions{
+		UserID: usr.ID,
+		Scope:  jwt.TokenScopeGlobal,
+		Capabilities: []jwt.APITokenCapability{
+			mkjwt.TokenCapabiltyDeckCreate,
+			mkjwt.TokenCapabiltyDeckDelete,
+			mkjwt.TokenCapabiltyDeckUpdate,
+			mkjwt.TokenCapabilitySubjectCreate,
+			mkjwt.TokenCapabilitySubjectUpdate,
+			mkjwt.TokenCapabilitySubjectDelete,
+			mkjwt.TokenCapabilityReviewCreate,
+		},
+		ExpiresAt: &tokenExpiration,
 	})
+	if err != nil {
+		return err
+	}
 
-	admin := repo.client.User.Query().
+	// create the default deck
+	err = repo.client.DeckClient().Create().
+		SetName("WaniKani").
+		SetDescription("All WaniKani cards to help you learn japanese fast!").
+		SetOwnerID(usr.ID).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	admin := repo.client.UserClient().Query().
 		Where(user.UsernameEQ("manekani")).
 		OnlyX(ctx)
 
 	_, _ = repo.DumpUserAPITokens(ctx, admin.ID)
 
 	return err
+}
+
+func (repo *UsersRepository) BeginTransaction(ctx context.Context) (transactions.TransactionalRepository, error) {
+	cli, err := repo.client.BeginTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &UsersRepository{
+		client:             cli.(*ent_repo.EntRepository),
+		tokenEncryptionKey: repo.tokenEncryptionKey,
+		jwt:                repo.jwt,
+	}, nil
+}
+
+func (repo *UsersRepository) Rollback() error {
+	return repo.client.Rollback()
+}
+func (repo *UsersRepository) Commit() error {
+	return repo.client.Commit()
 }

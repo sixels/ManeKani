@@ -26,24 +26,21 @@ func (api *CardsApi) StudySession() gin.HandlerFunc {
 			return
 		}
 
-		var availableCards []*cards.Card
-		if req.SessionType == cards.SessionLesson {
-			availableCards, err = api.V1.Cards.AllUserCards(
-				ctx,
-				userID,
-				&cards.QueryManyCardsRequest{
-					AvailableBefore: util.Ptr(time.Now()),
-					FilterDecks: filters.FilterDecks{
-						Decks: util.Ptr((filters.CommaSeparatedUUID)(req.DeckID)),
-					},
-					ProgressBefore: util.Ptr(uint8(0)),
+		availableCards, err := api.V1.Cards.AllCards(
+			ctx,
+			userID,
+			cards.QueryManyCardsRequest{
+				FilterDecks: filters.FilterDecks{
+					Decks: util.Ptr((filters.CommaSeparatedUUID)(req.DeckID)),
 				},
-			)
-			if err != nil {
-				c.Error(err)
-				c.Status(http.StatusInternalServerError)
-				return
-			}
+				AvailableBefore: util.Ptr(time.Now()),
+				IsStarted:       util.Ptr(req.SessionType == cards.SessionReview),
+			},
+		)
+		if err != nil {
+			c.Error(err)
+			c.Status(http.StatusInternalServerError)
+			return
 		}
 
 		sessionSize := 8
@@ -56,8 +53,8 @@ func (api *CardsApi) StudySession() gin.HandlerFunc {
 	}
 }
 
-func createQueue(cards_ []*cards.Card) cards.SessionQueue {
-	sessionCards := make([]*cards.QueueItem, 0, len(cards_))
+func createQueue(cards_ []cards.Card) cards.SessionQueue {
+	sessionCards := make([]cards.QueueItem, 0, len(cards_))
 
 	for _, card := range cards_ {
 		answers := make([]cards.QueueItemAnswers, len(card.Subject.StudyData))
@@ -78,8 +75,8 @@ func createQueue(cards_ []*cards.Card) cards.SessionQueue {
 				}),
 			}
 		}
-		sessionCards = append(sessionCards, &cards.QueueItem{
-			CardID:  card.Id,
+		sessionCards = append(sessionCards, cards.QueueItem{
+			CardID:  card.ID,
 			Answers: answers,
 			Subject: minimalSubject(card.Subject),
 		})

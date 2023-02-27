@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/supertokens/supertokens-golang/supertokens"
 
+	"sixels.io/manekani/core/services/cards"
 	_ "sixels.io/manekani/docs/manekani"
 
 	auth_api "sixels.io/manekani/server/api/auth"
@@ -22,7 +23,7 @@ import (
 
 	"sixels.io/manekani/services/auth"
 	"sixels.io/manekani/services/ent"
-	"sixels.io/manekani/services/ent/cards"
+	cards_repo "sixels.io/manekani/services/ent/cards"
 	"sixels.io/manekani/services/ent/users"
 	"sixels.io/manekani/services/files"
 	"sixels.io/manekani/services/jwt"
@@ -46,7 +47,7 @@ func New() *Server {
 	if err != nil {
 		log.Fatalf("Could not connect with ManeKani database: %v", err)
 	}
-	cardsRepo := cards.NewRepository(entRepo)
+	cardsRepo := cards_repo.NewRepository(entRepo)
 	usersRepo, err := users.NewRepository(context.Background(), entRepo, jwtService)
 	if err != nil {
 		log.Fatal(err)
@@ -61,7 +62,7 @@ func New() *Server {
 		log.Fatalf("Could not setup the 'file' repository: %v", err)
 	}
 
-	cardsV1 := cards_api.New(cardsRepo, filesRepo, usersRepo, jwtService)
+	cardsV1 := cards_api.New(cards.NewService(cardsRepo, filesRepo), filesRepo, usersRepo, jwtService)
 	filesAPI := files_api.New(filesRepo)
 	usersAPI := users_api.New(usersRepo, jwtService)
 

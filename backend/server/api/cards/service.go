@@ -1,7 +1,7 @@
 package cards
 
 import (
-	"sixels.io/manekani/services/ent/cards"
+	"sixels.io/manekani/core/services/cards"
 	"sixels.io/manekani/services/ent/users"
 	"sixels.io/manekani/services/files"
 
@@ -19,7 +19,7 @@ type CardsApi struct {
 }
 
 func New(
-	cardsService *cards.CardsRepository,
+	cardsService cards.CardsService,
 	filesService *files.FilesRepository,
 	usersService *users.UsersRepository,
 	jwtService *mkjwt.JWTService,

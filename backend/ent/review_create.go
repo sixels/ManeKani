@@ -171,6 +171,9 @@ func (rc *ReviewCreate) check() error {
 	if _, ok := rc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Review.created_at"`)}
 	}
+	if _, ok := rc.mutation.Errors(); !ok {
+		return &ValidationError{Name: "errors", err: errors.New(`ent: missing required field "Review.errors"`)}
+	}
 	if _, ok := rc.mutation.StartProgress(); !ok {
 		return &ValidationError{Name: "start_progress", err: errors.New(`ent: missing required field "Review.start_progress"`)}
 	}

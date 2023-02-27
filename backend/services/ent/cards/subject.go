@@ -16,7 +16,7 @@ import (
 
 // check if there is a subject with the given `kind`, `name` and `slug` in a deck.
 func (repo *CardsRepository) SubjectExists(ctx context.Context, kind string, name string, slug string, deckID uuid.UUID) (bool, error) {
-	return repo.client.Subject.Query().
+	return repo.client.SubjectClient().Query().
 		Where(subject.And(
 			subject.KindEQ(kind),
 			subject.NameEQ(name),
@@ -27,7 +27,7 @@ func (repo *CardsRepository) SubjectExists(ctx context.Context, kind string, nam
 }
 
 func (repo *CardsRepository) QuerySubject(ctx context.Context, id uuid.UUID) (*cards.Subject, error) {
-	result, err := repo.client.Subject.
+	result, err := repo.client.SubjectClient().
 		Query().
 		Where(subject.IDEQ(id)).
 		WithDependencies(func(sq *ent.SubjectQuery) {
@@ -50,11 +50,11 @@ func (repo *CardsRepository) QuerySubject(ctx context.Context, id uuid.UUID) (*c
 		return nil, err
 	}
 
-	return SubjectFromEnt(result), nil
+	return util.Ptr(SubjectFromEnt(result)), nil
 }
 
 func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, req cards.CreateSubjectRequest) (*cards.Subject, error) {
-	query := repo.client.Subject.Create().
+	query := repo.client.SubjectClient().Create().
 		SetKind(req.Kind).
 		SetLevel(req.Level).
 		SetName(req.Name).
@@ -79,11 +79,11 @@ func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, 
 	// TODO: fetch the edges from ent
 	created.Edges.Deck = &ent.Deck{ID: req.Deck}
 	created.Edges.Owner = &ent.User{ID: ownerID}
-	return SubjectFromEnt(created), nil
+	return util.Ptr(SubjectFromEnt(created)), nil
 }
 
 func (repo *CardsRepository) UpdateSubject(ctx context.Context, id uuid.UUID, req cards.UpdateSubjectRequest) (*cards.Subject, error) {
-	query := repo.client.Subject.UpdateOneID(id)
+	query := repo.client.SubjectClient().UpdateOneID(id)
 
 	util.UpdateValue(req.Kind, query.SetKind)
 	util.UpdateValue(req.Level, query.SetLevel)
@@ -109,14 +109,14 @@ func (repo *CardsRepository) UpdateSubject(ctx context.Context, id uuid.UUID, re
 	if err != nil {
 		return nil, err
 	}
-	return SubjectFromEnt(updated), nil
+	return util.Ptr(SubjectFromEnt(updated)), nil
 }
 
 func (repo *CardsRepository) DeleteSubject(ctx context.Context, id uuid.UUID) error {
-	return repo.client.Subject.DeleteOneID(id).Exec(ctx)
+	return repo.client.SubjectClient().DeleteOneID(id).Exec(ctx)
 }
 
-func (repo *CardsRepository) AllSubjects(ctx context.Context, req cards.QueryManySubjectsRequest) ([]*cards.PartialSubject, error) {
+func (repo *CardsRepository) AllSubjects(ctx context.Context, req cards.QueryManySubjectsRequest) ([]cards.PartialSubject, error) {
 	var reqFilters []predicate.Subject
 	reqFilters = filters.ApplyFilter(reqFilters, req.Levels.Separate(), subject.LevelIn)
 	reqFilters = filters.ApplyFilter(reqFilters, req.IDs.Separate(), subject.IDIn)
@@ -134,7 +134,7 @@ func (repo *CardsRepository) AllSubjects(ctx context.Context, req cards.QueryMan
 		page = int(*req.Page)
 	}
 
-	queried, err := repo.client.Subject.Query().
+	queried, err := repo.client.SubjectClient().Query().
 		Where(subject.And(reqFilters...)).
 		Limit(1000).
 		Offset(page).
@@ -173,14 +173,14 @@ func (repo *CardsRepository) AllSubjects(ctx context.Context, req cards.QueryMan
 }
 
 func (repo *CardsRepository) SubjectOwner(ctx context.Context, subjectID uuid.UUID) (string, error) {
-	return repo.client.Subject.Query().
+	return repo.client.SubjectClient().Query().
 		Where(subject.IDEQ(subjectID)).
 		QueryOwner().
 		OnlyID(ctx)
 }
 
-func SubjectFromEnt(e *ent.Subject) *cards.Subject {
-	return &cards.Subject{
+func SubjectFromEnt(e *ent.Subject) cards.Subject {
+	return cards.Subject{
 		ID:         e.ID,
 		CreatedAt:  e.CreatedAt,
 		UpdatedAt:  e.UpdatedAt,
@@ -209,8 +209,8 @@ func SubjectFromEnt(e *ent.Subject) *cards.Subject {
 	}
 }
 
-func PartialSubjectFromEnt(e *ent.Subject) *cards.PartialSubject {
-	return &cards.PartialSubject{
+func PartialSubjectFromEnt(e *ent.Subject) cards.PartialSubject {
+	return cards.PartialSubject{
 		ID:         e.ID,
 		Kind:       e.Kind,
 		Level:      e.Level,

@@ -29,7 +29,6 @@ func (api *CardsApiV1) QueryDeck() gin.HandlerFunc {
 		} else {
 			c.JSON(http.StatusOK, queried)
 		}
-
 	}
 }
 
@@ -67,8 +66,8 @@ func (api *CardsApiV1) SubscribeUserToDeck() gin.HandlerFunc {
 			return
 		}
 
-		if err := api.Cards.SubscribeUserToDeck(
-			c.Request.Context(), userID, deckID,
+		if err := api.Cards.AddDeckSubscriber(
+			c.Request.Context(), deckID, userID,
 		); err != nil {
 			c.Error(fmt.Errorf("subscribe error: %w", err))
 			c.Status(http.StatusInternalServerError)
@@ -94,8 +93,8 @@ func (api *CardsApiV1) UnsubscribeUserFromDeck() gin.HandlerFunc {
 			return
 		}
 
-		if err := api.Cards.UnsubscribeUserFromDeck(
-			c.Request.Context(), userID, deckID,
+		if err := api.Cards.RemoveDeckSubscriber(
+			c.Request.Context(), deckID, userID,
 		); err != nil {
 			c.Error(fmt.Errorf("reset error: %w", err))
 			c.Status(http.StatusInternalServerError)

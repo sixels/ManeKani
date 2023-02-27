@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"sixels.io/manekani/core/ports/transactions"
 	"sixels.io/manekani/ent"
 	"sixels.io/manekani/ent/migrate"
 
@@ -14,8 +15,10 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
+type Client = ent.AnyClient
+
 type EntRepository struct {
-	*ent.Client
+	Client
 }
 
 func NewRepository() (*EntRepository, error) {
@@ -46,4 +49,36 @@ func open(databaseUrl string) (*ent.Client, error) {
 	// Create an ent.Driver from `db`.
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	return ent.NewClient(ent.Driver(drv)), nil
+}
+
+func (repo *EntRepository) BeginTransaction(ctx context.Context) (transactions.TransactionalRepository, error) {
+	client, ok := repo.Client.(*ent.Client)
+	if !ok {
+		return nil, fmt.Errorf("Cannot start a transaction out of a transaction")
+	}
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	txRepo := *repo
+	txRepo.Client = tx
+
+	return &txRepo, nil
+}
+
+func (repo *EntRepository) Rollback() error {
+	tx, ok := repo.Client.(*ent.Tx)
+	if !ok {
+		return fmt.Errorf("Can't rollback because this is not a transaction")
+	}
+	return tx.Rollback()
+}
+func (repo *EntRepository) Commit() error {
+	tx, ok := repo.Client.(*ent.Tx)
+	if !ok {
+		return nil
+	}
+	return tx.Commit()
 }

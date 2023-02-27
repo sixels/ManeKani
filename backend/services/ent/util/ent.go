@@ -1,9 +1,6 @@
 package util
 
 import (
-	"context"
-	"fmt"
-
 	"sixels.io/manekani/core/domain/errors"
 	"sixels.io/manekani/ent"
 
@@ -38,6 +35,10 @@ func MapArray[T any, U any](values []T, mapper func(T) U) []U {
 	return array
 }
 
+func Ptr[T any](t T) *T {
+	return &t
+}
+
 func ParseEntError(err error) *errors.Error {
 	var domainError *errors.Error
 	switch e := err.(type) {
@@ -53,39 +54,4 @@ func ParseEntError(err error) *errors.Error {
 		domainError = errors.Unknown(err)
 	}
 	return domainError
-}
-
-func WithTx[T any](ctx context.Context, client *ent.Client, fn func(tx *ent.Tx) (*T, error)) (*T, error) {
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if v := recover(); v != nil {
-			tx.Rollback()
-			panic(v)
-		}
-	}()
-
-	ret, err := fn(tx)
-	if err != nil {
-		return nil, rollback(tx, err)
-	}
-
-	return ret, commit(tx)
-}
-
-func rollback(tx *ent.Tx, err error) error {
-	if rerr := tx.Rollback(); rerr != nil {
-		err = fmt.Errorf("%w: %v", err, rerr)
-	}
-	return err
-}
-
-func commit(tx *ent.Tx) error {
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("committing transaction: %w", err)
-	}
-	return nil
 }
