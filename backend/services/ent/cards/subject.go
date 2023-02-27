@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/core/domain/cards/filters"
-	"sixels.io/manekani/ent"
-	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/predicate"
-	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
-	"sixels.io/manekani/services/ent/util"
+	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/domain/cards/filters"
+	"github.com/sixels/manekani/ent"
+	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/predicate"
+	"github.com/sixels/manekani/ent/subject"
+	"github.com/sixels/manekani/ent/user"
+	"github.com/sixels/manekani/services/ent/util"
 )
 
 // check if there is a subject with the given `kind`, `name` and `slug` in a deck.

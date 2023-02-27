@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	server "sixels.io/manekani/server"
+	server "github.com/sixels/manekani/server"
 
 	"github.com/joho/godotenv"
 )

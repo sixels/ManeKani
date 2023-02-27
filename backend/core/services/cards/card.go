@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	domain "sixels.io/manekani/core/domain/cards"
+	domain "github.com/sixels/manekani/core/domain/cards"
 )
 
 func (svc *CardsService) QueryCard(ctx context.Context, id uuid.UUID) (*domain.Card, error) {

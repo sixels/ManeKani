@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/core/domain/errors"
-	"sixels.io/manekani/server/api/cards/util"
+	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/domain/errors"
+	"github.com/sixels/manekani/server/api/cards/util"
 )
 
 func (api *CardsApiV1) QueryDeck() gin.HandlerFunc {

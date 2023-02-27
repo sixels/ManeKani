@@ -9,11 +9,11 @@ import (
 	"net/http"
 	"strings"
 
-	"sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/core/domain/errors"
-	"sixels.io/manekani/core/domain/files"
-	"sixels.io/manekani/server/api/cards/util"
-	files_service "sixels.io/manekani/services/files"
+	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/domain/errors"
+	"github.com/sixels/manekani/core/domain/files"
+	"github.com/sixels/manekani/server/api/cards/util"
+	files_service "github.com/sixels/manekani/services/files"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

@@ -5,7 +5,7 @@ package deckprogress
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"sixels.io/manekani/ent/predicate"
+	"github.com/sixels/manekani/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.

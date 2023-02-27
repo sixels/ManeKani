@@ -5,12 +5,12 @@ package enttest
 import (
 	"context"
 
-	"sixels.io/manekani/ent"
+	"github.com/sixels/manekani/ent"
 	// required by schema hooks.
-	_ "sixels.io/manekani/ent/runtime"
+	_ "github.com/sixels/manekani/ent/runtime"
 
 	"entgo.io/ent/dialect/sql/schema"
-	"sixels.io/manekani/ent/migrate"
+	"github.com/sixels/manekani/ent/migrate"
 )
 
 type (

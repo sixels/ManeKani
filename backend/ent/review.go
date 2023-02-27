@@ -10,8 +10,8 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/review"
+	"github.com/sixels/manekani/ent/card"
+	"github.com/sixels/manekani/ent/review"
 )
 
 // Review is the model entity for the Review schema.

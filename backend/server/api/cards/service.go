@@ -1,16 +1,16 @@
 package cards
 
 import (
-	"sixels.io/manekani/core/services/cards"
-	"sixels.io/manekani/services/ent/users"
-	"sixels.io/manekani/services/files"
+	"github.com/sixels/manekani/core/services/cards"
+	"github.com/sixels/manekani/services/ent/users"
+	"github.com/sixels/manekani/services/files"
 
-	auth_api "sixels.io/manekani/server/api/auth"
-	mkjwt "sixels.io/manekani/services/jwt"
+	auth_api "github.com/sixels/manekani/server/api/auth"
+	mkjwt "github.com/sixels/manekani/services/jwt"
 
 	"github.com/gin-gonic/gin"
 
-	cards1 "sixels.io/manekani/server/api/cards/v1"
+	cards1 "github.com/sixels/manekani/server/api/cards/v1"
 )
 
 type CardsApi struct {

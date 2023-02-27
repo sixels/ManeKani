@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/deckprogress"
-	"sixels.io/manekani/ent/subject"
+	"github.com/sixels/manekani/ent/card"
+	"github.com/sixels/manekani/ent/deckprogress"
+	"github.com/sixels/manekani/ent/subject"
 )
 
 // Card is the model entity for the Card schema.

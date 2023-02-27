@@ -6,8 +6,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
-	"sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/ent/schema/common"
+	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/ent/schema/common"
 )
 
 // Subject holds the schema definition for the Subject entity.

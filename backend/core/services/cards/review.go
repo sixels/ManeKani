@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	domain "sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/core/domain/cards/filters"
-	"sixels.io/manekani/core/ports"
-	"sixels.io/manekani/core/ports/transactions"
-	"sixels.io/manekani/server/api/cards/util"
+	domain "github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/domain/cards/filters"
+	"github.com/sixels/manekani/core/ports"
+	"github.com/sixels/manekani/core/ports/transactions"
+	"github.com/sixels/manekani/server/api/cards/util"
 )
 
 func (svc *CardsService) CreateReview(ctx context.Context, userID string, req domain.CreateReviewAPIRequest) (*domain.Review, error) {

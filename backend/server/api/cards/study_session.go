@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/core/domain/cards/filters"
-	"sixels.io/manekani/server/api/cards/util"
+	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/domain/cards/filters"
+	"github.com/sixels/manekani/server/api/cards/util"
 )
 
 func (api *CardsApi) StudySession() gin.HandlerFunc {

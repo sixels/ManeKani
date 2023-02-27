@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/predicate"
-	"sixels.io/manekani/ent/review"
+	"github.com/sixels/manekani/ent/card"
+	"github.com/sixels/manekani/ent/predicate"
+	"github.com/sixels/manekani/ent/review"
 )
 
 // ReviewUpdate is the builder for updating Review entities.

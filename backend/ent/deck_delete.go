@@ -9,8 +9,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/predicate"
+	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/predicate"
 )
 
 // DeckDelete is the builder for deleting a Deck entity.

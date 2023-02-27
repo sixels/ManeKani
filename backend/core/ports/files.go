@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	domain "sixels.io/manekani/core/domain/files"
+	domain "github.com/sixels/manekani/core/domain/files"
 )
 
 type FilesRepository interface {

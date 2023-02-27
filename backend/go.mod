@@ -1,4 +1,4 @@
-module sixels.io/manekani
+module github.com/sixels/manekani
 
 go 1.19
 

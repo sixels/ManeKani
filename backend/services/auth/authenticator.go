@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/sixels/manekani/core/domain/user"
+	"github.com/sixels/manekani/core/ports"
 	"github.com/supertokens/supertokens-golang/recipe/dashboard"
 	"github.com/supertokens/supertokens-golang/recipe/dashboard/dashboardmodels"
 	"github.com/supertokens/supertokens-golang/recipe/emailpassword"
 	"github.com/supertokens/supertokens-golang/recipe/emailpassword/epmodels"
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"github.com/supertokens/supertokens-golang/supertokens"
-	"sixels.io/manekani/core/domain/user"
-	"sixels.io/manekani/core/ports"
 )
 
 func StartAuthenticator(users ports.UserRepository) error {

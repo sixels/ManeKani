@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-	"sixels.io/manekani/ent/schema"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/ent/schema"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // User is the model entity for the User schema.

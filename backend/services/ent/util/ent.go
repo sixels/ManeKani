@@ -1,8 +1,8 @@
 package util
 
 import (
-	"sixels.io/manekani/core/domain/errors"
-	"sixels.io/manekani/ent"
+	"github.com/sixels/manekani/core/domain/errors"
+	"github.com/sixels/manekani/ent"
 
 	"github.com/jackc/pgtype"
 )

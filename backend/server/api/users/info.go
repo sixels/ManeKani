@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"sixels.io/manekani/core/domain/user"
+	"github.com/sixels/manekani/core/domain/user"
 )
 
 func (api *UserApi) GetBasicUserInfo() gin.HandlerFunc {

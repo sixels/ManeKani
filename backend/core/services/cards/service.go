@@ -1,6 +1,6 @@
 package cards
 
-import "sixels.io/manekani/core/ports"
+import "github.com/sixels/manekani/core/ports"
 
 type CardsService struct {
 	repo      ports.CardsRepository

@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/apitoken"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/ent/apitoken"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // ApiToken is the model entity for the ApiToken schema.

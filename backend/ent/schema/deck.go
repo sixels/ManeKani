@@ -5,7 +5,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/schema/common"
+	"github.com/sixels/manekani/ent/schema/common"
 )
 
 // Deck holds the schema definition for the Deck entity.

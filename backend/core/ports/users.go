@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"sixels.io/manekani/core/domain/user"
+	"github.com/sixels/manekani/core/domain/user"
 )
 
 // TODO: update user repository methods and add users service

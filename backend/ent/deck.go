@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // Deck is the model entity for the Deck schema.

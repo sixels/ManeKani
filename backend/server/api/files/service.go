@@ -2,7 +2,7 @@ package files
 
 import (
 	"github.com/gin-gonic/gin"
-	"sixels.io/manekani/services/files"
+	"github.com/sixels/manekani/services/files"
 )
 
 type FilesApi struct {

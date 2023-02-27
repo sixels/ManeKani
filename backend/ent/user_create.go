@@ -10,12 +10,12 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/apitoken"
-	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/deckprogress"
-	"sixels.io/manekani/ent/schema"
-	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/ent/apitoken"
+	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/deckprogress"
+	"github.com/sixels/manekani/ent/schema"
+	"github.com/sixels/manekani/ent/subject"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // UserCreate is the builder for creating a User entity.

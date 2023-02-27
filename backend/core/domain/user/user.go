@@ -2,7 +2,7 @@ package user
 
 import (
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/schema"
+	"github.com/sixels/manekani/ent/schema"
 )
 
 type User struct {

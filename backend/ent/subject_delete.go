@@ -9,8 +9,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"sixels.io/manekani/ent/predicate"
-	"sixels.io/manekani/ent/subject"
+	"github.com/sixels/manekani/ent/predicate"
+	"github.com/sixels/manekani/ent/subject"
 )
 
 // SubjectDelete is the builder for deleting a Subject entity.

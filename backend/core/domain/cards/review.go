@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"sixels.io/manekani/core/domain/cards/filters"
+	"github.com/sixels/manekani/core/domain/cards/filters"
 )
 
 type (

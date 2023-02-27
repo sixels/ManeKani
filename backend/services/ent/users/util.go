@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 
-	domain "sixels.io/manekani/core/domain/user"
-	"sixels.io/manekani/ent"
-	"sixels.io/manekani/ent/user"
-	"sixels.io/manekani/services/ent/util"
+	domain "github.com/sixels/manekani/core/domain/user"
+	"github.com/sixels/manekani/ent"
+	"github.com/sixels/manekani/ent/user"
+	"github.com/sixels/manekani/services/ent/util"
 )
 
 func (repo *UsersRepository) IsUsernameAvailable(ctx context.Context, username string) (bool, error) {

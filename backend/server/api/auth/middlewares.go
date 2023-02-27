@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sixels/manekani/server/api/cards/util"
+	mkjwt "github.com/sixels/manekani/services/jwt"
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
-	"sixels.io/manekani/server/api/cards/util"
-	mkjwt "sixels.io/manekani/services/jwt"
 )
 
 func SupertokensMiddleware(c *gin.Context) {

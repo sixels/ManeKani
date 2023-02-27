@@ -6,11 +6,11 @@ import (
 	"log"
 
 	"github.com/golang-jwt/jwt/v4"
-	"sixels.io/manekani/ent"
-	"sixels.io/manekani/ent/user"
-	"sixels.io/manekani/services/ent/users/crypto"
-	"sixels.io/manekani/services/ent/util"
-	mkjwt "sixels.io/manekani/services/jwt"
+	"github.com/sixels/manekani/ent"
+	"github.com/sixels/manekani/ent/user"
+	"github.com/sixels/manekani/services/ent/users/crypto"
+	"github.com/sixels/manekani/services/ent/util"
+	mkjwt "github.com/sixels/manekani/services/jwt"
 )
 
 func (repo *UsersRepository) CreateUserAPITokenTX(ctx context.Context, userID string, options mkjwt.APITokenOptions) (string, error) {

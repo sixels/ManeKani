@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"time"
 
-	user_domain "sixels.io/manekani/core/domain/user"
-	"sixels.io/manekani/ent"
-	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/deckprogress"
-	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
+	user_domain "github.com/sixels/manekani/core/domain/user"
+	"github.com/sixels/manekani/ent"
+	"github.com/sixels/manekani/ent/card"
+	"github.com/sixels/manekani/ent/deckprogress"
+	"github.com/sixels/manekani/ent/subject"
+	"github.com/sixels/manekani/ent/user"
 )
 
 func (repo *UsersRepository) ResolveActions(ctx context.Context, userID string) error {

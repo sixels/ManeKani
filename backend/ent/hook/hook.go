@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"sixels.io/manekani/ent"
+	"github.com/sixels/manekani/ent"
 )
 
 // The ApiTokenFunc type is an adapter to allow the use of ordinary

@@ -8,9 +8,9 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/deckprogress"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/deckprogress"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // DeckProgress is the model entity for the DeckProgress schema.

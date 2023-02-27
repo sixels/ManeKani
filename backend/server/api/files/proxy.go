@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"sixels.io/manekani/services/ent/util"
+	"github.com/sixels/manekani/services/ent/util"
 )
 
 // TODO: swagger comment

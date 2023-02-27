@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	domain "sixels.io/manekani/core/domain/cards"
+	domain "github.com/sixels/manekani/core/domain/cards"
 )
 
 func (svc *CardsService) CreateSubject(ctx context.Context, ownerID string, req domain.CreateSubjectRequest) (*domain.Subject, error) {

@@ -9,8 +9,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"sixels.io/manekani/ent/deckprogress"
-	"sixels.io/manekani/ent/predicate"
+	"github.com/sixels/manekani/ent/deckprogress"
+	"github.com/sixels/manekani/ent/predicate"
 )
 
 // DeckProgressDelete is the builder for deleting a DeckProgress entity.

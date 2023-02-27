@@ -7,7 +7,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sixels.io/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/domain/cards"
 )
 
 // Review holds the schema definition for the Review entity.

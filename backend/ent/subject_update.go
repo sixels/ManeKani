@@ -13,12 +13,12 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/predicate"
-	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/ent/card"
+	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/predicate"
+	"github.com/sixels/manekani/ent/subject"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // SubjectUpdate is the builder for updating Subject entities.

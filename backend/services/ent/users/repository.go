@@ -7,12 +7,12 @@ import (
 	"os"
 	"time"
 
-	"sixels.io/manekani/core/ports/transactions"
-	"sixels.io/manekani/ent/schema"
-	"sixels.io/manekani/ent/user"
-	ent_repo "sixels.io/manekani/services/ent"
-	"sixels.io/manekani/services/jwt"
-	mkjwt "sixels.io/manekani/services/jwt"
+	"github.com/sixels/manekani/core/ports/transactions"
+	"github.com/sixels/manekani/ent/schema"
+	"github.com/sixels/manekani/ent/user"
+	ent_repo "github.com/sixels/manekani/services/ent"
+	"github.com/sixels/manekani/services/jwt"
+	mkjwt "github.com/sixels/manekani/services/jwt"
 )
 
 type UsersRepository struct {

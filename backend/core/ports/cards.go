@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	domain "sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/core/ports/transactions"
+	domain "github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/ports/transactions"
 )
 
 type (

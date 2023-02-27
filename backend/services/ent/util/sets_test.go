@@ -3,7 +3,7 @@ package util_test
 import (
 	"testing"
 
-	"sixels.io/manekani/services/ent/util"
+	"github.com/sixels/manekani/services/ent/util"
 
 	"github.com/stretchr/testify/assert"
 )

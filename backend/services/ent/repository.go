@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"sixels.io/manekani/core/ports/transactions"
-	"sixels.io/manekani/ent"
-	"sixels.io/manekani/ent/migrate"
+	"github.com/sixels/manekani/core/ports/transactions"
+	"github.com/sixels/manekani/ent"
+	"github.com/sixels/manekani/ent/migrate"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"

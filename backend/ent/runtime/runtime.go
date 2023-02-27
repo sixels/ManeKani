@@ -2,7 +2,7 @@
 
 package runtime
 
-// The schema-stitching logic is generated in sixels.io/manekani/ent/runtime.go
+// The schema-stitching logic is generated in github.com/sixels/manekani/ent/runtime.go
 
 const (
 	Version = "v0.11.4"                                         // Version of ent codegen.

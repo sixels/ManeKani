@@ -2,8 +2,8 @@ package users
 
 import (
 	"github.com/gin-gonic/gin"
-	"sixels.io/manekani/services/ent/users"
-	mkjwt "sixels.io/manekani/services/jwt"
+	"github.com/sixels/manekani/services/ent/users"
+	mkjwt "github.com/sixels/manekani/services/jwt"
 )
 
 type UserApi struct {

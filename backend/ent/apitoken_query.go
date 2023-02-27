@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sixels.io/manekani/ent/apitoken"
-	"sixels.io/manekani/ent/predicate"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/ent/apitoken"
+	"github.com/sixels/manekani/ent/predicate"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // ApiTokenQuery is the builder for querying ApiToken entities.

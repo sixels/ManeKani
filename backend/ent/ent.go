@@ -10,13 +10,13 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"sixels.io/manekani/ent/apitoken"
-	"sixels.io/manekani/ent/card"
-	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/deckprogress"
-	"sixels.io/manekani/ent/review"
-	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/ent/apitoken"
+	"github.com/sixels/manekani/ent/card"
+	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/deckprogress"
+	"github.com/sixels/manekani/ent/review"
+	"github.com/sixels/manekani/ent/subject"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // ent aliases to avoid import conflicts in user's code.

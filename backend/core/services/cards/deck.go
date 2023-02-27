@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	domain "sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/core/domain/cards/filters"
-	"sixels.io/manekani/core/ports/transactions"
-	"sixels.io/manekani/server/api/cards/util"
+	domain "github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/domain/cards/filters"
+	"github.com/sixels/manekani/core/ports/transactions"
+	"github.com/sixels/manekani/server/api/cards/util"
 )
 
 // TODO: func (svc *CardsService) CreateDeck(ctx context.Context, userID string, req domain.CreateDeckRequest) (*domain.Deck, error)

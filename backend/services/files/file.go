@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"sixels.io/manekani/core/domain/errors"
-	"sixels.io/manekani/core/domain/files"
+	"github.com/sixels/manekani/core/domain/errors"
+	"github.com/sixels/manekani/core/domain/files"
 
 	"github.com/minio/minio-go/v7"
 )

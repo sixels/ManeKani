@@ -3,8 +3,8 @@ package users
 import (
 	"context"
 
-	domain "sixels.io/manekani/core/domain/user"
-	"sixels.io/manekani/services/ent/util"
+	domain "github.com/sixels/manekani/core/domain/user"
+	"github.com/sixels/manekani/services/ent/util"
 )
 
 func (repo *UsersRepository) CreateUser(ctx context.Context, req domain.CreateUserRequest) (*domain.User, error) {

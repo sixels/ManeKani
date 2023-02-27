@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/server/api/cards/util"
+	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/server/api/cards/util"
 )
 
 func (api *CardsApiV1) AllUserCards() gin.HandlerFunc {

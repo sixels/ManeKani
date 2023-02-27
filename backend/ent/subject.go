@@ -10,10 +10,10 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sixels.io/manekani/core/domain/cards"
-	"sixels.io/manekani/ent/deck"
-	"sixels.io/manekani/ent/subject"
-	"sixels.io/manekani/ent/user"
+	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/subject"
+	"github.com/sixels/manekani/ent/user"
 )
 
 // Subject is the model entity for the Subject schema.

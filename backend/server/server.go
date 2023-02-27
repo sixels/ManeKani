@@ -13,20 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/supertokens/supertokens-golang/supertokens"
 
-	"sixels.io/manekani/core/services/cards"
-	_ "sixels.io/manekani/docs/manekani"
+	"github.com/sixels/manekani/core/services/cards"
+	_ "github.com/sixels/manekani/docs/manekani"
 
-	auth_api "sixels.io/manekani/server/api/auth"
-	cards_api "sixels.io/manekani/server/api/cards"
-	files_api "sixels.io/manekani/server/api/files"
-	users_api "sixels.io/manekani/server/api/users"
+	auth_api "github.com/sixels/manekani/server/api/auth"
+	cards_api "github.com/sixels/manekani/server/api/cards"
+	files_api "github.com/sixels/manekani/server/api/files"
+	users_api "github.com/sixels/manekani/server/api/users"
 
-	"sixels.io/manekani/services/auth"
-	"sixels.io/manekani/services/ent"
-	cards_repo "sixels.io/manekani/services/ent/cards"
-	"sixels.io/manekani/services/ent/users"
-	"sixels.io/manekani/services/files"
-	"sixels.io/manekani/services/jwt"
+	"github.com/sixels/manekani/services/auth"
+	"github.com/sixels/manekani/services/ent"
+	cards_repo "github.com/sixels/manekani/services/ent/cards"
+	"github.com/sixels/manekani/services/ent/users"
+	"github.com/sixels/manekani/services/files"
+	"github.com/sixels/manekani/services/jwt"
 )
 
 type Service interface {

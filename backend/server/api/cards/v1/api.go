@@ -1,9 +1,9 @@
 package cards
 
 import (
-	"sixels.io/manekani/core/services/cards"
-	"sixels.io/manekani/services/ent/users"
-	"sixels.io/manekani/services/files"
+	"github.com/sixels/manekani/core/services/cards"
+	"github.com/sixels/manekani/services/ent/users"
+	"github.com/sixels/manekani/services/files"
 )
 
 type CardsApiV1 struct {
