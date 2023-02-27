@@ -1,4 +1,6 @@
 import { API_URL } from "@/lib/api/fetchApi";
+import { useSRS } from "@/lib/hooks/srs";
+import { SRSUserData } from "@/lib/models/srs";
 import { cardColors } from "@/lib/theme";
 import {
   Card,
@@ -6,35 +8,41 @@ import {
   CardHeader,
   Center,
   HStack,
+  Link,
+  LinkBox,
+  LinkOverlay,
   Progress,
   Stack,
   Text,
+  VisuallyHidden,
   VStack,
 } from "@chakra-ui/react";
-import Image from "next/image";
+import SVG from "../SVG";
 
 export type LevelProgressProps = {
-  userLevel: number;
   completeCardProgress: number;
-  cards: {
-    name: string;
-    value: string | { image: string };
-    meaning: string;
-    kind: "radical" | "vocabulary" | "kanji";
-    progress: number;
-  }[];
 };
-export function LevelProgress({
-  userLevel,
-  completeCardProgress,
-  cards,
-}: LevelProgressProps) {
-  const radicals = cards.filter((c) => c.kind == "radical");
-  const kanjis = cards.filter((c) => c.kind == "kanji");
+export function LevelProgress({ completeCardProgress }: LevelProgressProps) {
+  const { data } = useSRS();
+
+  if (!data) {
+    return <></>;
+  }
+
+  // TODO: get the correct level
+  const userLevel = 1;
+
+  const radicals = data.filter(
+    (c) => c.subject.kind == "radical" && c.subject.level == userLevel
+  );
+  const kanjis = data.filter(
+    (c) => c.subject.kind == "kanji" && c.subject.level == userLevel
+  );
+
   // const vocabs = cards.filter(c => c.kind == "vocabulary")
 
   // we don't consider vocabularies to pass levels
-  const totalCards = radicals.length + kanjis.length;
+  const requiredCards = Math.ceil(kanjis.length * 0.9);
 
   const kanjisDone = kanjis.reduce((tot, { progress }) => {
     return tot + (progress >= completeCardProgress ? 1 : 0);
@@ -45,7 +53,7 @@ export function LevelProgress({
   }, 0);
 
   totalProgress = clamp(
-    totalCards == 0 ? 0 : totalProgress / kanjis.length,
+    requiredCards == 0 ? 0 : totalProgress / requiredCards,
     0.0,
     1.0
   );
@@ -60,11 +68,12 @@ export function LevelProgress({
       : undefined;
 
   return (
-    <Card shadow="sm" bg="white" rounded="2xl">
+    <Card shadow="none" rounded="2xl">
       <CardHeader
         position="relative"
         zIndex={1}
         roundedTop="2xl"
+        roundedBottom="sm"
         overflow="hidden"
         _before={{
           content: `""`,
@@ -90,13 +99,15 @@ export function LevelProgress({
           left: 0,
           mask: progressMask,
         }}
+        // pt={2}
+        // px={2}
       >
-        <HStack justifyContent="space-between">
+        <HStack justifyContent="space-between" alignItems={"center"}>
           <Text textTransform="capitalize" fontSize="lg">
             Level {userLevel} Progress
           </Text>
           <Text as="span">
-            {kanjisDone} / {kanjis.length} kanji
+            {kanjisDone} / {requiredCards} kanji
           </Text>
         </HStack>
       </CardHeader>
@@ -124,31 +135,46 @@ export function LevelProgress({
   );
 }
 
-function CardProgress({ card }: { card: LevelProgressProps["cards"][number] }) {
+function CardProgress({ card }: { card: SRSUserData["cards"][number] }) {
   return (
     <Stack spacing={1} align="center">
-      <Center
-        w={10}
-        h={10}
-        bg={cardColors[card.kind]}
-        color="white"
-        rounded={"lg"}
-      >
-        {typeof card.value == "string" ? (
-          card.value
-        ) : (
-          <Image
-            src={`${API_URL}/files/image/${card.value}`}
-            alt={`${card.meaning} progress`}
-          />
-        )}
-      </Center>
+      <LinkBox>
+        <Center
+          w={10}
+          h={10}
+          bg={cardColors[card.subject.kind]}
+          color="white"
+          rounded={"lg"}
+        >
+          <>
+            <LinkOverlay href={`/${card.subject.kind}/${card.subject.slug}`}>
+              <VisuallyHidden>
+                {card.subject.kind} {card.subject.name.toLowerCase()}
+              </VisuallyHidden>
+            </LinkOverlay>
+            {card.subject.value ? (
+              card.subject.value
+            ) : (
+              <SVG
+                url={`${API_URL}/files/${card.subject.value_image?.url}`}
+                style={{
+                  width: "50%",
+                  stroke: "currentColor",
+                  fill: "none",
+                  strokeWidth: "60px",
+                }}
+              />
+            )}
+          </>
+        </Center>
+      </LinkBox>
       <Progress
-        colorScheme={cardColors[card.kind].split(".")[0]}
+        colorScheme={cardColors[card.subject.kind].split(".")[0]}
         w="85%"
         size={"xs"}
         value={(card.progress / 5) * 100}
         rounded="sm"
+        background={"gray.300"}
         hasStripe
       />
     </Stack>

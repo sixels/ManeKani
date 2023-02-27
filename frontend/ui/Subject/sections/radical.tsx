@@ -1,13 +1,17 @@
 import { PartialKanjiResponse, Radical, Vocabulary } from "@/lib/models/cards";
+import { PartialSubject, StudyData, Subject } from "@/lib/models/subject";
 import { Flex, LinkBox, LinkOverlay, Text, VStack } from "@chakra-ui/react";
-import { SectionProps } from "..";
-import { ListProps } from "../components/List";
+import { SectionProps } from "../Section";
+import { studyData } from "./common";
 
 export const radicalSections = (
-  radical: Radical,
-  kanjis?: PartialKanjiResponse[]
+  radical: Subject,
+  kanjis?: PartialSubject[]
 ): SectionProps[] => {
   let kanjisSection: SectionProps = {} as SectionProps;
+
+  const meaningMnemonic = studyData(radical, "meaning");
+
   if (kanjis && kanjis.length) {
     kanjisSection = {
       title: "Found in kanji",
@@ -15,9 +19,9 @@ export const radicalSections = (
         {
           component: (
             <VStack mt={2} gap={1}>
-              {kanjis.map(({ name, reading, symbol }, i) => (
+              {kanjis.map((kanji, i) => (
                 <LinkBox key={i} w="full">
-                  <LinkOverlay href={`/kanji/${symbol}`}>
+                  <LinkOverlay href={`/kanji/${kanji.value}`}>
                     <Flex
                       alignItems="center"
                       px={3}
@@ -28,15 +32,21 @@ export const radicalSections = (
                       shadow={"md"}
                     >
                       <Text as="span" lang="ja" flex={1}>
-                        {symbol}
+                        {kanji.value}
                       </Text>
                       <VStack lineHeight={"1em"} align="end">
                         <Text as="span" lang="ja">
-                          {"    "}
-                          {reading}
-                          {"    "}
+                          <>
+                            {"    "}
+                            {
+                              studyData(kanji, "reading")?.items.find(
+                                (item) => item.is_primary
+                              )?.value
+                            }
+                            {"    "}
+                          </>
                         </Text>
-                        <Text as="span">{name}</Text>
+                        <Text as="span">{kanji.name}</Text>
                       </VStack>
                     </Flex>
                   </LinkOverlay>
@@ -66,7 +76,7 @@ export const radicalSections = (
         {
           mdDoc: {
             title: "Mnemonic",
-            content: radical.meaning_mnemonic,
+            content: meaningMnemonic?.mnemonic || "",
           },
         },
       ],

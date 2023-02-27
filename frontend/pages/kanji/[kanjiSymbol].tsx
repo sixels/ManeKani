@@ -1,20 +1,15 @@
 import { GetServerSidePropsContext } from "next";
 
 import { fetchApi } from "@/lib/api/fetchApi";
-import {
-  Kanji,
-  PartialRadicalResponse,
-  PartialVocabularyResponse,
-} from "@/lib/models/cards";
-import { kanjiSections } from "@/ui/CardPage/Sections/kanjiSections";
-import { PageWithLayout } from "@/ui/layouts";
-import DefaultLayout from "@/ui/layouts/Default";
-import CardPage from "@/ui/CardPage";
+
+import { kanjiSections } from "@/ui/Subject/sections/kanji";
+import CardPage from "@/ui/Subject";
+import { PartialSubject, Subject } from "@/lib/models/subject";
 
 interface KanjiProps {
-  kanji: Kanji;
-  kanjiRadicals?: PartialRadicalResponse[];
-  kanjiVocabularies?: PartialVocabularyResponse[];
+  kanji: Subject;
+  kanjiRadicals?: PartialSubject[];
+  kanjiVocabularies?: PartialSubject[];
 }
 
 export async function getServerSideProps({
@@ -25,15 +20,24 @@ export async function getServerSideProps({
   }
 
   const { kanjiSymbol } = params;
-  const kanji = await fetchApi<Kanji>(`/kanji/${kanjiSymbol}`, "v1");
-  if (kanji == null) {
+  const kanjis = await fetchApi<PartialSubject[]>(
+    `/subject?kinds=kanji&slugs=${kanjiSymbol}`,
+    "v1"
+  );
+
+  if (kanjis == null || kanjis.length == 0) {
     return { notFound: true };
   }
+  console.log(`found ${kanjis.length} kanji with slug ${kanjiSymbol}`);
 
-  const [kanjiRadicals, kanjiVocabularies] = await Promise.all([
-    fetchApi<PartialRadicalResponse[]>(`/kanji/${kanjiSymbol}/radicals`, "v1"),
-    fetchApi<PartialVocabularyResponse[]>(
-      `/kanji/${kanjiSymbol}/vocabularies`,
+  const [kanji, kanjiRadicals, kanjiVocabularies] = await Promise.all([
+    fetchApi<Subject[]>(`/subject/${kanjis[0].id}`, "v1"),
+    fetchApi<PartialSubject[]>(
+      `/subject?ids=${kanjis[0].dependencies.join(",")}`,
+      "v1"
+    ),
+    fetchApi<PartialSubject[]>(
+      `/subject?ids=${kanjis[0].dependents.join(",")}`,
       "v1"
     ),
   ]);
@@ -41,12 +45,11 @@ export async function getServerSideProps({
   return { props: { kanji, kanjiRadicals, kanjiVocabularies } };
 }
 
-const PageLayout = DefaultLayout;
-const Page: PageWithLayout<KanjiProps> = ({
+export default function Page({
   kanji,
   kanjiRadicals,
   kanjiVocabularies,
-}) => {
+}: KanjiProps) {
   const sections = kanjiSections(kanji, kanjiVocabularies, kanjiRadicals);
 
   return (
@@ -54,17 +57,13 @@ const Page: PageWithLayout<KanjiProps> = ({
       card={{
         kind: "kanji",
         level: kanji.level,
-        meaning: kanji.name,
-        value: kanji.symbol,
-        reading: kanji.reading,
+        name: kanji.name,
+        value: kanji.value,
+        reading: kanji.study_data
+          .find((sd) => sd.kind == "reading")
+          ?.items.find((si) => si.is_primary)?.value,
       }}
       sections={sections}
     />
   );
-};
-
-Page.getLayout = (page) => {
-  return <PageLayout>{page}</PageLayout>;
-};
-
-export default Page;
+}

@@ -1,15 +1,14 @@
 import { GetServerSidePropsContext } from "next";
 
 import { PartialKanjiResponse, Radical, Vocabulary } from "@/lib/models/cards";
-import { radicalSections } from "@/ui/CardPage/Sections/radicalSections";
+import { radicalSections } from "@/ui/Subject/sections/radical";
 import { API_URL, fetchApi } from "@/lib/api/fetchApi";
-import DefaultLayout from "@/ui/layouts/Default";
-import { PageWithLayout } from "@/ui/layouts";
-import CardPage from "@/ui/CardPage";
+import CardPage from "@/ui/Subject";
+import { PartialSubject, RemoteContent, Subject } from "@/lib/models/subject";
 
 interface RadicalProps {
-  radical: Radical;
-  radicalKanjis?: PartialKanjiResponse[];
+  radical: Subject;
+  radicalKanjis?: PartialSubject[];
 }
 
 export async function getServerSideProps({
@@ -20,22 +19,28 @@ export async function getServerSideProps({
   }
 
   const { radicalName } = params;
-  const radical = await fetchApi<Radical>(`/radical/${radicalName}`, "v1");
-
-  if (radical == null) {
-    return { notFound: true };
-  }
-
-  const radicalKanjis = await fetchApi<PartialKanjiResponse[]>(
-    `/radical/${radicalName}/kanji`,
+  const radicals = await fetchApi<PartialSubject[]>(
+    `/subject?kinds=radical&slugs=${radicalName}`,
     "v1"
   );
+
+  if (radicals == null || radicals.length == 0) {
+    return { notFound: true };
+  }
+  console.log(`found ${radicals.length} radicals with slug ${radicalName}`);
+
+  const [radical, radicalKanjis] = await Promise.all([
+    fetchApi<Subject[]>(`/subject/${radicals[0].id}`, "v1"),
+    fetchApi<PartialSubject[]>(
+      `/subject?ids=${radicals[0].dependents.join(",")}`,
+      "v1"
+    ),
+  ]);
 
   return { props: { radical, radicalKanjis } };
 }
 
-const PageLayout = DefaultLayout;
-const Page: PageWithLayout<RadicalProps> = ({ radical, radicalKanjis }) => {
+export default function Page({ radical, radicalKanjis }: RadicalProps) {
   const sections = radicalSections(radical, radicalKanjis);
 
   return (
@@ -43,18 +48,11 @@ const Page: PageWithLayout<RadicalProps> = ({ radical, radicalKanjis }) => {
       card={{
         kind: "radical",
         level: radical.level,
-        meaning: radical.name,
-        value: radical.symbol.includes("/")
-          ? { image: `${API_URL}/files/${radical.symbol}` }
-          : radical.symbol,
+        name: radical.name,
+        value: radical.value,
+        value_image: radical.value_image,
       }}
       sections={sections}
     />
   );
-};
-
-Page.getLayout = (page) => {
-  return <PageLayout>{page}</PageLayout>;
-};
-
-export default Page;
+}

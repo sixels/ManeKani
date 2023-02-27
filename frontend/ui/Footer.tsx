@@ -5,7 +5,7 @@ import Logo from "@/assets/logo-aside-dark.svg";
 
 export default function Footer() {
   return (
-    <Box bg={"#202328"} color={"gray.200"} mt="28">
+    <Box bgColor={"#121D2B"} color={"gray.300"} mt="28" w="full" h="270px">
       <Container
         as={Stack}
         maxW={"6xl"}
@@ -32,7 +32,7 @@ export default function Footer() {
         </Stack>
       </Container>
 
-      <Box borderTopWidth={1} borderStyle={"solid"} borderColor={"#404040"}>
+      <Box borderTopWidth={1} borderStyle={"solid"} borderColor={"gray.700"}>
         <Container
           as={Stack}
           maxW={"5xl"}

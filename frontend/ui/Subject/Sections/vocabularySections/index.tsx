@@ -18,7 +18,7 @@ import {
 } from "@chakra-ui/react";
 import * as wanakana from "wanakana";
 
-import { SectionProps } from "..";
+import { SectionProps } from "../Section";
 import { ListProps } from "../components/List";
 import { PlayIcon } from "@radix-ui/react-icons";
 

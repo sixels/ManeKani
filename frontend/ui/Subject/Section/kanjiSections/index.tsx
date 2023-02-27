@@ -4,6 +4,7 @@ import {
   PartialRadicalResponse,
   PartialVocabularyResponse,
 } from "@/lib/models/cards";
+import { PartialSubject, Subject } from "@/lib/models/subject";
 import {
   Box,
   Flex,
@@ -14,16 +15,22 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { SectionProps } from "..";
-import { ListProps } from "../components/List";
+import { SectionProps } from "../../Section";
+import { ListProps } from "../../Section/components/List";
 
 export const kanjiSections = (
-  kanji: Kanji,
-  vocabularies?: PartialVocabularyResponse[],
-  radicals?: PartialRadicalResponse[]
+  kanji: Subject,
+  vocabularies?: PartialSubject[],
+  radicals?: PartialSubject[]
 ): SectionProps[] => {
+  const primaryReading = kanji.study_data
+    .find((sd) => sd.kind == "reading")
+    ?.items.find((si) => si.is_primary)?.value;
+
   function readingIncludes(readings: string[]): boolean {
-    return readings.includes(kanji.reading);
+    return primaryReading != undefined
+      ? readings.includes(primaryReading)
+      : false;
   }
 
   function styleReading(readings: string[]): Partial<ListProps> {

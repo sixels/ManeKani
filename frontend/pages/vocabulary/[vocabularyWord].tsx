@@ -1,15 +1,14 @@
 import { GetServerSidePropsContext } from "next";
 
 import { PartialKanjiResponse, Vocabulary } from "@/lib/models/cards";
-import { vocabularySections } from "@/ui/CardPage/Sections/vocabularySections";
+import { vocabularySections } from "@/ui/Subject/sections/vocabulary";
 import { fetchApi } from "@/lib/api/fetchApi";
-import DefaultLayout from "@/ui/layouts/Default";
-import { PageWithLayout } from "@/ui/layouts";
-import CardPage from "@/ui/CardPage";
+import CardPage from "@/ui/Subject";
+import { PartialSubject, Subject } from "@/lib/models/subject";
 
 interface VocabularyProps {
-  vocab: Vocabulary;
-  vocabKanjis?: PartialKanjiResponse[];
+  vocab: Subject;
+  vocabKanjis?: PartialSubject[];
 }
 
 export async function getServerSideProps({
@@ -20,25 +19,30 @@ export async function getServerSideProps({
   }
 
   const { vocabularyWord } = params;
-  const vocab = await fetchApi<Vocabulary>(
-    `/vocabulary/${vocabularyWord}`,
+  const vocabs = await fetchApi<PartialSubject[]>(
+    `/subject?kinds=vocabulary&slugs=${vocabularyWord}`,
     "v1"
   );
 
-  if (vocab == null) {
+  if (vocabs == null || vocabs.length == 0) {
     return { notFound: true };
   }
-
-  const vocabKanjis = await fetchApi<PartialKanjiResponse[]>(
-    `/vocabulary/${vocabularyWord}/kanji`,
-    "v1"
+  console.log(
+    `found ${vocabs.length} vocabularies with slug ${vocabularyWord}`
   );
+
+  const [vocab, vocabKanjis] = await Promise.all([
+    fetchApi<Subject[]>(`/subject/${vocabs[0].id}`, "v1"),
+    fetchApi<PartialSubject[]>(
+      `/subject?ids=${vocabs[0].dependencies.join(",")}`,
+      "v1"
+    ),
+  ]);
 
   return { props: { vocab, vocabKanjis } };
 }
 
-const PageLayout = DefaultLayout;
-const Page: PageWithLayout<VocabularyProps> = ({ vocab, vocabKanjis }) => {
+export default function Page({ vocab, vocabKanjis }: VocabularyProps) {
   const sections = vocabularySections(vocab, vocabKanjis);
 
   return (
@@ -46,17 +50,13 @@ const Page: PageWithLayout<VocabularyProps> = ({ vocab, vocabKanjis }) => {
       card={{
         kind: "vocabulary",
         level: vocab.level,
-        meaning: vocab.name,
-        value: vocab.word,
-        reading: vocab.reading,
+        name: vocab.name,
+        value: vocab.value,
+        reading: vocab.study_data
+          .find((sd) => sd.kind == "reading")
+          ?.items.find((si) => si.is_primary)?.value,
       }}
       sections={sections}
     />
   );
-};
-
-Page.getLayout = (page) => {
-  return <PageLayout>{page}</PageLayout>;
-};
-
-export default Page;
+}

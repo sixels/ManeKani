@@ -10,12 +10,12 @@ import {
   VStack,
 } from "@chakra-ui/react";
 
-import Illustration from "@/assets/open-doodles/svg/SitReadingDoodle.svg";
+import Illustration from "@/assets/illustration/boy-studying.png";
 
 export type ExtraStudyProps = {};
 export default function ExtraStudy(_: ExtraStudyProps) {
   return (
-    <Card shadow="sm" bg="white" rounded="2xl">
+    <Card shadow="xl" bg="#000" color={"gray.200"} rounded="2xl">
       <CardHeader>
         <Text textTransform="capitalize" fontSize="lg">
           Extra Study
@@ -24,21 +24,18 @@ export default function ExtraStudy(_: ExtraStudyProps) {
       <CardBody pt={0}>
         <Flex
           flexDir={{ base: "column", lg: "row-reverse" }}
-          gap={3}
+          rowGap={6}
+          columnGap={4}
           alignItems={"center"}
         >
           <Image
             src={Illustration.src}
             flex={{ lg: 1 }}
-            w={{ lg: "0" }}
             maxW={"xs"}
-            p={8}
+            // p={8}
             filter="grayscale(1)"
             rounded="xl"
-            // bgColor="gray.100"
-            // bgGradient={"radial(whiteAlpha.800, whiteAlpha.600)"}
-            // shadow="md"
-            gridArea={"image"}
+            bgColor="black"
           />
           <VStack align="flex-start" gridArea={"content"} flex={{ lg: 1 }}>
             <Text fontSize="md">
@@ -54,6 +51,7 @@ export default function ExtraStudy(_: ExtraStudyProps) {
                 disabled={false}
                 colorScheme={"orange"}
                 justifyContent={"flex-start"}
+                _hover={{ backgroundColor: "orange.800", color: "orange.400" }}
               >
                 3 Recent Lessons
               </Button>

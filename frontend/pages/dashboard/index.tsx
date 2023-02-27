@@ -1,30 +1,25 @@
 import {
   Container,
   SimpleGrid,
-  Stack,
   Box,
   Grid,
   Spinner,
   Text,
   VStack,
   Heading,
+  Flex,
 } from "@chakra-ui/react";
-import { subHours, setHours, addDays } from "date-fns";
 
 import AuthRoute from "@/lib/auth/wrappers/AuthRoute";
-import { Calendar } from "@/ui/Calendar";
 import ReviewForecast from "@/ui/Dashboard/ReviewForecast";
 import LinkCard from "@/ui/Dashboard/LinkCard";
-import useSWR from "swr";
 
-import LessonImage from "@/assets/images/Lesson.svg";
-import ReviewImage from "@/assets/images/Review.svg";
 import ExtraStudy from "@/ui/Dashboard/ExtraStudy";
 import { LevelProgress } from "@/ui/Dashboard/LevelProgress";
 import { API_URL } from "@/lib/api/fetchApi";
-
-const N_LESSONS = 13;
-const N_REVIEWS = 30;
+import { useSRS, WANIKANI_DECK_ID } from "@/lib/hooks/srs";
+import StudyModal from "@/ui/Dashboard/StudyModal";
+import { differenceInHours } from "date-fns";
 
 type CardProgress = {
   kind: "radical" | "kanji" | "vocabulary";
@@ -98,69 +93,68 @@ const LEVEL_PROGRESS: {
   ],
 };
 
-const USER_PROGRESS: {
-  apprendice: { radical: number; kanji: number; vocabulary: number };
-  guru: { radical: number; kanji: number; vocabulary: number };
-  master: { radical: number; kanji: number; vocabulary: number };
-  enlightened: { radical: number; kanji: number; vocabulary: number };
-  burned: { radical: number; kanji: number; vocabulary: number };
-} = {} as any;
-
-// TODO: SORT
-const REVIEW_SCHEDULE: {
-  schedule: Date;
-  reviews: {
-    kind: "kanji" | "radical" | "vocabulary";
-    name: string;
-    level: number;
-    value: string;
-    meaning: string;
-  }[];
-}[] = [
-  // now
-  { schedule: subHours(new Date(), 2), reviews: [] },
-  { schedule: new Date(), reviews: [] },
-  // today
-  { schedule: setHours(new Date(), 21), reviews: [] },
-  { schedule: setHours(new Date(), 22), reviews: [] },
-  { schedule: setHours(new Date(), 23), reviews: [] },
-  // tomorrow
-  { schedule: addDays(new Date().setHours(21), 1), reviews: [] },
-  { schedule: addDays(new Date().setHours(22), 1), reviews: [] },
-  { schedule: addDays(new Date().setHours(23), 1), reviews: [] },
-  // the day after tomorrow
-  { schedule: addDays(new Date().setHours(0), 2), reviews: [] },
-  // after 5 days
-  { schedule: addDays(new Date().setHours(10), 5), reviews: [] },
-];
-
 function Dashboard() {
-  const { data, isLoading, error } = useSWR(`${API_URL}/user/srs`);
+  const { data, isLoading, isError, mutate } = useSRS();
 
   if (isLoading) {
     return (
-      <VStack spacing={4}>
-        <Text>Loading data</Text>
-        <Spinner />
-      </VStack>
+      <Box h="50vh" minH={"400px"}>
+        <VStack spacing={4}>
+          <Text>Loading data</Text>
+          <Spinner />
+        </VStack>
+      </Box>
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
-      <VStack>
-        <Heading>Ooops..</Heading>
-        <Text>{JSON.stringify(error)}</Text>
-      </VStack>
+      <Box h="50vh" minH={"400px"}>
+        <VStack>
+          <Heading>Ooops..</Heading>
+          <Text>{JSON.stringify(isError)}</Text>
+        </VStack>
+      </Box>
     );
   }
 
-  console.log(data);
+  if (!data) {
+    return <>*TODO*</>;
+  }
+
+  if (data.length == 0) {
+    fetch(`${API_URL}/api/v1/deck/${WANIKANI_DECK_ID}/subscribe`, {
+      method: "PATCH",
+      credentials: "include",
+    })
+      .then((res) => {
+        if (res.ok) mutate();
+      })
+      .catch((e) =>
+        console.error(`could not subscribe user to wanikani deck: ${e}`)
+      );
+  }
+
+  const now = new Date();
+
+  const lessons = data.filter(
+    (c) =>
+      c.available_at &&
+      differenceInHours(new Date(c.available_at), now) <= 0 &&
+      !c.started_at
+  );
+  const reviews = data.filter(
+    (c) =>
+      c.available_at &&
+      differenceInHours(new Date(c.available_at), now) <= 0 &&
+      c.started_at
+  );
 
   return (
-    <Container maxW={"8xl"} mt={6}>
+    <Container maxW={"8xl"} py={2} mt={4}>
       <Grid
         rowGap={4}
+        py={0}
         columnGap={3}
         gridTemplateRows={{ md: "auto  1fr" }}
         gridTemplateColumns={{ base: "1fr", md: "3fr 1.2fr" }}
@@ -180,22 +174,26 @@ function Dashboard() {
       >
         <SimpleGrid columns={2} gridArea={"cards"} gap={3}>
           {/* lessons */}
-          <LinkCard
-            data={`${N_LESSONS} lessons`}
-            image={LessonImage}
+          <StudyModal
+            body={<></>}
+            title={"Lessons Overview"}
+            buttonText={`${lessons.length} lessons`}
             props={{
-              bgColor: "hsl(14.52, 100%, 80.59%)",
-              color: "hsl(14.52, 100%, 20.59%)",
+              bgColor: "orange.300",
+              color: "orange.800",
             }}
+            startURL="/lesson"
           />
           {/* reviews */}
-          <LinkCard
-            data={`${N_REVIEWS} reviews`}
-            image={ReviewImage}
+          <StudyModal
+            body={<></>}
+            title={"Reviews Overview"}
+            buttonText={`${reviews.length} reviews`}
             props={{
-              bgColor: "blue.200",
-              color: "blue.800",
+              bgColor: "purple.300",
+              color: "purple.800",
             }}
+            startURL="/review"
           />
         </SimpleGrid>
         {/* extra study */}
@@ -211,15 +209,11 @@ function Dashboard() {
           px={0}
         >
           {/* <Calendar /> */}
-          <ReviewForecast schedules={REVIEW_SCHEDULE} />
+          <ReviewForecast />
         </Box>
         {/* level progress */}
         <Box gridArea={"progress"}>
-          <LevelProgress
-            cards={LEVEL_PROGRESS.cards}
-            userLevel={LEVEL_PROGRESS.level}
-            completeCardProgress={5}
-          />
+          <LevelProgress completeCardProgress={5} />
         </Box>
       </Grid>
     </Container>

@@ -1,21 +1,17 @@
-import {
-  Box,
-  Center,
-  Container,
-  Heading,
-  Img,
-  Stack,
-  Text,
-} from "@chakra-ui/react";
+import { Box, Center, Container, Heading, Stack, Text } from "@chakra-ui/react";
 
-import { Section, SectionProps } from "@/ui/CardPage/Sections";
+import { Section, SectionProps } from "@/ui/Subject/Section";
+import { RemoteContent } from "@/lib/models/subject";
+import { API_URL } from "@/lib/api/fetchApi";
+import SVG from "../SVG";
 
 export type CardPageProps = {
   card: {
     kind: string;
+    name: string;
     level: number;
-    value: string | { image: string };
-    meaning: string;
+    value?: string;
+    value_image?: RemoteContent;
     reading?: string;
   };
   sections: SectionProps[];
@@ -35,7 +31,7 @@ export default function CardPage({ card, sections }: CardPageProps) {
 
   return (
     <Container maxW={"7xl"}>
-      <Stack spacing={8} pt={12} align="center" position={"relative"}>
+      <Stack spacing={8} pt={0} align="center" position={"relative"}>
         <Center position={"relative"}>
           <Box
             position={"absolute"}
@@ -71,7 +67,7 @@ export default function CardPage({ card, sections }: CardPageProps) {
             <Text textTransform={"uppercase"} fontSize="md" fontWeight="bold">
               level {card.level} {card.kind}
             </Text>
-            {typeof card.value == "string" ? (
+            {card.value ? (
               <Heading
                 as="h1"
                 fontSize={`${headingFontSize(card.value)}em`}
@@ -83,11 +79,14 @@ export default function CardPage({ card, sections }: CardPageProps) {
               </Heading>
             ) : (
               <Center height={"142px"} w="65%" py="8.458rem">
-                <Img
-                  src={`${card.value.image}`}
-                  alt={"card value image"}
-                  filter="brightness(0.14)"
-                  mb={6}
+                <SVG
+                  url={`${API_URL}/files/${card.value_image?.url}`}
+                  style={{
+                    width: "100%",
+                    fill: "none",
+                    stroke: "currentcolor",
+                    strokeWidth: "60px",
+                  }}
                 />
               </Center>
             )}
@@ -96,7 +95,7 @@ export default function CardPage({ card, sections }: CardPageProps) {
               textAlign="center"
               fontSize={"xl"}
             >
-              {card.meaning}
+              {card.name}
             </Text>
             {card.reading && (
               <Text
@@ -109,9 +108,17 @@ export default function CardPage({ card, sections }: CardPageProps) {
             )}
           </Stack>
         </Center>
-        {sections.map((section, i) => (
-          <Section key={i} {...section} />
-        ))}
+        {sections
+          .filter((s) => s.sectionItems)
+          .map((section, i) => {
+            return (
+              <Section
+                key={i}
+                sectionItems={section.sectionItems}
+                title={section.title}
+              />
+            );
+          })}
       </Stack>
     </Container>
   );

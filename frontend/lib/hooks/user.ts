@@ -8,7 +8,11 @@ export interface UserData {
 }
 
 export function useUser() {
-  const { data, isLoading, error } = useSWR<UserData, any>(`${API_URL}/user`);
+  const { data, isLoading, error } = useSWR<UserData>(`${API_URL}/user`, {
+    shouldRetryOnError: false,
+    revalidateOnFocus: false,
+    revalidateIfStale: false,
+  });
 
   return {
     user: data,

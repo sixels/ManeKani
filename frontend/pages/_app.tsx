@@ -10,6 +10,8 @@ import SEO from "@/lib/config/seo";
 import swrConfiguration from "@/lib/config/swr";
 import { theme } from "@/lib/theme";
 import { SWRConfig } from "swr";
+import { PageWithLayout } from "@/ui/layouts";
+import DefaultLayout from "@/ui/layouts/Default";
 
 import Footer from "@/ui/Footer";
 import Navbar from "@/ui/Navbar";
@@ -19,14 +21,22 @@ import Favicon from "@/assets/icon.svg";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/700.css";
+import "@fontsource/noto-sans-jp/400.css";
 import "@/assets/styles/calendar.css";
 import "@/assets/styles/markdown.css";
+
+type AppPropsWithLayout = AppProps & {
+  Component: PageWithLayout;
+};
 
 if (typeof window !== "undefined") {
   SuperTokensReact.init(frontendConfig());
 }
 
-function App({ Component, pageProps }: AppProps) {
+function App({ Component, pageProps }: AppPropsWithLayout) {
+  const getLayout =
+    Component.getLayout ?? ((page) => <DefaultLayout>{page}</DefaultLayout>);
+
   return (
     <>
       <Head>
@@ -44,9 +54,7 @@ function App({ Component, pageProps }: AppProps) {
       <ChakraProvider theme={theme}>
         <SuperTokensWrapper>
           <SWRConfig value={swrConfiguration}>
-            <Navbar />
-            <Component {...pageProps} />
-            <Footer />
+            {getLayout(<Component {...pageProps} />)}
           </SWRConfig>
         </SuperTokensWrapper>
       </ChakraProvider>
