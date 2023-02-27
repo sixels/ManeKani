@@ -72,7 +72,7 @@ services:
       retries: 5
 
   manekani:
-    container_name: manekani-backend
+    container_name: manekani
     hostname: manekani
     restart: unless-stopped
     environment:
@@ -81,18 +81,18 @@ services:
       MANEKANI_DB_URL: "postgres://sixels:123@postgres/manekani"
       AWS_ACCESS_KEY_ID: Kz31iB793qov0cTW
       AWS_SECRET_ACCESS_KEY: jKyin9lWVio2tCIDXu0JHr3a1zfcPQ78
-      KEYCLOAK_CLIENT_ID: manekani-backend
+      KEYCLOAK_CLIENT_ID: manekani
       KEYCLOAK_CLIENT_SECRET: Zzmv9gFDHs5YOuL7ajfvhX5vERFVzyAs
       KEYCLOAK_URL: "http://keycloak:9100"
       KEYCLOAK_REALM: manekani
       REDIS_URL: "http://redis:6379"
       REDIS_PASSWORD: "123"
     # env_file:
-    #   - ./backend/.env
+    #   - ./.env
     ports:
       - "8081:8081"
     build:
-      context: ./backend
+      context: ./
       dockerfile: Dockerfile
     depends_on:
       - keycloak
@@ -100,7 +100,7 @@ services:
       - postgres
     volumes:
       - /home/sixels/.manekani:/data
-      - ./backend:/app/manekani
+      - ./:/app/manekani
 
   nginx:
     image: nginx:alpine

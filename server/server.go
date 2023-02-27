@@ -80,14 +80,13 @@ func (server *Server) Start(logFile io.Writer) {
 
 	trustedOrigins := []string{
 		clientURL + ":" + clientPort,
-		"localhost:" + clientPort,
+		"http://localhost:" + clientPort,
 	}
 
 	corsConfig := cors.Config{
 		AllowCredentials: true,
 		AllowOrigins:     trustedOrigins,
-		// AllowOrigins:     []string{fmt.Sprintf(":8082"), fmt.Sprintf("http://%s:8082", hostname), "http://192.168.15.9:8082"},
-		AllowMethods: []string{"GET", "POST", "DELETE", "PUT", "OPTIONS", "PATCH"},
+		AllowMethods:     []string{"GET", "POST", "DELETE", "PUT", "OPTIONS", "PATCH"},
 		AllowHeaders: append([]string{"Content-Type"},
 			supertokens.GetAllCORSHeaders()...),
 	}
