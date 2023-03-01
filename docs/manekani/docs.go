@@ -251,7 +251,7 @@ const docTemplate = `{
                         "slug"
                     ],
                     "properties": {
-                        "complimentary_study_data": {
+                        "additional_study_data": {
                             "type": "array",
                             "items": {
                                 "type": "object",
@@ -447,7 +447,7 @@ const docTemplate = `{
         "cards.Subject": {
             "type": "object",
             "properties": {
-                "complimentary_study_data": {
+                "additional_study_data": {
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -531,7 +531,7 @@ const docTemplate = `{
         "cards.UpdateSubjectRequest": {
             "type": "object",
             "properties": {
-                "complimentary_study_data": {
+                "additional_study_data": {
                     "type": "array",
                     "items": {
                         "type": "object",

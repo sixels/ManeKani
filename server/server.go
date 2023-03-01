@@ -75,7 +75,7 @@ func New() *Server {
 
 func (server *Server) Start(logFile io.Writer) {
 	clientURL := os.Getenv("MANEKANI_CLIENT_URL")
-	clientPort := os.Getenv("MANEKANI_CLIENT_URL")
+	clientPort := os.Getenv("MANEKANI_CLIENT_PORT")
 	serverPort := os.Getenv("MANEKANI_SERVER_PORT")
 
 	trustedOrigins := []string{

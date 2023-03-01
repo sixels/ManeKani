@@ -832,17 +832,17 @@ func ResourcesNotNil() predicate.Subject {
 	})
 }
 
-// ComplimentaryStudyDataIsNil applies the IsNil predicate on the "complimentary_study_data" field.
-func ComplimentaryStudyDataIsNil() predicate.Subject {
+// AdditionalStudyDataIsNil applies the IsNil predicate on the "additional_study_data" field.
+func AdditionalStudyDataIsNil() predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldComplimentaryStudyData)))
+		s.Where(sql.IsNull(s.C(FieldAdditionalStudyData)))
 	})
 }
 
-// ComplimentaryStudyDataNotNil applies the NotNil predicate on the "complimentary_study_data" field.
-func ComplimentaryStudyDataNotNil() predicate.Subject {
+// AdditionalStudyDataNotNil applies the NotNil predicate on the "additional_study_data" field.
+func AdditionalStudyDataNotNil() predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldComplimentaryStudyData)))
+		s.Where(sql.NotNull(s.C(FieldAdditionalStudyData)))
 	})
 }
 

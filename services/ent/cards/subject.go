@@ -63,7 +63,7 @@ func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, 
 		SetSlug(req.Slug).
 		SetPriority(req.Priority).
 		SetStudyData(req.StudyData).
-		SetComplimentaryStudyData(req.ComplimentaryStudyData).
+		SetAdditionalStudyData(req.AdditionalStudyData).
 		SetResources(req.Resources).
 		AddDependencyIDs(req.Dependencies...).
 		AddDependentIDs(req.Dependents...).
@@ -194,7 +194,7 @@ func SubjectFromEnt(e *ent.Subject) cards.Subject {
 		Resources:  e.Resources,
 		StudyData:  e.StudyData,
 
-		ComplimentaryStudyData: e.ComplimentaryStudyData,
+		AdditionalStudyData: e.AdditionalStudyData,
 		Dependencies: util.MapArray(e.Edges.Dependencies,
 			func(s *ent.Subject) uuid.UUID { return s.ID },
 		),

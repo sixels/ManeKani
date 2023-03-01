@@ -26,6 +26,8 @@ func StartAuthenticator(users ports.UserRepository) error {
 		apiBasePath       string = "/auth"
 		websiteBasePath   string = "/auth"
 	)
+	log.Println(websiteDomain)
+	log.Println(apiDomain)
 
 	supertokensConfig := supertokens.ConnectionInfo{
 		ConnectionURI: supertokensURL,

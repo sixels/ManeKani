@@ -43,8 +43,8 @@ type Subject struct {
 	Resources *map[string][]cards.RemoteContent `json:"resources,omitempty"`
 	// StudyData holds the value of the "study_data" field.
 	StudyData []cards.StudyData `json:"study_data,omitempty"`
-	// ComplimentaryStudyData holds the value of the "complimentary_study_data" field.
-	ComplimentaryStudyData *map[string]interface{} `json:"complimentary_study_data,omitempty"`
+	// AdditionalStudyData holds the value of the "additional_study_data" field.
+	AdditionalStudyData *map[string]interface{} `json:"additional_study_data,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SubjectQuery when eager-loading is set.
 	Edges         SubjectEdges `json:"edges"`
@@ -138,7 +138,7 @@ func (*Subject) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case subject.FieldValueImage, subject.FieldResources, subject.FieldStudyData, subject.FieldComplimentaryStudyData:
+		case subject.FieldValueImage, subject.FieldResources, subject.FieldStudyData, subject.FieldAdditionalStudyData:
 			values[i] = new([]byte)
 		case subject.FieldLevel, subject.FieldPriority:
 			values[i] = new(sql.NullInt64)
@@ -246,12 +246,12 @@ func (s *Subject) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field study_data: %w", err)
 				}
 			}
-		case subject.FieldComplimentaryStudyData:
+		case subject.FieldAdditionalStudyData:
 			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field complimentary_study_data", values[i])
+				return fmt.Errorf("unexpected type %T for field additional_study_data", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &s.ComplimentaryStudyData); err != nil {
-					return fmt.Errorf("unmarshal field complimentary_study_data: %w", err)
+				if err := json.Unmarshal(*value, &s.AdditionalStudyData); err != nil {
+					return fmt.Errorf("unmarshal field additional_study_data: %w", err)
 				}
 			}
 		case subject.ForeignKeys[0]:
@@ -361,8 +361,8 @@ func (s *Subject) String() string {
 	builder.WriteString("study_data=")
 	builder.WriteString(fmt.Sprintf("%v", s.StudyData))
 	builder.WriteString(", ")
-	builder.WriteString("complimentary_study_data=")
-	builder.WriteString(fmt.Sprintf("%v", s.ComplimentaryStudyData))
+	builder.WriteString("additional_study_data=")
+	builder.WriteString(fmt.Sprintf("%v", s.AdditionalStudyData))
 	builder.WriteByte(')')
 	return builder.String()
 }

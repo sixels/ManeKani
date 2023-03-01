@@ -150,7 +150,7 @@ var (
 		{Name: "priority", Type: field.TypeUint8},
 		{Name: "resources", Type: field.TypeJSON, Nullable: true},
 		{Name: "study_data", Type: field.TypeJSON},
-		{Name: "complimentary_study_data", Type: field.TypeJSON, Nullable: true},
+		{Name: "additional_study_data", Type: field.TypeJSON, Nullable: true},
 		{Name: "deck_subjects", Type: field.TypeUUID},
 		{Name: "user_subjects", Type: field.TypeString},
 	}

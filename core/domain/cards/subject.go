@@ -23,9 +23,9 @@ type (
 		Slug       string         `json:"slug"`
 		Priority   uint8          `json:"priority"`
 
-		Resources              *map[string][]RemoteContent `json:"resources"`
-		StudyData              []StudyData                 `json:"study_data"`
-		ComplimentaryStudyData *map[string]any             `json:"complimentary_study_data"`
+		Resources           *map[string][]RemoteContent `json:"resources"`
+		StudyData           []StudyData                 `json:"study_data"`
+		AdditionalStudyData *map[string]any             `json:"additional_study_data"`
 
 		Dependencies []uuid.UUID `json:"dependencies"`
 		Dependents   []uuid.UUID `json:"dependents"`
@@ -82,9 +82,9 @@ type (
 		Slug       string         `json:"slug" form:"slug" binding:"required"`
 		Priority   uint8          `json:"priority" form:"priority"`
 
-		StudyData              []StudyData                 `json:"study_data,omitempty" form:"study_data" binding:"-"`
-		Resources              *map[string][]RemoteContent `json:"resources,omitempty" form:"resources" binding:"-"`
-		ComplimentaryStudyData *map[string]any             `json:"complimentary_study_data" form:"complimentary_study_data" binding:"-"`
+		StudyData           []StudyData                 `json:"study_data,omitempty" form:"study_data" binding:"-"`
+		Resources           *map[string][]RemoteContent `json:"resources,omitempty" form:"resources" binding:"-"`
+		AdditionalStudyData *map[string]any             `json:"additional_study_data" form:"additional_study_data" binding:"-"`
 
 		Dependencies []uuid.UUID `json:"dependencies,omitempty" form:"dependencies"`
 		Dependents   []uuid.UUID `json:"dependents,omitempty" form:"dependents"`
@@ -103,9 +103,9 @@ type (
 		Slug       *string        `json:"slug,omitempty" form:"slug"`
 		Priority   *uint8         `json:"priority,omitempty" form:"priority"`
 
-		StudyData              *[]StudyData                `json:"study_data,omitempty" form:"study_data"`
-		Resources              *map[string][]RemoteContent `json:"resources,omitempty" form:"resources"`
-		ComplimentaryStudyData *map[string]any             `json:"complimentary_study_data" form:"complimentary_study_data" binding:"-"`
+		StudyData           *[]StudyData                `json:"study_data,omitempty" form:"study_data"`
+		Resources           *map[string][]RemoteContent `json:"resources,omitempty" form:"resources"`
+		AdditionalStudyData *map[string]any             `json:"additional_study_data" form:"additional_study_data" binding:"-"`
 
 		Dependencies *[]uuid.UUID `json:"dependencies,omitempty" form:"dependencies"`
 		Dependents   *[]uuid.UUID `json:"dependents,omitempty" form:"dependents"`

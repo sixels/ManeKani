@@ -3526,44 +3526,44 @@ func (m *ReviewMutation) ResetEdge(name string) error {
 // SubjectMutation represents an operation that mutates the Subject nodes in the graph.
 type SubjectMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *uuid.UUID
-	created_at               *time.Time
-	updated_at               *time.Time
-	kind                     *string
-	level                    *int32
-	addlevel                 *int32
-	name                     *string
-	value                    *string
-	value_image              **cards.RemoteContent
-	slug                     *string
-	priority                 *uint8
-	addpriority              *int8
-	resources                **map[string][]cards.RemoteContent
-	study_data               *[]cards.StudyData
-	appendstudy_data         []cards.StudyData
-	complimentary_study_data **map[string]interface{}
-	clearedFields            map[string]struct{}
-	cards                    map[uuid.UUID]struct{}
-	removedcards             map[uuid.UUID]struct{}
-	clearedcards             bool
-	similar                  map[uuid.UUID]struct{}
-	removedsimilar           map[uuid.UUID]struct{}
-	clearedsimilar           bool
-	dependencies             map[uuid.UUID]struct{}
-	removeddependencies      map[uuid.UUID]struct{}
-	cleareddependencies      bool
-	dependents               map[uuid.UUID]struct{}
-	removeddependents        map[uuid.UUID]struct{}
-	cleareddependents        bool
-	deck                     *uuid.UUID
-	cleareddeck              bool
-	owner                    *string
-	clearedowner             bool
-	done                     bool
-	oldValue                 func(context.Context) (*Subject, error)
-	predicates               []predicate.Subject
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	created_at            *time.Time
+	updated_at            *time.Time
+	kind                  *string
+	level                 *int32
+	addlevel              *int32
+	name                  *string
+	value                 *string
+	value_image           **cards.RemoteContent
+	slug                  *string
+	priority              *uint8
+	addpriority           *int8
+	resources             **map[string][]cards.RemoteContent
+	study_data            *[]cards.StudyData
+	appendstudy_data      []cards.StudyData
+	additional_study_data **map[string]interface{}
+	clearedFields         map[string]struct{}
+	cards                 map[uuid.UUID]struct{}
+	removedcards          map[uuid.UUID]struct{}
+	clearedcards          bool
+	similar               map[uuid.UUID]struct{}
+	removedsimilar        map[uuid.UUID]struct{}
+	clearedsimilar        bool
+	dependencies          map[uuid.UUID]struct{}
+	removeddependencies   map[uuid.UUID]struct{}
+	cleareddependencies   bool
+	dependents            map[uuid.UUID]struct{}
+	removeddependents     map[uuid.UUID]struct{}
+	cleareddependents     bool
+	deck                  *uuid.UUID
+	cleareddeck           bool
+	owner                 *string
+	clearedowner          bool
+	done                  bool
+	oldValue              func(context.Context) (*Subject, error)
+	predicates            []predicate.Subject
 }
 
 var _ ent.Mutation = (*SubjectMutation)(nil)
@@ -4160,53 +4160,53 @@ func (m *SubjectMutation) ResetStudyData() {
 	m.appendstudy_data = nil
 }
 
-// SetComplimentaryStudyData sets the "complimentary_study_data" field.
-func (m *SubjectMutation) SetComplimentaryStudyData(value *map[string]interface{}) {
-	m.complimentary_study_data = &value
+// SetAdditionalStudyData sets the "additional_study_data" field.
+func (m *SubjectMutation) SetAdditionalStudyData(value *map[string]interface{}) {
+	m.additional_study_data = &value
 }
 
-// ComplimentaryStudyData returns the value of the "complimentary_study_data" field in the mutation.
-func (m *SubjectMutation) ComplimentaryStudyData() (r *map[string]interface{}, exists bool) {
-	v := m.complimentary_study_data
+// AdditionalStudyData returns the value of the "additional_study_data" field in the mutation.
+func (m *SubjectMutation) AdditionalStudyData() (r *map[string]interface{}, exists bool) {
+	v := m.additional_study_data
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldComplimentaryStudyData returns the old "complimentary_study_data" field's value of the Subject entity.
+// OldAdditionalStudyData returns the old "additional_study_data" field's value of the Subject entity.
 // If the Subject object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SubjectMutation) OldComplimentaryStudyData(ctx context.Context) (v *map[string]interface{}, err error) {
+func (m *SubjectMutation) OldAdditionalStudyData(ctx context.Context) (v *map[string]interface{}, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldComplimentaryStudyData is only allowed on UpdateOne operations")
+		return v, errors.New("OldAdditionalStudyData is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldComplimentaryStudyData requires an ID field in the mutation")
+		return v, errors.New("OldAdditionalStudyData requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldComplimentaryStudyData: %w", err)
+		return v, fmt.Errorf("querying old value for OldAdditionalStudyData: %w", err)
 	}
-	return oldValue.ComplimentaryStudyData, nil
+	return oldValue.AdditionalStudyData, nil
 }
 
-// ClearComplimentaryStudyData clears the value of the "complimentary_study_data" field.
-func (m *SubjectMutation) ClearComplimentaryStudyData() {
-	m.complimentary_study_data = nil
-	m.clearedFields[subject.FieldComplimentaryStudyData] = struct{}{}
+// ClearAdditionalStudyData clears the value of the "additional_study_data" field.
+func (m *SubjectMutation) ClearAdditionalStudyData() {
+	m.additional_study_data = nil
+	m.clearedFields[subject.FieldAdditionalStudyData] = struct{}{}
 }
 
-// ComplimentaryStudyDataCleared returns if the "complimentary_study_data" field was cleared in this mutation.
-func (m *SubjectMutation) ComplimentaryStudyDataCleared() bool {
-	_, ok := m.clearedFields[subject.FieldComplimentaryStudyData]
+// AdditionalStudyDataCleared returns if the "additional_study_data" field was cleared in this mutation.
+func (m *SubjectMutation) AdditionalStudyDataCleared() bool {
+	_, ok := m.clearedFields[subject.FieldAdditionalStudyData]
 	return ok
 }
 
-// ResetComplimentaryStudyData resets all changes to the "complimentary_study_data" field.
-func (m *SubjectMutation) ResetComplimentaryStudyData() {
-	m.complimentary_study_data = nil
-	delete(m.clearedFields, subject.FieldComplimentaryStudyData)
+// ResetAdditionalStudyData resets all changes to the "additional_study_data" field.
+func (m *SubjectMutation) ResetAdditionalStudyData() {
+	m.additional_study_data = nil
+	delete(m.clearedFields, subject.FieldAdditionalStudyData)
 }
 
 // AddCardIDs adds the "cards" edge to the Card entity by ids.
@@ -4556,8 +4556,8 @@ func (m *SubjectMutation) Fields() []string {
 	if m.study_data != nil {
 		fields = append(fields, subject.FieldStudyData)
 	}
-	if m.complimentary_study_data != nil {
-		fields = append(fields, subject.FieldComplimentaryStudyData)
+	if m.additional_study_data != nil {
+		fields = append(fields, subject.FieldAdditionalStudyData)
 	}
 	return fields
 }
@@ -4589,8 +4589,8 @@ func (m *SubjectMutation) Field(name string) (ent.Value, bool) {
 		return m.Resources()
 	case subject.FieldStudyData:
 		return m.StudyData()
-	case subject.FieldComplimentaryStudyData:
-		return m.ComplimentaryStudyData()
+	case subject.FieldAdditionalStudyData:
+		return m.AdditionalStudyData()
 	}
 	return nil, false
 }
@@ -4622,8 +4622,8 @@ func (m *SubjectMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldResources(ctx)
 	case subject.FieldStudyData:
 		return m.OldStudyData(ctx)
-	case subject.FieldComplimentaryStudyData:
-		return m.OldComplimentaryStudyData(ctx)
+	case subject.FieldAdditionalStudyData:
+		return m.OldAdditionalStudyData(ctx)
 	}
 	return nil, fmt.Errorf("unknown Subject field %s", name)
 }
@@ -4710,12 +4710,12 @@ func (m *SubjectMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStudyData(v)
 		return nil
-	case subject.FieldComplimentaryStudyData:
+	case subject.FieldAdditionalStudyData:
 		v, ok := value.(*map[string]interface{})
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetComplimentaryStudyData(v)
+		m.SetAdditionalStudyData(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Subject field %s", name)
@@ -4783,8 +4783,8 @@ func (m *SubjectMutation) ClearedFields() []string {
 	if m.FieldCleared(subject.FieldResources) {
 		fields = append(fields, subject.FieldResources)
 	}
-	if m.FieldCleared(subject.FieldComplimentaryStudyData) {
-		fields = append(fields, subject.FieldComplimentaryStudyData)
+	if m.FieldCleared(subject.FieldAdditionalStudyData) {
+		fields = append(fields, subject.FieldAdditionalStudyData)
 	}
 	return fields
 }
@@ -4809,8 +4809,8 @@ func (m *SubjectMutation) ClearField(name string) error {
 	case subject.FieldResources:
 		m.ClearResources()
 		return nil
-	case subject.FieldComplimentaryStudyData:
-		m.ClearComplimentaryStudyData()
+	case subject.FieldAdditionalStudyData:
+		m.ClearAdditionalStudyData()
 		return nil
 	}
 	return fmt.Errorf("unknown Subject nullable field %s", name)
@@ -4853,8 +4853,8 @@ func (m *SubjectMutation) ResetField(name string) error {
 	case subject.FieldStudyData:
 		m.ResetStudyData()
 		return nil
-	case subject.FieldComplimentaryStudyData:
-		m.ResetComplimentaryStudyData()
+	case subject.FieldAdditionalStudyData:
+		m.ResetAdditionalStudyData()
 		return nil
 	}
 	return fmt.Errorf("unknown Subject field %s", name)

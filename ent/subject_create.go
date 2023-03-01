@@ -115,9 +115,9 @@ func (sc *SubjectCreate) SetStudyData(cd []cards.StudyData) *SubjectCreate {
 	return sc
 }
 
-// SetComplimentaryStudyData sets the "complimentary_study_data" field.
-func (sc *SubjectCreate) SetComplimentaryStudyData(m *map[string]interface{}) *SubjectCreate {
-	sc.mutation.SetComplimentaryStudyData(m)
+// SetAdditionalStudyData sets the "additional_study_data" field.
+func (sc *SubjectCreate) SetAdditionalStudyData(m *map[string]interface{}) *SubjectCreate {
+	sc.mutation.SetAdditionalStudyData(m)
 	return sc
 }
 
@@ -440,9 +440,9 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 		_spec.SetField(subject.FieldStudyData, field.TypeJSON, value)
 		_node.StudyData = value
 	}
-	if value, ok := sc.mutation.ComplimentaryStudyData(); ok {
-		_spec.SetField(subject.FieldComplimentaryStudyData, field.TypeJSON, value)
-		_node.ComplimentaryStudyData = value
+	if value, ok := sc.mutation.AdditionalStudyData(); ok {
+		_spec.SetField(subject.FieldAdditionalStudyData, field.TypeJSON, value)
+		_node.AdditionalStudyData = value
 	}
 	if nodes := sc.mutation.CardsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
