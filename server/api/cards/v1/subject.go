@@ -83,8 +83,6 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 		// 	return
 		// }
 
-		log.Println(form.Data.ComplimentaryStudyData)
-
 		var subjectImage *cards.RemoteContent = nil
 		var subjectResources *map[string][]cards.RemoteContent = nil
 
@@ -110,14 +108,22 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 		if form.ResourcesMeta != nil {
 			resources := map[string][]cards.RemoteContent{}
 
-			for _, resourceMeta := range form.ResourcesMeta {
-				if (resourceMeta.Group == nil || resourceMeta.Attachment == nil) ||
-					(*resourceMeta.Attachment < 0 || *resourceMeta.Attachment >= len(form.Resources)) ||
-					(form.Resources[*resourceMeta.Attachment] == nil) {
+			for i, resourceMeta := range form.ResourcesMeta {
+				attachmentIndex := i
+				if resourceMeta.Attachment != nil {
+					attachmentIndex = *resourceMeta.Attachment
+				}
+
+				if (resourceMeta.Group == nil) ||
+					(attachmentIndex < 0 || attachmentIndex >= len(form.Resources)) {
 					continue
 				}
 
-				resourceFile := form.Resources[*resourceMeta.Attachment]
+				if form.Resources[attachmentIndex] == nil {
+					continue
+				}
+
+				resourceFile := form.Resources[attachmentIndex]
 				resource, err := api.uploadRemoteResource(
 					ctx,
 					*resourceFile,
