@@ -4,12 +4,33 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/sixels/manekani/core/domain/errors"
 	"github.com/sixels/manekani/core/domain/files"
 
 	"github.com/minio/minio-go/v7"
 )
+
+func (repo FilesRepository) UploadFileURL(ctx context.Context, info files.FileInfo) (objectKey string, uploadURL files.UploadURL, err error) {
+	objectKey = objectNameFromFile(info)
+
+	expirationTime := 10 * time.Minute
+	expiresAt := time.Now().Add(expirationTime)
+
+	uploadURLWrap, err := repo.minio_client.PresignedPutObject(ctx, BUCKET_NAME, objectKey, expirationTime)
+	if err != nil {
+		return "", files.UploadURL{}, fmt.Errorf("failed to generate the upload url: %w", err)
+	}
+
+	uploadURL = files.UploadURL{
+		URL:       uploadURLWrap.String(),
+		Resource:  objectKey,
+		ExpiresAt: expiresAt,
+	}
+
+	return objectKey, uploadURL, nil
+}
 
 func (repo FilesRepository) CreateFile(ctx context.Context, req files.CreateFileRequest) (string, error) {
 	objectName := objectNameFromFile(req.FileInfo)

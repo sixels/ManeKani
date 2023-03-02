@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/core/domain/cards"
 	"github.com/sixels/manekani/core/domain/cards/filters"
+	"github.com/sixels/manekani/core/ports"
 	"github.com/sixels/manekani/ent"
 	"github.com/sixels/manekani/ent/card"
 	"github.com/sixels/manekani/ent/deck"
@@ -16,6 +17,8 @@ import (
 	"github.com/sixels/manekani/ent/user"
 	"github.com/sixels/manekani/services/ent/util"
 )
+
+var _ ports.CardsManager = (*CardsRepository)(nil)
 
 func (repo *CardsRepository) QueryCard(ctx context.Context, id uuid.UUID) (*cards.Card, error) {
 	queried, err := repo.client.CardClient().

@@ -129,12 +129,6 @@ type (
 		ContentType string          `json:"content_type"`
 		Metadata    *map[string]any `json:"metadata"`
 	}
-	ContentMeta struct {
-		Attachment  *int            `json:"attachment,omitempty"`
-		Group       *string         `json:"group,omitempty"`
-		ContentType *string         `json:"content_type,omitempty"`
-		Metadata    *map[string]any `json:"metadata,omitempty"`
-	}
 
 	StudyData struct {
 		Kind     string      `json:"kind"`

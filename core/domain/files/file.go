@@ -3,6 +3,7 @@ package files
 import (
 	"io"
 	"os"
+	"time"
 )
 
 type (
@@ -19,6 +20,12 @@ type (
 		io.ReadCloser
 		Size        int64
 		ContentType string
+	}
+
+	UploadURL struct {
+		URL       string    `json:"url"`
+		Resource  string    `json:"resource"`
+		ExpiresAt time.Time `json:"expires_at"`
 	}
 
 	FileInfo struct {

@@ -3,12 +3,10 @@ package cards
 import (
 	"context"
 
-	"github.com/sixels/manekani/core/ports"
 	"github.com/sixels/manekani/core/ports/transactions"
 	ent_repo "github.com/sixels/manekani/services/ent"
 )
 
-var _ ports.CardsRepository = (*CardsRepository)(nil)
 
 type CardsRepository struct {
 	client *ent_repo.EntRepository

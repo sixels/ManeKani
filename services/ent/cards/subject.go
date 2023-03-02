@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/core/domain/cards"
 	"github.com/sixels/manekani/core/domain/cards/filters"
+	"github.com/sixels/manekani/core/ports"
 	"github.com/sixels/manekani/ent"
 	"github.com/sixels/manekani/ent/deck"
 	"github.com/sixels/manekani/ent/predicate"
@@ -13,6 +14,8 @@ import (
 	"github.com/sixels/manekani/ent/user"
 	"github.com/sixels/manekani/services/ent/util"
 )
+
+var _ ports.SubjectsManager = (*CardsRepository)(nil)
 
 // check if there is a subject with the given `kind`, `name` and `slug` in a deck.
 func (repo *CardsRepository) SubjectExists(ctx context.Context, kind string, name string, slug string, deckID uuid.UUID) (bool, error) {
