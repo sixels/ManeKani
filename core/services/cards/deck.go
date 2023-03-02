@@ -66,8 +66,8 @@ func (svc *CardsService) AddDeckSubscriber(ctx context.Context, id uuid.UUID, us
 			// unlock cards which have no dependencies
 			if len(subject.Dependencies) == 0 {
 				now := time.Now()
-				*unlockedAt = now
-				*availableAt = now
+				unlockedAt = &now
+				availableAt = &now
 			}
 			cards[i] = domain.CreateCardRequest{
 				SubjectID:   subject.ID,
