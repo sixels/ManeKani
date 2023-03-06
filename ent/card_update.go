@@ -186,14 +186,6 @@ func (cu *CardUpdate) SetDeckProgressID(id int) *CardUpdate {
 	return cu
 }
 
-// SetNillableDeckProgressID sets the "deck_progress" edge to the DeckProgress entity by ID if the given value is not nil.
-func (cu *CardUpdate) SetNillableDeckProgressID(id *int) *CardUpdate {
-	if id != nil {
-		cu = cu.SetDeckProgressID(*id)
-	}
-	return cu
-}
-
 // SetDeckProgress sets the "deck_progress" edge to the DeckProgress entity.
 func (cu *CardUpdate) SetDeckProgress(d *DeckProgress) *CardUpdate {
 	return cu.SetDeckProgressID(d.ID)
@@ -334,6 +326,9 @@ func (cu *CardUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cu *CardUpdate) check() error {
+	if _, ok := cu.mutation.DeckProgressID(); cu.mutation.DeckProgressCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Card.deck_progress"`)
+	}
 	if _, ok := cu.mutation.SubjectID(); cu.mutation.SubjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Card.subject"`)
 	}
@@ -700,14 +695,6 @@ func (cuo *CardUpdateOne) SetDeckProgressID(id int) *CardUpdateOne {
 	return cuo
 }
 
-// SetNillableDeckProgressID sets the "deck_progress" edge to the DeckProgress entity by ID if the given value is not nil.
-func (cuo *CardUpdateOne) SetNillableDeckProgressID(id *int) *CardUpdateOne {
-	if id != nil {
-		cuo = cuo.SetDeckProgressID(*id)
-	}
-	return cuo
-}
-
 // SetDeckProgress sets the "deck_progress" edge to the DeckProgress entity.
 func (cuo *CardUpdateOne) SetDeckProgress(d *DeckProgress) *CardUpdateOne {
 	return cuo.SetDeckProgressID(d.ID)
@@ -861,6 +848,9 @@ func (cuo *CardUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cuo *CardUpdateOne) check() error {
+	if _, ok := cuo.mutation.DeckProgressID(); cuo.mutation.DeckProgressCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Card.deck_progress"`)
+	}
 	if _, ok := cuo.mutation.SubjectID(); cuo.mutation.SubjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Card.subject"`)
 	}

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -28,6 +29,7 @@ func (ApiToken) Edges() []ent.Edge {
 		edge.From("user", User.Type).
 			Ref("api_tokens").
 			Required().
-			Unique(),
+			Unique().
+			Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 	}
 }

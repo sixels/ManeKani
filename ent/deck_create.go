@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -22,6 +24,7 @@ type DeckCreate struct {
 	config
 	mutation *DeckMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -284,6 +287,7 @@ func (dc *DeckCreate) createSpec() (*Deck, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = dc.conflict
 	if id, ok := dc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -384,10 +388,227 @@ func (dc *DeckCreate) createSpec() (*Deck, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Deck.Create().
+//		SetCreatedAt(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DeckUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (dc *DeckCreate) OnConflict(opts ...sql.ConflictOption) *DeckUpsertOne {
+	dc.conflict = opts
+	return &DeckUpsertOne{
+		create: dc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Deck.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (dc *DeckCreate) OnConflictColumns(columns ...string) *DeckUpsertOne {
+	dc.conflict = append(dc.conflict, sql.ConflictColumns(columns...))
+	return &DeckUpsertOne{
+		create: dc,
+	}
+}
+
+type (
+	// DeckUpsertOne is the builder for "upsert"-ing
+	//  one Deck node.
+	DeckUpsertOne struct {
+		create *DeckCreate
+	}
+
+	// DeckUpsert is the "OnConflict" setter.
+	DeckUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *DeckUpsert) SetUpdatedAt(v time.Time) *DeckUpsert {
+	u.Set(deck.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *DeckUpsert) UpdateUpdatedAt() *DeckUpsert {
+	u.SetExcluded(deck.FieldUpdatedAt)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *DeckUpsert) SetName(v string) *DeckUpsert {
+	u.Set(deck.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *DeckUpsert) UpdateName() *DeckUpsert {
+	u.SetExcluded(deck.FieldName)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *DeckUpsert) SetDescription(v string) *DeckUpsert {
+	u.Set(deck.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *DeckUpsert) UpdateDescription() *DeckUpsert {
+	u.SetExcluded(deck.FieldDescription)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Deck.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(deck.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DeckUpsertOne) UpdateNewValues() *DeckUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(deck.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(deck.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Deck.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *DeckUpsertOne) Ignore() *DeckUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DeckUpsertOne) DoNothing() *DeckUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DeckCreate.OnConflict
+// documentation for more info.
+func (u *DeckUpsertOne) Update(set func(*DeckUpsert)) *DeckUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DeckUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *DeckUpsertOne) SetUpdatedAt(v time.Time) *DeckUpsertOne {
+	return u.Update(func(s *DeckUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *DeckUpsertOne) UpdateUpdatedAt() *DeckUpsertOne {
+	return u.Update(func(s *DeckUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *DeckUpsertOne) SetName(v string) *DeckUpsertOne {
+	return u.Update(func(s *DeckUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *DeckUpsertOne) UpdateName() *DeckUpsertOne {
+	return u.Update(func(s *DeckUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *DeckUpsertOne) SetDescription(v string) *DeckUpsertOne {
+	return u.Update(func(s *DeckUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *DeckUpsertOne) UpdateDescription() *DeckUpsertOne {
+	return u.Update(func(s *DeckUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// Exec executes the query.
+func (u *DeckUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DeckCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DeckUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *DeckUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: DeckUpsertOne.ID is not supported by MySQL driver. Use DeckUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *DeckUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // DeckCreateBulk is the builder for creating many Deck entities in bulk.
 type DeckCreateBulk struct {
 	config
 	builders []*DeckCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Deck entities in the database.
@@ -414,6 +635,7 @@ func (dcb *DeckCreateBulk) Save(ctx context.Context) ([]*Deck, error) {
 					_, err = mutators[i+1].Mutate(root, dcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = dcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, dcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -460,6 +682,162 @@ func (dcb *DeckCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (dcb *DeckCreateBulk) ExecX(ctx context.Context) {
 	if err := dcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Deck.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DeckUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (dcb *DeckCreateBulk) OnConflict(opts ...sql.ConflictOption) *DeckUpsertBulk {
+	dcb.conflict = opts
+	return &DeckUpsertBulk{
+		create: dcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Deck.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (dcb *DeckCreateBulk) OnConflictColumns(columns ...string) *DeckUpsertBulk {
+	dcb.conflict = append(dcb.conflict, sql.ConflictColumns(columns...))
+	return &DeckUpsertBulk{
+		create: dcb,
+	}
+}
+
+// DeckUpsertBulk is the builder for "upsert"-ing
+// a bulk of Deck nodes.
+type DeckUpsertBulk struct {
+	create *DeckCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Deck.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(deck.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DeckUpsertBulk) UpdateNewValues() *DeckUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(deck.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(deck.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Deck.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *DeckUpsertBulk) Ignore() *DeckUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DeckUpsertBulk) DoNothing() *DeckUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DeckCreateBulk.OnConflict
+// documentation for more info.
+func (u *DeckUpsertBulk) Update(set func(*DeckUpsert)) *DeckUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DeckUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *DeckUpsertBulk) SetUpdatedAt(v time.Time) *DeckUpsertBulk {
+	return u.Update(func(s *DeckUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *DeckUpsertBulk) UpdateUpdatedAt() *DeckUpsertBulk {
+	return u.Update(func(s *DeckUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *DeckUpsertBulk) SetName(v string) *DeckUpsertBulk {
+	return u.Update(func(s *DeckUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *DeckUpsertBulk) UpdateName() *DeckUpsertBulk {
+	return u.Update(func(s *DeckUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *DeckUpsertBulk) SetDescription(v string) *DeckUpsertBulk {
+	return u.Update(func(s *DeckUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *DeckUpsertBulk) UpdateDescription() *DeckUpsertBulk {
+	return u.Update(func(s *DeckUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// Exec executes the query.
+func (u *DeckUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the DeckCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DeckCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DeckUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

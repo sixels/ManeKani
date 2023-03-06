@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -41,12 +42,17 @@ func (Card) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("deck_progress", DeckProgress.Type).
 			Ref("cards").
-			Unique(),
+			Required().
+			Unique().
+			// delete cards if deck_progress is deleted
+			Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 
 		edge.From("subject", Subject.Type).
 			Ref("cards").
 			Required().
-			Unique(),
+			Unique().
+			// delete cards if subject is deleted
+			Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 
 		edge.To("reviews", Review.Type),
 	}

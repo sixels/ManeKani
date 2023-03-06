@@ -40,7 +40,7 @@ var (
 		{Name: "passed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "available_at", Type: field.TypeTime, Nullable: true},
 		{Name: "burned_at", Type: field.TypeTime, Nullable: true},
-		{Name: "deck_progress_cards", Type: field.TypeInt, Nullable: true},
+		{Name: "deck_progress_cards", Type: field.TypeInt},
 		{Name: "subject_cards", Type: field.TypeUUID},
 	}
 	// CardsTable holds the schema information for the "cards" table.
@@ -53,7 +53,7 @@ var (
 				Symbol:     "cards_deck_progresses_cards",
 				Columns:    []*schema.Column{CardsColumns[10]},
 				RefColumns: []*schema.Column{DeckProgressesColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "cards_subjects_cards",
@@ -110,6 +110,13 @@ var (
 				Columns:    []*schema.Column{DeckProgressesColumns[3]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "deckprogress_user_decks_progress_deck_users_progress",
+				Unique:  true,
+				Columns: []*schema.Column{DeckProgressesColumns[3], DeckProgressesColumns[2]},
 			},
 		},
 	}

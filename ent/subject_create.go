@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -23,6 +25,7 @@ type SubjectCreate struct {
 	config
 	mutation *SubjectMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -392,6 +395,7 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = sc.conflict
 	if id, ok := sc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -563,10 +567,513 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Subject.Create().
+//		SetCreatedAt(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.SubjectUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (sc *SubjectCreate) OnConflict(opts ...sql.ConflictOption) *SubjectUpsertOne {
+	sc.conflict = opts
+	return &SubjectUpsertOne{
+		create: sc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Subject.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (sc *SubjectCreate) OnConflictColumns(columns ...string) *SubjectUpsertOne {
+	sc.conflict = append(sc.conflict, sql.ConflictColumns(columns...))
+	return &SubjectUpsertOne{
+		create: sc,
+	}
+}
+
+type (
+	// SubjectUpsertOne is the builder for "upsert"-ing
+	//  one Subject node.
+	SubjectUpsertOne struct {
+		create *SubjectCreate
+	}
+
+	// SubjectUpsert is the "OnConflict" setter.
+	SubjectUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SubjectUpsert) SetUpdatedAt(v time.Time) *SubjectUpsert {
+	u.Set(subject.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateUpdatedAt() *SubjectUpsert {
+	u.SetExcluded(subject.FieldUpdatedAt)
+	return u
+}
+
+// SetKind sets the "kind" field.
+func (u *SubjectUpsert) SetKind(v string) *SubjectUpsert {
+	u.Set(subject.FieldKind, v)
+	return u
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateKind() *SubjectUpsert {
+	u.SetExcluded(subject.FieldKind)
+	return u
+}
+
+// SetLevel sets the "level" field.
+func (u *SubjectUpsert) SetLevel(v int32) *SubjectUpsert {
+	u.Set(subject.FieldLevel, v)
+	return u
+}
+
+// UpdateLevel sets the "level" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateLevel() *SubjectUpsert {
+	u.SetExcluded(subject.FieldLevel)
+	return u
+}
+
+// AddLevel adds v to the "level" field.
+func (u *SubjectUpsert) AddLevel(v int32) *SubjectUpsert {
+	u.Add(subject.FieldLevel, v)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *SubjectUpsert) SetName(v string) *SubjectUpsert {
+	u.Set(subject.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateName() *SubjectUpsert {
+	u.SetExcluded(subject.FieldName)
+	return u
+}
+
+// SetValue sets the "value" field.
+func (u *SubjectUpsert) SetValue(v string) *SubjectUpsert {
+	u.Set(subject.FieldValue, v)
+	return u
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateValue() *SubjectUpsert {
+	u.SetExcluded(subject.FieldValue)
+	return u
+}
+
+// ClearValue clears the value of the "value" field.
+func (u *SubjectUpsert) ClearValue() *SubjectUpsert {
+	u.SetNull(subject.FieldValue)
+	return u
+}
+
+// SetValueImage sets the "value_image" field.
+func (u *SubjectUpsert) SetValueImage(v *cards.RemoteContent) *SubjectUpsert {
+	u.Set(subject.FieldValueImage, v)
+	return u
+}
+
+// UpdateValueImage sets the "value_image" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateValueImage() *SubjectUpsert {
+	u.SetExcluded(subject.FieldValueImage)
+	return u
+}
+
+// ClearValueImage clears the value of the "value_image" field.
+func (u *SubjectUpsert) ClearValueImage() *SubjectUpsert {
+	u.SetNull(subject.FieldValueImage)
+	return u
+}
+
+// SetSlug sets the "slug" field.
+func (u *SubjectUpsert) SetSlug(v string) *SubjectUpsert {
+	u.Set(subject.FieldSlug, v)
+	return u
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateSlug() *SubjectUpsert {
+	u.SetExcluded(subject.FieldSlug)
+	return u
+}
+
+// SetPriority sets the "priority" field.
+func (u *SubjectUpsert) SetPriority(v uint8) *SubjectUpsert {
+	u.Set(subject.FieldPriority, v)
+	return u
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdatePriority() *SubjectUpsert {
+	u.SetExcluded(subject.FieldPriority)
+	return u
+}
+
+// AddPriority adds v to the "priority" field.
+func (u *SubjectUpsert) AddPriority(v uint8) *SubjectUpsert {
+	u.Add(subject.FieldPriority, v)
+	return u
+}
+
+// SetResources sets the "resources" field.
+func (u *SubjectUpsert) SetResources(v *map[string][]cards.RemoteContent) *SubjectUpsert {
+	u.Set(subject.FieldResources, v)
+	return u
+}
+
+// UpdateResources sets the "resources" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateResources() *SubjectUpsert {
+	u.SetExcluded(subject.FieldResources)
+	return u
+}
+
+// ClearResources clears the value of the "resources" field.
+func (u *SubjectUpsert) ClearResources() *SubjectUpsert {
+	u.SetNull(subject.FieldResources)
+	return u
+}
+
+// SetStudyData sets the "study_data" field.
+func (u *SubjectUpsert) SetStudyData(v []cards.StudyData) *SubjectUpsert {
+	u.Set(subject.FieldStudyData, v)
+	return u
+}
+
+// UpdateStudyData sets the "study_data" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateStudyData() *SubjectUpsert {
+	u.SetExcluded(subject.FieldStudyData)
+	return u
+}
+
+// SetAdditionalStudyData sets the "additional_study_data" field.
+func (u *SubjectUpsert) SetAdditionalStudyData(v *map[string]interface{}) *SubjectUpsert {
+	u.Set(subject.FieldAdditionalStudyData, v)
+	return u
+}
+
+// UpdateAdditionalStudyData sets the "additional_study_data" field to the value that was provided on create.
+func (u *SubjectUpsert) UpdateAdditionalStudyData() *SubjectUpsert {
+	u.SetExcluded(subject.FieldAdditionalStudyData)
+	return u
+}
+
+// ClearAdditionalStudyData clears the value of the "additional_study_data" field.
+func (u *SubjectUpsert) ClearAdditionalStudyData() *SubjectUpsert {
+	u.SetNull(subject.FieldAdditionalStudyData)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Subject.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(subject.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *SubjectUpsertOne) UpdateNewValues() *SubjectUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(subject.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(subject.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Subject.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *SubjectUpsertOne) Ignore() *SubjectUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *SubjectUpsertOne) DoNothing() *SubjectUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the SubjectCreate.OnConflict
+// documentation for more info.
+func (u *SubjectUpsertOne) Update(set func(*SubjectUpsert)) *SubjectUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&SubjectUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SubjectUpsertOne) SetUpdatedAt(v time.Time) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateUpdatedAt() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetKind sets the "kind" field.
+func (u *SubjectUpsertOne) SetKind(v string) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetKind(v)
+	})
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateKind() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateKind()
+	})
+}
+
+// SetLevel sets the "level" field.
+func (u *SubjectUpsertOne) SetLevel(v int32) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetLevel(v)
+	})
+}
+
+// AddLevel adds v to the "level" field.
+func (u *SubjectUpsertOne) AddLevel(v int32) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.AddLevel(v)
+	})
+}
+
+// UpdateLevel sets the "level" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateLevel() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateLevel()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *SubjectUpsertOne) SetName(v string) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateName() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetValue sets the "value" field.
+func (u *SubjectUpsertOne) SetValue(v string) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetValue(v)
+	})
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateValue() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateValue()
+	})
+}
+
+// ClearValue clears the value of the "value" field.
+func (u *SubjectUpsertOne) ClearValue() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.ClearValue()
+	})
+}
+
+// SetValueImage sets the "value_image" field.
+func (u *SubjectUpsertOne) SetValueImage(v *cards.RemoteContent) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetValueImage(v)
+	})
+}
+
+// UpdateValueImage sets the "value_image" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateValueImage() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateValueImage()
+	})
+}
+
+// ClearValueImage clears the value of the "value_image" field.
+func (u *SubjectUpsertOne) ClearValueImage() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.ClearValueImage()
+	})
+}
+
+// SetSlug sets the "slug" field.
+func (u *SubjectUpsertOne) SetSlug(v string) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetSlug(v)
+	})
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateSlug() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateSlug()
+	})
+}
+
+// SetPriority sets the "priority" field.
+func (u *SubjectUpsertOne) SetPriority(v uint8) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetPriority(v)
+	})
+}
+
+// AddPriority adds v to the "priority" field.
+func (u *SubjectUpsertOne) AddPriority(v uint8) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.AddPriority(v)
+	})
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdatePriority() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdatePriority()
+	})
+}
+
+// SetResources sets the "resources" field.
+func (u *SubjectUpsertOne) SetResources(v *map[string][]cards.RemoteContent) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetResources(v)
+	})
+}
+
+// UpdateResources sets the "resources" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateResources() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateResources()
+	})
+}
+
+// ClearResources clears the value of the "resources" field.
+func (u *SubjectUpsertOne) ClearResources() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.ClearResources()
+	})
+}
+
+// SetStudyData sets the "study_data" field.
+func (u *SubjectUpsertOne) SetStudyData(v []cards.StudyData) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetStudyData(v)
+	})
+}
+
+// UpdateStudyData sets the "study_data" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateStudyData() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateStudyData()
+	})
+}
+
+// SetAdditionalStudyData sets the "additional_study_data" field.
+func (u *SubjectUpsertOne) SetAdditionalStudyData(v *map[string]interface{}) *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetAdditionalStudyData(v)
+	})
+}
+
+// UpdateAdditionalStudyData sets the "additional_study_data" field to the value that was provided on create.
+func (u *SubjectUpsertOne) UpdateAdditionalStudyData() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateAdditionalStudyData()
+	})
+}
+
+// ClearAdditionalStudyData clears the value of the "additional_study_data" field.
+func (u *SubjectUpsertOne) ClearAdditionalStudyData() *SubjectUpsertOne {
+	return u.Update(func(s *SubjectUpsert) {
+		s.ClearAdditionalStudyData()
+	})
+}
+
+// Exec executes the query.
+func (u *SubjectUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for SubjectCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *SubjectUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *SubjectUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: SubjectUpsertOne.ID is not supported by MySQL driver. Use SubjectUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *SubjectUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // SubjectCreateBulk is the builder for creating many Subject entities in bulk.
 type SubjectCreateBulk struct {
 	config
 	builders []*SubjectCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Subject entities in the database.
@@ -593,6 +1100,7 @@ func (scb *SubjectCreateBulk) Save(ctx context.Context) ([]*Subject, error) {
 					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = scb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, scb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -639,6 +1147,316 @@ func (scb *SubjectCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (scb *SubjectCreateBulk) ExecX(ctx context.Context) {
 	if err := scb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Subject.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.SubjectUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (scb *SubjectCreateBulk) OnConflict(opts ...sql.ConflictOption) *SubjectUpsertBulk {
+	scb.conflict = opts
+	return &SubjectUpsertBulk{
+		create: scb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Subject.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (scb *SubjectCreateBulk) OnConflictColumns(columns ...string) *SubjectUpsertBulk {
+	scb.conflict = append(scb.conflict, sql.ConflictColumns(columns...))
+	return &SubjectUpsertBulk{
+		create: scb,
+	}
+}
+
+// SubjectUpsertBulk is the builder for "upsert"-ing
+// a bulk of Subject nodes.
+type SubjectUpsertBulk struct {
+	create *SubjectCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Subject.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(subject.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *SubjectUpsertBulk) UpdateNewValues() *SubjectUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(subject.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(subject.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Subject.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *SubjectUpsertBulk) Ignore() *SubjectUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *SubjectUpsertBulk) DoNothing() *SubjectUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the SubjectCreateBulk.OnConflict
+// documentation for more info.
+func (u *SubjectUpsertBulk) Update(set func(*SubjectUpsert)) *SubjectUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&SubjectUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SubjectUpsertBulk) SetUpdatedAt(v time.Time) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateUpdatedAt() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetKind sets the "kind" field.
+func (u *SubjectUpsertBulk) SetKind(v string) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetKind(v)
+	})
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateKind() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateKind()
+	})
+}
+
+// SetLevel sets the "level" field.
+func (u *SubjectUpsertBulk) SetLevel(v int32) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetLevel(v)
+	})
+}
+
+// AddLevel adds v to the "level" field.
+func (u *SubjectUpsertBulk) AddLevel(v int32) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.AddLevel(v)
+	})
+}
+
+// UpdateLevel sets the "level" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateLevel() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateLevel()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *SubjectUpsertBulk) SetName(v string) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateName() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetValue sets the "value" field.
+func (u *SubjectUpsertBulk) SetValue(v string) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetValue(v)
+	})
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateValue() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateValue()
+	})
+}
+
+// ClearValue clears the value of the "value" field.
+func (u *SubjectUpsertBulk) ClearValue() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.ClearValue()
+	})
+}
+
+// SetValueImage sets the "value_image" field.
+func (u *SubjectUpsertBulk) SetValueImage(v *cards.RemoteContent) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetValueImage(v)
+	})
+}
+
+// UpdateValueImage sets the "value_image" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateValueImage() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateValueImage()
+	})
+}
+
+// ClearValueImage clears the value of the "value_image" field.
+func (u *SubjectUpsertBulk) ClearValueImage() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.ClearValueImage()
+	})
+}
+
+// SetSlug sets the "slug" field.
+func (u *SubjectUpsertBulk) SetSlug(v string) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetSlug(v)
+	})
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateSlug() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateSlug()
+	})
+}
+
+// SetPriority sets the "priority" field.
+func (u *SubjectUpsertBulk) SetPriority(v uint8) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetPriority(v)
+	})
+}
+
+// AddPriority adds v to the "priority" field.
+func (u *SubjectUpsertBulk) AddPriority(v uint8) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.AddPriority(v)
+	})
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdatePriority() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdatePriority()
+	})
+}
+
+// SetResources sets the "resources" field.
+func (u *SubjectUpsertBulk) SetResources(v *map[string][]cards.RemoteContent) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetResources(v)
+	})
+}
+
+// UpdateResources sets the "resources" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateResources() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateResources()
+	})
+}
+
+// ClearResources clears the value of the "resources" field.
+func (u *SubjectUpsertBulk) ClearResources() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.ClearResources()
+	})
+}
+
+// SetStudyData sets the "study_data" field.
+func (u *SubjectUpsertBulk) SetStudyData(v []cards.StudyData) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetStudyData(v)
+	})
+}
+
+// UpdateStudyData sets the "study_data" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateStudyData() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateStudyData()
+	})
+}
+
+// SetAdditionalStudyData sets the "additional_study_data" field.
+func (u *SubjectUpsertBulk) SetAdditionalStudyData(v *map[string]interface{}) *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.SetAdditionalStudyData(v)
+	})
+}
+
+// UpdateAdditionalStudyData sets the "additional_study_data" field to the value that was provided on create.
+func (u *SubjectUpsertBulk) UpdateAdditionalStudyData() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.UpdateAdditionalStudyData()
+	})
+}
+
+// ClearAdditionalStudyData clears the value of the "additional_study_data" field.
+func (u *SubjectUpsertBulk) ClearAdditionalStudyData() *SubjectUpsertBulk {
+	return u.Update(func(s *SubjectUpsert) {
+		s.ClearAdditionalStudyData()
+	})
+}
+
+// Exec executes the query.
+func (u *SubjectUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the SubjectCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for SubjectCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *SubjectUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

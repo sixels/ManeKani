@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -22,6 +24,7 @@ type CardCreate struct {
 	config
 	mutation *CardMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -170,14 +173,6 @@ func (cc *CardCreate) SetDeckProgressID(id int) *CardCreate {
 	return cc
 }
 
-// SetNillableDeckProgressID sets the "deck_progress" edge to the DeckProgress entity by ID if the given value is not nil.
-func (cc *CardCreate) SetNillableDeckProgressID(id *int) *CardCreate {
-	if id != nil {
-		cc = cc.SetDeckProgressID(*id)
-	}
-	return cc
-}
-
 // SetDeckProgress sets the "deck_progress" edge to the DeckProgress entity.
 func (cc *CardCreate) SetDeckProgress(d *DeckProgress) *CardCreate {
 	return cc.SetDeckProgressID(d.ID)
@@ -322,6 +317,9 @@ func (cc *CardCreate) check() error {
 	if _, ok := cc.mutation.TotalErrors(); !ok {
 		return &ValidationError{Name: "total_errors", err: errors.New(`ent: missing required field "Card.total_errors"`)}
 	}
+	if _, ok := cc.mutation.DeckProgressID(); !ok {
+		return &ValidationError{Name: "deck_progress", err: errors.New(`ent: missing required edge "Card.deck_progress"`)}
+	}
 	if _, ok := cc.mutation.SubjectID(); !ok {
 		return &ValidationError{Name: "subject", err: errors.New(`ent: missing required edge "Card.subject"`)}
 	}
@@ -357,6 +355,7 @@ func (cc *CardCreate) createSpec() (*Card, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	_spec.OnConflict = cc.conflict
 	if id, ok := cc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -459,10 +458,448 @@ func (cc *CardCreate) createSpec() (*Card, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Card.Create().
+//		SetCreatedAt(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CardUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (cc *CardCreate) OnConflict(opts ...sql.ConflictOption) *CardUpsertOne {
+	cc.conflict = opts
+	return &CardUpsertOne{
+		create: cc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Card.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (cc *CardCreate) OnConflictColumns(columns ...string) *CardUpsertOne {
+	cc.conflict = append(cc.conflict, sql.ConflictColumns(columns...))
+	return &CardUpsertOne{
+		create: cc,
+	}
+}
+
+type (
+	// CardUpsertOne is the builder for "upsert"-ing
+	//  one Card node.
+	CardUpsertOne struct {
+		create *CardCreate
+	}
+
+	// CardUpsert is the "OnConflict" setter.
+	CardUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *CardUpsert) SetUpdatedAt(v time.Time) *CardUpsert {
+	u.Set(card.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *CardUpsert) UpdateUpdatedAt() *CardUpsert {
+	u.SetExcluded(card.FieldUpdatedAt)
+	return u
+}
+
+// SetProgress sets the "progress" field.
+func (u *CardUpsert) SetProgress(v uint8) *CardUpsert {
+	u.Set(card.FieldProgress, v)
+	return u
+}
+
+// UpdateProgress sets the "progress" field to the value that was provided on create.
+func (u *CardUpsert) UpdateProgress() *CardUpsert {
+	u.SetExcluded(card.FieldProgress)
+	return u
+}
+
+// AddProgress adds v to the "progress" field.
+func (u *CardUpsert) AddProgress(v uint8) *CardUpsert {
+	u.Add(card.FieldProgress, v)
+	return u
+}
+
+// SetTotalErrors sets the "total_errors" field.
+func (u *CardUpsert) SetTotalErrors(v int32) *CardUpsert {
+	u.Set(card.FieldTotalErrors, v)
+	return u
+}
+
+// UpdateTotalErrors sets the "total_errors" field to the value that was provided on create.
+func (u *CardUpsert) UpdateTotalErrors() *CardUpsert {
+	u.SetExcluded(card.FieldTotalErrors)
+	return u
+}
+
+// AddTotalErrors adds v to the "total_errors" field.
+func (u *CardUpsert) AddTotalErrors(v int32) *CardUpsert {
+	u.Add(card.FieldTotalErrors, v)
+	return u
+}
+
+// SetUnlockedAt sets the "unlocked_at" field.
+func (u *CardUpsert) SetUnlockedAt(v time.Time) *CardUpsert {
+	u.Set(card.FieldUnlockedAt, v)
+	return u
+}
+
+// UpdateUnlockedAt sets the "unlocked_at" field to the value that was provided on create.
+func (u *CardUpsert) UpdateUnlockedAt() *CardUpsert {
+	u.SetExcluded(card.FieldUnlockedAt)
+	return u
+}
+
+// ClearUnlockedAt clears the value of the "unlocked_at" field.
+func (u *CardUpsert) ClearUnlockedAt() *CardUpsert {
+	u.SetNull(card.FieldUnlockedAt)
+	return u
+}
+
+// SetStartedAt sets the "started_at" field.
+func (u *CardUpsert) SetStartedAt(v time.Time) *CardUpsert {
+	u.Set(card.FieldStartedAt, v)
+	return u
+}
+
+// UpdateStartedAt sets the "started_at" field to the value that was provided on create.
+func (u *CardUpsert) UpdateStartedAt() *CardUpsert {
+	u.SetExcluded(card.FieldStartedAt)
+	return u
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (u *CardUpsert) ClearStartedAt() *CardUpsert {
+	u.SetNull(card.FieldStartedAt)
+	return u
+}
+
+// SetPassedAt sets the "passed_at" field.
+func (u *CardUpsert) SetPassedAt(v time.Time) *CardUpsert {
+	u.Set(card.FieldPassedAt, v)
+	return u
+}
+
+// UpdatePassedAt sets the "passed_at" field to the value that was provided on create.
+func (u *CardUpsert) UpdatePassedAt() *CardUpsert {
+	u.SetExcluded(card.FieldPassedAt)
+	return u
+}
+
+// ClearPassedAt clears the value of the "passed_at" field.
+func (u *CardUpsert) ClearPassedAt() *CardUpsert {
+	u.SetNull(card.FieldPassedAt)
+	return u
+}
+
+// SetAvailableAt sets the "available_at" field.
+func (u *CardUpsert) SetAvailableAt(v time.Time) *CardUpsert {
+	u.Set(card.FieldAvailableAt, v)
+	return u
+}
+
+// UpdateAvailableAt sets the "available_at" field to the value that was provided on create.
+func (u *CardUpsert) UpdateAvailableAt() *CardUpsert {
+	u.SetExcluded(card.FieldAvailableAt)
+	return u
+}
+
+// ClearAvailableAt clears the value of the "available_at" field.
+func (u *CardUpsert) ClearAvailableAt() *CardUpsert {
+	u.SetNull(card.FieldAvailableAt)
+	return u
+}
+
+// SetBurnedAt sets the "burned_at" field.
+func (u *CardUpsert) SetBurnedAt(v time.Time) *CardUpsert {
+	u.Set(card.FieldBurnedAt, v)
+	return u
+}
+
+// UpdateBurnedAt sets the "burned_at" field to the value that was provided on create.
+func (u *CardUpsert) UpdateBurnedAt() *CardUpsert {
+	u.SetExcluded(card.FieldBurnedAt)
+	return u
+}
+
+// ClearBurnedAt clears the value of the "burned_at" field.
+func (u *CardUpsert) ClearBurnedAt() *CardUpsert {
+	u.SetNull(card.FieldBurnedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Card.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(card.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CardUpsertOne) UpdateNewValues() *CardUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(card.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(card.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Card.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *CardUpsertOne) Ignore() *CardUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CardUpsertOne) DoNothing() *CardUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CardCreate.OnConflict
+// documentation for more info.
+func (u *CardUpsertOne) Update(set func(*CardUpsert)) *CardUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CardUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *CardUpsertOne) SetUpdatedAt(v time.Time) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *CardUpsertOne) UpdateUpdatedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetProgress sets the "progress" field.
+func (u *CardUpsertOne) SetProgress(v uint8) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.SetProgress(v)
+	})
+}
+
+// AddProgress adds v to the "progress" field.
+func (u *CardUpsertOne) AddProgress(v uint8) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.AddProgress(v)
+	})
+}
+
+// UpdateProgress sets the "progress" field to the value that was provided on create.
+func (u *CardUpsertOne) UpdateProgress() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateProgress()
+	})
+}
+
+// SetTotalErrors sets the "total_errors" field.
+func (u *CardUpsertOne) SetTotalErrors(v int32) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.SetTotalErrors(v)
+	})
+}
+
+// AddTotalErrors adds v to the "total_errors" field.
+func (u *CardUpsertOne) AddTotalErrors(v int32) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.AddTotalErrors(v)
+	})
+}
+
+// UpdateTotalErrors sets the "total_errors" field to the value that was provided on create.
+func (u *CardUpsertOne) UpdateTotalErrors() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateTotalErrors()
+	})
+}
+
+// SetUnlockedAt sets the "unlocked_at" field.
+func (u *CardUpsertOne) SetUnlockedAt(v time.Time) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.SetUnlockedAt(v)
+	})
+}
+
+// UpdateUnlockedAt sets the "unlocked_at" field to the value that was provided on create.
+func (u *CardUpsertOne) UpdateUnlockedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateUnlockedAt()
+	})
+}
+
+// ClearUnlockedAt clears the value of the "unlocked_at" field.
+func (u *CardUpsertOne) ClearUnlockedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearUnlockedAt()
+	})
+}
+
+// SetStartedAt sets the "started_at" field.
+func (u *CardUpsertOne) SetStartedAt(v time.Time) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.SetStartedAt(v)
+	})
+}
+
+// UpdateStartedAt sets the "started_at" field to the value that was provided on create.
+func (u *CardUpsertOne) UpdateStartedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateStartedAt()
+	})
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (u *CardUpsertOne) ClearStartedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearStartedAt()
+	})
+}
+
+// SetPassedAt sets the "passed_at" field.
+func (u *CardUpsertOne) SetPassedAt(v time.Time) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.SetPassedAt(v)
+	})
+}
+
+// UpdatePassedAt sets the "passed_at" field to the value that was provided on create.
+func (u *CardUpsertOne) UpdatePassedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdatePassedAt()
+	})
+}
+
+// ClearPassedAt clears the value of the "passed_at" field.
+func (u *CardUpsertOne) ClearPassedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearPassedAt()
+	})
+}
+
+// SetAvailableAt sets the "available_at" field.
+func (u *CardUpsertOne) SetAvailableAt(v time.Time) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.SetAvailableAt(v)
+	})
+}
+
+// UpdateAvailableAt sets the "available_at" field to the value that was provided on create.
+func (u *CardUpsertOne) UpdateAvailableAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateAvailableAt()
+	})
+}
+
+// ClearAvailableAt clears the value of the "available_at" field.
+func (u *CardUpsertOne) ClearAvailableAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearAvailableAt()
+	})
+}
+
+// SetBurnedAt sets the "burned_at" field.
+func (u *CardUpsertOne) SetBurnedAt(v time.Time) *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.SetBurnedAt(v)
+	})
+}
+
+// UpdateBurnedAt sets the "burned_at" field to the value that was provided on create.
+func (u *CardUpsertOne) UpdateBurnedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateBurnedAt()
+	})
+}
+
+// ClearBurnedAt clears the value of the "burned_at" field.
+func (u *CardUpsertOne) ClearBurnedAt() *CardUpsertOne {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearBurnedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *CardUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CardCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CardUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *CardUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: CardUpsertOne.ID is not supported by MySQL driver. Use CardUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *CardUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // CardCreateBulk is the builder for creating many Card entities in bulk.
 type CardCreateBulk struct {
 	config
 	builders []*CardCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Card entities in the database.
@@ -489,6 +926,7 @@ func (ccb *CardCreateBulk) Save(ctx context.Context) ([]*Card, error) {
 					_, err = mutators[i+1].Mutate(root, ccb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = ccb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, ccb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -535,6 +973,281 @@ func (ccb *CardCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (ccb *CardCreateBulk) ExecX(ctx context.Context) {
 	if err := ccb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Card.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CardUpsert) {
+//			SetCreatedAt(v+v).
+//		}).
+//		Exec(ctx)
+func (ccb *CardCreateBulk) OnConflict(opts ...sql.ConflictOption) *CardUpsertBulk {
+	ccb.conflict = opts
+	return &CardUpsertBulk{
+		create: ccb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Card.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (ccb *CardCreateBulk) OnConflictColumns(columns ...string) *CardUpsertBulk {
+	ccb.conflict = append(ccb.conflict, sql.ConflictColumns(columns...))
+	return &CardUpsertBulk{
+		create: ccb,
+	}
+}
+
+// CardUpsertBulk is the builder for "upsert"-ing
+// a bulk of Card nodes.
+type CardUpsertBulk struct {
+	create *CardCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Card.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(card.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CardUpsertBulk) UpdateNewValues() *CardUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(card.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(card.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Card.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *CardUpsertBulk) Ignore() *CardUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CardUpsertBulk) DoNothing() *CardUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CardCreateBulk.OnConflict
+// documentation for more info.
+func (u *CardUpsertBulk) Update(set func(*CardUpsert)) *CardUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CardUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *CardUpsertBulk) SetUpdatedAt(v time.Time) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *CardUpsertBulk) UpdateUpdatedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetProgress sets the "progress" field.
+func (u *CardUpsertBulk) SetProgress(v uint8) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.SetProgress(v)
+	})
+}
+
+// AddProgress adds v to the "progress" field.
+func (u *CardUpsertBulk) AddProgress(v uint8) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.AddProgress(v)
+	})
+}
+
+// UpdateProgress sets the "progress" field to the value that was provided on create.
+func (u *CardUpsertBulk) UpdateProgress() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateProgress()
+	})
+}
+
+// SetTotalErrors sets the "total_errors" field.
+func (u *CardUpsertBulk) SetTotalErrors(v int32) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.SetTotalErrors(v)
+	})
+}
+
+// AddTotalErrors adds v to the "total_errors" field.
+func (u *CardUpsertBulk) AddTotalErrors(v int32) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.AddTotalErrors(v)
+	})
+}
+
+// UpdateTotalErrors sets the "total_errors" field to the value that was provided on create.
+func (u *CardUpsertBulk) UpdateTotalErrors() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateTotalErrors()
+	})
+}
+
+// SetUnlockedAt sets the "unlocked_at" field.
+func (u *CardUpsertBulk) SetUnlockedAt(v time.Time) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.SetUnlockedAt(v)
+	})
+}
+
+// UpdateUnlockedAt sets the "unlocked_at" field to the value that was provided on create.
+func (u *CardUpsertBulk) UpdateUnlockedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateUnlockedAt()
+	})
+}
+
+// ClearUnlockedAt clears the value of the "unlocked_at" field.
+func (u *CardUpsertBulk) ClearUnlockedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearUnlockedAt()
+	})
+}
+
+// SetStartedAt sets the "started_at" field.
+func (u *CardUpsertBulk) SetStartedAt(v time.Time) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.SetStartedAt(v)
+	})
+}
+
+// UpdateStartedAt sets the "started_at" field to the value that was provided on create.
+func (u *CardUpsertBulk) UpdateStartedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateStartedAt()
+	})
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (u *CardUpsertBulk) ClearStartedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearStartedAt()
+	})
+}
+
+// SetPassedAt sets the "passed_at" field.
+func (u *CardUpsertBulk) SetPassedAt(v time.Time) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.SetPassedAt(v)
+	})
+}
+
+// UpdatePassedAt sets the "passed_at" field to the value that was provided on create.
+func (u *CardUpsertBulk) UpdatePassedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdatePassedAt()
+	})
+}
+
+// ClearPassedAt clears the value of the "passed_at" field.
+func (u *CardUpsertBulk) ClearPassedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearPassedAt()
+	})
+}
+
+// SetAvailableAt sets the "available_at" field.
+func (u *CardUpsertBulk) SetAvailableAt(v time.Time) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.SetAvailableAt(v)
+	})
+}
+
+// UpdateAvailableAt sets the "available_at" field to the value that was provided on create.
+func (u *CardUpsertBulk) UpdateAvailableAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateAvailableAt()
+	})
+}
+
+// ClearAvailableAt clears the value of the "available_at" field.
+func (u *CardUpsertBulk) ClearAvailableAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearAvailableAt()
+	})
+}
+
+// SetBurnedAt sets the "burned_at" field.
+func (u *CardUpsertBulk) SetBurnedAt(v time.Time) *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.SetBurnedAt(v)
+	})
+}
+
+// UpdateBurnedAt sets the "burned_at" field to the value that was provided on create.
+func (u *CardUpsertBulk) UpdateBurnedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.UpdateBurnedAt()
+	})
+}
+
+// ClearBurnedAt clears the value of the "burned_at" field.
+func (u *CardUpsertBulk) ClearBurnedAt() *CardUpsertBulk {
+	return u.Update(func(s *CardUpsert) {
+		s.ClearBurnedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *CardUpsertBulk) Exec(ctx context.Context) error {
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the CardCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CardCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CardUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
