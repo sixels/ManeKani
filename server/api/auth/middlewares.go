@@ -98,7 +98,7 @@ func EnsureCapabilities(jwt *mkjwt.JWTService, caps ...mkjwt.APITokenCapability)
 			}
 
 			c.Set("userID", sessionContainer.GetUserID())
-			log.Println("user authorized by login")
+			log.Printf("user %s authorized by login\n", sessionContainer.GetUserID())
 		}
 	}
 }
