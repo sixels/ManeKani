@@ -96,7 +96,7 @@ func (api *CardsApiV1) UnsubscribeUserFromDeck() gin.HandlerFunc {
 		if err := api.Cards.RemoveDeckSubscriber(
 			c.Request.Context(), deckID, userID,
 		); err != nil {
-			c.Error(fmt.Errorf("reset error: %w", err))
+			c.Error(fmt.Errorf("unsubscribe error: %w", err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}

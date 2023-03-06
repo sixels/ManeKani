@@ -61,7 +61,7 @@ func (api *CardsApi) SetupRoutes(router *gin.Engine) {
 	v1.
 		GET("/deck/:id", api.V1.QueryDeck()).
 		GET("/deck", api.V1.AllDecks()).
-		PATCH("/deck/:id/subscribe",
+		PATCH("/deck/:id/subscribe", // TODO: use PUT instead of PATCH
 			auth_api.EnsureCapabilities(api.jwt, mkjwt.TokenCapabilityUserUpdate),
 			api.V1.SubscribeUserToDeck()).
 		DELETE("/deck/:id/subscribe",

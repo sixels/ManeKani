@@ -3,6 +3,7 @@ package cards
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	domain "github.com/sixels/manekani/core/domain/cards"
@@ -35,8 +36,11 @@ func (svc *CardsService) CreateReview(ctx context.Context, userID string, req do
 		}
 
 		endProgress := calculateNextProgress(req.SessionType, startProgress, totalErrors)
-		txCards.UpdateCard(ctx, card.ID,
+		updatedCard, err := txCards.UpdateCard(ctx, card.ID,
 			cardUpdates(card, endProgress, int32(totalErrors)))
+		if err != nil {
+			return nil, err
+		}
 
 		review, err := txCards.CreateReview(ctx, userID, domain.CreateReviewRequest{
 			CardID:        *req.CardID.Only(),
@@ -48,7 +52,7 @@ func (svc *CardsService) CreateReview(ctx context.Context, userID string, req do
 			return nil, err
 		}
 
-		if err := unlockDependents(ctx, txCards, card, userID); err != nil {
+		if err := unlockDependents(ctx, txCards, updatedCard, userID); err != nil {
 			return nil, err
 		}
 
@@ -61,6 +65,8 @@ func (svc *CardsService) AllReviews(ctx context.Context, userID string, req doma
 }
 
 func unlockDependents(ctx context.Context, txCards ports.CardsRepository, card *domain.Card, userID string) error {
+	log.Printf("Checking if card %v has any dependents to unlock\n", card.ID)
+
 	// search for locked dependents of card's subject
 	dependents, err := txCards.AllCards(ctx, userID, domain.QueryManyCardsRequest{
 		WithDependencies: util.Ptr((filters.CommaSeparatedUUID)(card.Subject.ID.String())),
@@ -69,6 +75,7 @@ func unlockDependents(ctx context.Context, txCards ports.CardsRepository, card *
 	if err != nil {
 		return err
 	}
+	log.Printf("card %v has %d dependents with subject %v\n", card.ID, len(dependents), card.Subject.ID)
 
 	// for each locked dependent, check if all its depencies have been passed
 	for _, dependent := range dependents {
@@ -80,9 +87,11 @@ func unlockDependents(ctx context.Context, txCards ports.CardsRepository, card *
 		if err != nil {
 			return err
 		}
+		log.Printf("card %v's dependent %v have %d dependencies, %d passed\n", card.ID, dependent.ID, totalDeps, len(depsPassed))
 
 		// if all dependencies have passed, we are good to unlock it
 		if len(depsPassed) == totalDeps {
+			log.Printf("unlocking %v", dependent.ID)
 			now := time.Now()
 			txCards.UpdateCard(ctx, dependent.ID, domain.UpdateCardRequest{
 				UnlockedAt:  util.Ptr(&now),

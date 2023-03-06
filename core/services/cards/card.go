@@ -16,6 +16,7 @@ func (svc *CardsService) UpdateCard(ctx context.Context, id uuid.UUID, req domai
 func (svc *CardsService) AllCards(ctx context.Context, userID string, req domain.QueryManyCardsRequest) ([]domain.Card, error) {
 	return svc.repo.AllCards(ctx, userID, req)
 }
-func (svc *CardsService) CreateManyCards(ctx context.Context, deckID uuid.UUID, userID string, reqs []domain.CreateCardRequest) ([]domain.Card, error) {
-	return svc.repo.CreateManyCards(ctx, deckID, userID, reqs)
-}
+
+// func (svc *CardsService) CreateManyCards(ctx context.Context, deckProgressID int, userID string, reqs []domain.CreateCardRequest) ([]domain.Card, error) {
+// 	return svc.repo.CreateManyCards(ctx, deckProgressID, userID, reqs)
+// }

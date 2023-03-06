@@ -58,6 +58,7 @@ type Urls struct {
 func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
+		log.Printf("create subject request received\n")
 
 		userID, err := util.CtxUserID(c)
 		if err != nil {
@@ -66,8 +67,8 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 			return
 		}
 
-		var form CreateSubjectAPIRequest
-		if err := c.Bind(&form); err != nil {
+		var req CreateSubjectAPIRequest
+		if err := c.Bind(&req); err != nil {
 			c.Error(fmt.Errorf("create-subject bind error: %w", err))
 			c.String(http.StatusBadRequest, err.Error())
 			return
@@ -78,11 +79,11 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 			subjectImage       *cards.RemoteContent
 			subjectImageUpload files.UploadURL
 		)
-		if form.ValueImageMeta != nil {
+		if req.ValueImageMeta != nil {
 			subjectImage, subjectImageUpload, err = api.startRemoteResourceUpload(
 				ctx,
-				form.ValueImageMeta,
-				fmt.Sprintf("L%d-%s\n", form.Level, form.Slug),
+				req.ValueImageMeta,
+				fmt.Sprintf("L%d-%s\n", req.Level, req.Slug),
 				"value",
 			)
 			if err != nil {
@@ -97,12 +98,12 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 			subjectResources       map[string][]cards.RemoteContent
 			subjectResourcesUpload []files.UploadURL
 		)
-		if form.ResourcesMeta != nil {
-			for _, resourceMeta := range form.ResourcesMeta {
+		if req.ResourcesMeta != nil {
+			for _, resourceMeta := range req.ResourcesMeta {
 				resource, uploadURL, err := api.startRemoteResourceUpload(
 					ctx,
 					&resourceMeta,
-					fmt.Sprintf("%s-%s\n", form.Name, *resourceMeta.Group),
+					fmt.Sprintf("%s-%s\n", req.Name, *resourceMeta.Group),
 					"resource",
 				)
 				if err != nil {
@@ -122,7 +123,7 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 			}
 		}
 
-		subj := form.CreateSubjectRequest
+		subj := req.CreateSubjectRequest
 		subj.ValueImage = subjectImage
 		subj.Resources = &subjectResources
 
@@ -317,8 +318,13 @@ func (api *CardsApiV1) startRemoteResourceUpload(
 		return nil, files.UploadURL{}, err
 	}
 
+	if meta.Group != nil {
+		uploadURL.Resource = *meta.Group
+	}
+
 	return &cards.RemoteContent{
-		// TODO: set full resource url
+		// TODO: return the full url to the resource instead of its storage key
+		// e.g: https://files.manekani.com/{key}
 		URL:         key,
 		ContentType: contentType,
 		Metadata:    meta.Metadata,

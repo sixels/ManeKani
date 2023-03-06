@@ -75,45 +75,32 @@ func (repo *CardsRepository) DeckOwner(ctx context.Context, deckID uuid.UUID) (s
 		OnlyID(ctx)
 }
 
-func (repo *CardsRepository) AddDeckSubscriber(ctx context.Context, deckID uuid.UUID, userID string) error {
-	return repo.client.DeckClient().UpdateOneID(deckID).
+func (repo *CardsRepository) AddDeckSubscriber(ctx context.Context, deckID uuid.UUID, userID string) (int, error) {
+	deckProgressID, err := repo.client.DeckProgressClient().Create().
+		SetLevel(1).
+		SetDeckID(deckID).
+		SetUserID(userID).
+		OnConflict().
+		DoNothing().
+		ID(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := repo.client.DeckClient().UpdateOneID(deckID).
 		AddSubscriberIDs(userID).
-		Exec(ctx)
+		Exec(ctx); err != nil {
+		return 0, err
+	}
+
+	return deckProgressID, nil
 }
 
 func (repo *CardsRepository) RemoveDeckSubscriber(ctx context.Context, deckID uuid.UUID, userID string) error {
 	return repo.client.DeckClient().UpdateOneID(deckID).
-		AddSubscriberIDs(userID).
+		RemoveSubscriberIDs(userID).
 		Exec(ctx)
 }
-
-// 	_, err := util.WithTx(ctx, repo.client.Client.(*ent.Client), func(_ *ent.Tx) (_ *struct{}, err error) {
-// 		// delete cards
-// 		_, err = repo.client.CardClient().Delete().
-// 			Where(card.And(
-// 				card.HasDeckProgressWith(deckprogress.HasUserWith(
-// 					user.IDEQ(userID),
-// 				)),
-// 				card.HasSubjectWith(
-// 					subject.HasDeckWith(deck.IDEQ(deckID))),
-// 			)).
-// 			Exec(ctx)
-// 		if err != nil {
-// 			return
-// 		}
-// 		// delete progress
-// 		_, err = repo.client.DeckProgressClient().Delete().
-// 			Where(
-// 				deckprogress.And(
-// 					deckprogress.HasUserWith(user.IDEQ(userID)),
-// 					deckprogress.HasDeckWith(deck.IDEQ(deckID)),
-// 				),
-// 			).
-// 			Exec(ctx)
-// 		return
-// 	})
-// 	return err
-// }
 
 func DeckFromEnt(e *ent.Deck) cards.Deck {
 	return cards.Deck{

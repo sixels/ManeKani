@@ -2,7 +2,7 @@ package cards
 
 import (
 	"context"
-	"time"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/core/domain/cards"
@@ -132,14 +132,14 @@ func (repo *CardsRepository) AllCards(ctx context.Context, userID string, req ca
 	filters.With(fs, req.AvailableAfter, card.AvailableAtGTE)
 	filters.With(fs, req.AvailableBefore, card.AvailableAtLTE)
 	filters.With(fs, req.IsUnlocked, func(c bool) predicate.Card {
-		p := card.UnlockedAtLTE(time.Now())
+		p := card.UnlockedAtNotNil()
 		if !c {
 			return card.Not(p)
 		}
 		return p
 	})
 	filters.With(fs, req.IsBurned, func(c bool) predicate.Card {
-		p := card.BurnedAtLTE(time.Now())
+		p := card.BurnedAtNotNil()
 		if !c {
 			return card.Not(p)
 		}
@@ -155,11 +155,22 @@ func (repo *CardsRepository) AllCards(ctx context.Context, userID string, req ca
 		return p
 	})
 	filters.In(fs, req.WithDependencies.Separate(), func(ids ...uuid.UUID) predicate.Card {
+		log.Println("dependency:", ids)
 		return card.HasSubjectWith(subject.HasDependenciesWith(subject.IDIn(ids...)))
 	})
 	filters.In(fs, req.WithDependents.Separate(), func(ids ...uuid.UUID) predicate.Card {
 		return card.HasSubjectWith(subject.HasDependentsWith(subject.IDIn(ids...)))
 	})
+
+	log.Println(repo.client.CardClient().Query().Where(
+		card.And(
+			card.HasDeckProgressWith(deckprogress.HasUserWith(user.IDEQ(userID))),
+			card.HasSubjectWith(subject.HasDependenciesWith(subject.IDEQ(
+				uuid.MustParse("1175bc9c-ec71-492a-81e9-64400317e8c3"),
+			))),
+			card.UnlockedAtNotNil(),
+		),
+	).CountX(ctx))
 
 	page := 0
 	if req.Page != nil {
@@ -208,22 +219,64 @@ func (repo *CardsRepository) AllCards(ctx context.Context, userID string, req ca
 	return util.MapArray(queried, CardFromEnt), nil
 }
 
-func (repo *CardsRepository) CreateManyCards(ctx context.Context, deckID uuid.UUID, userID string, reqs []cards.CreateCardRequest) ([]cards.Card, error) {
+func (repo *CardsRepository) CreateManyCards(ctx context.Context, deckProgressID int, userID string, reqs []cards.CreateCardRequest) ([]cards.Card, error) {
 	toCreate := make([]*ent.CardCreate, len(reqs))
 	for i, req := range reqs {
 		toCreate[i] = repo.client.CardClient().Create().
+			SetDeckProgressID(deckProgressID).
 			SetSubjectID(req.SubjectID).
 			SetNillableProgress(req.Progress).
 			SetNillableTotalErrors(req.TotalErrors).
 			SetNillableUnlockedAt(req.UnlockedAt).
 			SetNillableAvailableAt(req.AvailableAt)
 	}
+	log.Printf("creating %d cards", len(toCreate))
 	created, err := repo.client.CardClient().CreateBulk(toCreate...).
 		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return util.MapArray(created, CardFromEnt), nil
+
+	// TODO: better way to get edges from updated instead of querying again
+	queried, err := repo.client.CardClient().
+		Query().
+		Where(card.IDIn(util.MapArray(created, func(a *ent.Card) uuid.UUID {
+			return a.ID
+		})...)).
+		WithSubject(func(sq *ent.SubjectQuery) {
+			sq.
+				WithOwner(func(uq *ent.UserQuery) {
+					uq.Select(user.FieldID)
+				}).
+				WithDependencies(func(sq *ent.SubjectQuery) {
+					sq.Select(subject.FieldID)
+				}).
+				WithDependents(func(sq *ent.SubjectQuery) {
+					sq.Select(subject.FieldID)
+				}).
+				WithSimilar(func(sq *ent.SubjectQuery) {
+					sq.Select(subject.FieldID)
+				}).
+				WithDeck(func(dq *ent.DeckQuery) {
+					dq.Select(deck.FieldID)
+				}).
+				Select(
+					subject.FieldID,
+					subject.FieldKind,
+					subject.FieldLevel,
+					subject.FieldPriority,
+					subject.FieldName,
+					subject.FieldValue,
+					subject.FieldValueImage,
+					subject.FieldSlug,
+					subject.FieldStudyData,
+				)
+		}).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return util.MapArray(queried, CardFromEnt), nil
 }
 
 func CardFromEnt(e *ent.Card) cards.Card {

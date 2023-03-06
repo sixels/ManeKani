@@ -35,7 +35,10 @@ func NewRepository(ctx context.Context, client *ent_repo.EntRepository, jwtServi
 		return nil, err
 	}
 
-	if err := createAdminUser(ctx, txRepo); err != nil {
+	if err := tx.Run(func(ctx context.Context) error {
+		return createAdminUser(ctx, txRepo)
+	}); err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
@@ -56,7 +59,7 @@ func createAdminUser(ctx context.Context, repo *UsersRepository) error {
 		SetPendingActions([]schema.PendingAction{}).
 		Save(ctx)
 	if err != nil {
-		return fmt.Errorf("could not create the manekani user: %w", err)
+		return fmt.Errorf("could not create the manekani: %w", err)
 	}
 
 	tokenExpiration := time.Now().AddDate(10, 0, 0)
