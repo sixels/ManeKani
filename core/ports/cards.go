@@ -24,7 +24,7 @@ type (
 		AllDecks(ctx context.Context, req domain.QueryManyDecksRequest) ([]domain.DeckPartial, error)
 		DeckOwner(ctx context.Context, id uuid.UUID) (string, error)
 
-		AddDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) error
+		AddDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) (deckProgressID int, err error)
 		RemoveDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) error
 	}
 
@@ -38,7 +38,7 @@ type (
 		QueryCard(ctx context.Context, id uuid.UUID) (*domain.Card, error)
 		UpdateCard(ctx context.Context, id uuid.UUID, req domain.UpdateCardRequest) (*domain.Card, error)
 		AllCards(ctx context.Context, userID string, req domain.QueryManyCardsRequest) ([]domain.Card, error)
-		CreateManyCards(ctx context.Context, deckID uuid.UUID, userID string, reqs []domain.CreateCardRequest) ([]domain.Card, error)
+		CreateManyCards(ctx context.Context, deckProgressID int, userID string, reqs []domain.CreateCardRequest) ([]domain.Card, error)
 	}
 
 	CardsRepository interface {

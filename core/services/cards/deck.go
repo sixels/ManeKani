@@ -3,6 +3,7 @@ package cards
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -39,6 +40,11 @@ func (svc *CardsService) AddDeckSubscriber(ctx context.Context, id uuid.UUID, us
 
 	return tx.Run(func(ctx context.Context) error {
 		// TODO: check if user already has cards in this deck (i.e: was already subscribed in the past or still is)
+		deckProgressID, err := txCards.AddDeckSubscriber(ctx, id, userID)
+		if err != nil {
+			log.Printf("could not subscribe user %v to deck %v: %v", userID, id, err)
+			return err
+		}
 
 		// get level 1 subjects
 		subjects, err := txCards.AllSubjects(
@@ -55,6 +61,7 @@ func (svc *CardsService) AddDeckSubscriber(ctx context.Context, id uuid.UUID, us
 		if err != nil {
 			return err
 		}
+		log.Println("level 1 subjects:", len(subjects))
 
 		// create cards from subjects
 		cards := make([]domain.CreateCardRequest, len(subjects))
@@ -76,10 +83,11 @@ func (svc *CardsService) AddDeckSubscriber(ctx context.Context, id uuid.UUID, us
 			}
 		}
 
-		if _, err := txCards.CreateManyCards(ctx, id, userID, cards); err != nil {
+		if _, err := txCards.CreateManyCards(ctx, deckProgressID, userID, cards); err != nil {
+			log.Printf("could not create user %v cards from deck %v: %v", userID, id, err)
 			return err
 		}
-		return txCards.AddDeckSubscriber(ctx, id, userID)
+		return nil
 	})
 }
 
