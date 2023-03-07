@@ -58,7 +58,6 @@ type Urls struct {
 func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-		log.Printf("create subject request received\n")
 
 		userID, err := util.CtxUserID(c)
 		if err != nil {
@@ -95,7 +94,7 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 
 		// upload resources
 		var (
-			subjectResources       map[string][]cards.RemoteContent
+			subjectResources       = make(map[string][]cards.RemoteContent, 0)
 			subjectResourcesUpload []files.UploadURL
 		)
 		if req.ResourcesMeta != nil {
@@ -130,7 +129,8 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 		created, err := api.Cards.CreateSubject(ctx, userID, subj)
 		if err != nil {
 			c.Error(fmt.Errorf("could not create the subject: %w", err))
-			c.JSON(err.(*errors.Error).Status, err)
+			c.Status(http.StatusInternalServerError)
+			// c.JSON(err.(*errors.Error).Status, err)
 			return
 		}
 
@@ -333,25 +333,4 @@ func (api *CardsApiV1) startRemoteResourceUpload(
 
 func startFileUpload(ctx context.Context, filesService *files_service.FilesRepository, info files.FileInfo) (objectKey string, uploadURL files.UploadURL, err error) {
 	return filesService.UploadFileURL(ctx, info)
-}
-
-func checkResourceOwner[T any](
-	ctx context.Context,
-	userID string, resourceID T,
-	queryOwner func(context.Context, T) (string, error),
-) (status int, err error) {
-	if owner, err := queryOwner(ctx, resourceID); err != nil || owner != userID {
-		if owner != userID {
-			log.Printf("%s is not %s\n", userID, owner)
-			err = fmt.Errorf("%q is not the owner of '%v'", userID, resourceID)
-			status = http.StatusForbidden
-		} else {
-			err = fmt.Errorf(
-				"could not check wether the specified user owns the resource: %w", err,
-			)
-			status = http.StatusNotFound
-		}
-		return status, err
-	}
-	return 0, nil
 }

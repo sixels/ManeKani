@@ -56,18 +56,18 @@ func EnsureCapabilities(jwt *mkjwt.JWTService, caps ...mkjwt.APITokenCapability)
 	return func(c *gin.Context) {
 		// check api key first
 		bearerToken := c.GetHeader("Authorization")
-		tokenPrefix := "Bearer"
+		tokenPrefix := "Bearer "
 		if strings.HasPrefix(bearerToken, tokenPrefix) {
 			tokenString := bearerToken[len(tokenPrefix):]
 
 			claims := mkjwt.APITokenClaims{}
 			token, err := jwt.ValidateToken(tokenString, &claims)
 			if err != nil || !token.Valid {
+				log.Println("token validation error:", err)
 				c.AbortWithError(http.StatusUnauthorized, err)
 				return
 			}
 
-			log.Println(claims)
 			capMap := mkjwt.MapCapabilities(claims)
 			for _, cap := range caps {
 				if !capMap[cap] {
@@ -84,6 +84,7 @@ func EnsureCapabilities(jwt *mkjwt.JWTService, caps ...mkjwt.APITokenCapability)
 			// no need to check for capabilities for logged users
 			sessionContainer, err := session.GetSession(c.Request, c.Writer, nil)
 			if err != nil {
+				log.Println("get session errror:", err)
 				c.Error(err)
 				err = supertokens.ErrorHandler(err, c.Request, c.Writer)
 				if err != nil {

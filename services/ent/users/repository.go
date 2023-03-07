@@ -11,7 +11,6 @@ import (
 	"github.com/sixels/manekani/ent/schema"
 	"github.com/sixels/manekani/ent/user"
 	ent_repo "github.com/sixels/manekani/services/ent"
-	"github.com/sixels/manekani/services/jwt"
 	mkjwt "github.com/sixels/manekani/services/jwt"
 )
 
@@ -42,6 +41,12 @@ func NewRepository(ctx context.Context, client *ent_repo.EntRepository, jwtServi
 		return nil, err
 	}
 
+	// dump tokens for debug reasons
+	admin := repo.client.UserClient().Query().
+		Where(user.UsernameEQ("manekani")).
+		OnlyX(ctx)
+	_, _ = repo.DumpUserAPITokens(ctx, admin.ID)
+
 	return &repo, nil
 }
 
@@ -53,7 +58,7 @@ func createAdminUser(ctx context.Context, repo *UsersRepository) error {
 	}
 	log.Println("creating admin user")
 
-	usr, err := repo.client.UserClient().Create().
+	admin, err := repo.client.UserClient().Create().
 		SetEmail("admin@manekani.io").
 		SetUsername("manekani").
 		SetPendingActions([]schema.PendingAction{}).
@@ -63,10 +68,10 @@ func createAdminUser(ctx context.Context, repo *UsersRepository) error {
 	}
 
 	tokenExpiration := time.Now().AddDate(10, 0, 0)
-	_, err = repo.CreateUserAPITokenTX(ctx, usr.ID, mkjwt.APITokenOptions{
-		UserID: usr.ID,
-		Scope:  jwt.TokenScopeGlobal,
-		Capabilities: []jwt.APITokenCapability{
+	_, err = repo.CreateUserAPITokenTX(ctx, admin.ID, mkjwt.APITokenOptions{
+		UserID: admin.ID,
+		Scope:  mkjwt.TokenScopeGlobal,
+		Capabilities: []mkjwt.APITokenCapability{
 			mkjwt.TokenCapabiltyDeckCreate,
 			mkjwt.TokenCapabiltyDeckDelete,
 			mkjwt.TokenCapabiltyDeckUpdate,
@@ -85,17 +90,11 @@ func createAdminUser(ctx context.Context, repo *UsersRepository) error {
 	err = repo.client.DeckClient().Create().
 		SetName("WaniKani").
 		SetDescription("All WaniKani cards to help you learn japanese fast!").
-		SetOwnerID(usr.ID).
+		SetOwnerID(admin.ID).
 		Exec(ctx)
 	if err != nil {
 		return err
 	}
-
-	admin := repo.client.UserClient().Query().
-		Where(user.UsernameEQ("manekani")).
-		OnlyX(ctx)
-
-	_, _ = repo.DumpUserAPITokens(ctx, admin.ID)
 
 	return err
 }
