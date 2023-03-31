@@ -1,124 +1,118 @@
-version: "3"
+version: "3.7"
 
 # THIS COMPOSE FILE IS MEANT FOR DEVELOPMENT.
 # DON'T PUT ANY SENSITIVE DATA HERE!
 
 services:
-  minio:
-    image: quay.io/minio/minio:latest
-    container_name: manekani-minio
-    hostname: minio
-    restart: unless-stopped
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    command: server --console-address ":9001" /data
-    volumes:
-      - /home/sixels/.manekani/minio:/data
-
   postgres:
     image: postgres:15-alpine
-    container_name: manekani-postgres
-    hostname: postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: sixels
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: manekani
+    restart: always
     ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD", "pg_isready -U sixels"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=sixels
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=manekani
+    volumes:
+      - manekani-db:/var/lib/postgresql/data
 
-  # supertokens can be used to authenticate multiple clients,
-  # we don't want to keep wit on the same database as manekani
   auth-db:
     image: postgres:15-alpine
-    container_name: auth-db
-    hostname: auth-db
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_USER: sixels
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: supertokens
-    expose:
-      - "5432"
+      - POSTGRES_USER=sixels
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=supertokens
     volumes:
-      - auth-volume:/var/lib/postgresql/data
+      - auth-db:/var/lib/postgresql/data
+    networks:
+      - auth
 
   supertokens:
-    container_name: auth-supertokens
     image: registry.supertokens.io/supertokens/supertokens-postgresql
-    hostname: supertokens
+    restart: always
     depends_on:
       - auth-db
+    environment:
+      - POSTGRESQL_CONNECTION_URI=postgresql://sixels:123@auth-db/supertokens
+      - API_KEYS=60f98a9e-ce60-48c2-bfa2-8c4f623874af
     expose:
       - "3567"
+    networks:
+      - default
+      - auth
+
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: always
     environment:
-      POSTGRESQL_CONNECTION_URI: "postgresql://sixels:123@auth-db/supertokens"
-      API_KEYS: "60f98a9e-ce60-48c2-bfa2-8c4f623874af"
-    restart: unless-stopped
-    healthcheck:
-      test: >
-        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 && cat <&3 | grep "Hello"'
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    expose:
+      - "9000"
+      - "9001"
+    command: server --console-address ":9001" /data
+    volumes:
+      - minio-db:/data
 
   manekani:
-    container_name: manekani
-    hostname: manekani
     restart: unless-stopped
+    depends_on:
+      - minio
+      - supertokens
+      - postgres
     environment:
-      MANEKANI_DATA_HOME: /data
-      MANEKANI_S3_URL: "minio:9000"
-      MANEKANI_DB_URL: "postgres://sixels:123@postgres/manekani"
-      AWS_ACCESS_KEY_ID: Kz31iB793qov0cTW
-      AWS_SECRET_ACCESS_KEY: jKyin9lWVio2tCIDXu0JHr3a1zfcPQ78
-      KEYCLOAK_CLIENT_ID: manekani
-      KEYCLOAK_CLIENT_SECRET: Zzmv9gFDHs5YOuL7ajfvhX5vERFVzyAs
-      KEYCLOAK_URL: "http://keycloak:9100"
-      KEYCLOAK_REALM: manekani
-    # env_file:
-    #   - ./.env
-    ports:
-      - "8081:8081"
+      - TOKEN_SIGN_KEY=iDBNNgcX3slubbIUQ5bEuHosTQVqDF2Z
+      - TOKEN_ENCRYPTION_KEY=cE0SC2E2A4qNoeCdlWo8vA218Uzqbnw4
+
+      - MANEKANI_S3_URL=minio:9000
+      - AWS_ACCESS_KEY_ID=S6acsvuTta7QbL7k
+      - AWS_SECRET_ACCESS_KEY=vlXDezn2NgrjQducm6aHrACl7FUKiO3W
+
+      - MANEKANI_DB_URL=postgres://sixels:123@postgres/manekani
+
+      - MANEKANI_AUTH_URL=http://supertokens:3567
+      - MANEKANI_AUTH_SECRET=60f98a9e-ce60-48c2-bfa2-8c4f623874af
+
+      # TODO: find a better way to define these values
+      - MANEKANI_SERVER_URL=http://192.168.15.9
+      - MANEKANI_SERVER_PORT=8081
+      - MANEKANI_CLIENT_URL=http://192.168.15.9
+      - MANEKANI_CLIENT_PORT=8082
+    expose:
+      - "8081"
     build:
       context: ./
-      dockerfile: Dockerfile
-    depends_on:
-      - keycloak
-      - minio
-      - postgres
+      dockerfile: ./docker/Dockerfile
     volumes:
-      - /home/sixels/.manekani:/data
-      - ./:/app/manekani
+      - ./:/usr/src/manekani
 
   nginx:
     image: nginx:alpine
-    container_name: manekani-nginx
-    hostname: nginx
     restart: unless-stopped
+    depends_on:
+      - minio
+      - supertokens
+      - manekani
     volumes:
+      # TODO: modularize nginx configuration
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "9000:9000"
       - "9001:9001"
-      - "3567:3567"
-      # - "8081:8081"
-    depends_on:
-      - minio
-      - supertokens
-      # - manekani
+      - "3567:3567" # temporary
+      - "8081:8081"
+
+networks:
+  default:
+    name: "manekani-default-net"
+  auth:
+    name: "manekani-auth-net"
 
 volumes:
-  auth-volume:
+  manekani-db:
     driver: local
-  minio-volume:
+  auth-db:
+    driver: local
+  minio-db:
     driver: local

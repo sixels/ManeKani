@@ -26,6 +26,8 @@ type (
 
 		AddDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) (deckProgressID int, err error)
 		RemoveDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) error
+
+		DeckSubscriberExists(ctx context.Context, id uuid.UUID, userID string) (deckProgressID int, exists bool, err error)
 	}
 
 	// TODO: query review

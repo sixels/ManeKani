@@ -38,12 +38,21 @@ func (svc *CardsService) AddDeckSubscriber(ctx context.Context, id uuid.UUID, us
 		return err
 	}
 
+	log.Printf("Subscribing user %s to deck %s", userID, id)
 	return tx.Run(func(ctx context.Context) error {
 		// TODO: check if user already has cards in this deck (i.e: was already subscribed in the past or still is)
-		deckProgressID, err := txCards.AddDeckSubscriber(ctx, id, userID)
+		deckProgressID, exists, err := txCards.DeckSubscriberExists(ctx, id, userID)
 		if err != nil {
-			log.Printf("could not subscribe user %v to deck %v: %v", userID, id, err)
+			log.Printf("could not check if user %v is subscribed to deck %v: %v", userID, id, err)
 			return err
+		}
+
+		if !exists {
+			deckProgressID, err = txCards.AddDeckSubscriber(ctx, id, userID)
+			if err != nil {
+				log.Printf("could not subscribe user %v to deck %v: %v", userID, id, err)
+				return err
+			}
 		}
 
 		// get level 1 subjects

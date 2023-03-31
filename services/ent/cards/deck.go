@@ -9,6 +9,7 @@ import (
 	"github.com/sixels/manekani/core/ports"
 	"github.com/sixels/manekani/ent"
 	"github.com/sixels/manekani/ent/deck"
+	"github.com/sixels/manekani/ent/deckprogress"
 	"github.com/sixels/manekani/ent/predicate"
 	"github.com/sixels/manekani/ent/subject"
 	"github.com/sixels/manekani/ent/user"
@@ -100,6 +101,22 @@ func (repo *CardsRepository) RemoveDeckSubscriber(ctx context.Context, deckID uu
 	return repo.client.DeckClient().UpdateOneID(deckID).
 		RemoveSubscriberIDs(userID).
 		Exec(ctx)
+}
+
+func (repo *CardsRepository) DeckSubscriberExists(ctx context.Context, deckID uuid.UUID, userID string) (int, bool, error) {
+	dpID, err := repo.client.DeckProgressClient().Query().
+		Where(deckprogress.HasDeckWith(deck.IDEQ(deckID))).
+		Where(deckprogress.HasUserWith(user.ID(userID))).
+		OnlyID(ctx)
+
+	switch err.(type) {
+	case nil:
+		return dpID, true, nil
+	case *ent.NotFoundError:
+		return 0, false, nil
+	default:
+		return 0, false, err
+	}
 }
 
 func DeckFromEnt(e *ent.Deck) cards.Deck {
