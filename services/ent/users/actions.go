@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	user_domain "github.com/sixels/manekani/core/domain/user"
@@ -12,46 +11,6 @@ import (
 	"github.com/sixels/manekani/ent/subject"
 	"github.com/sixels/manekani/ent/user"
 )
-
-func (repo *UsersRepository) ResolveActions(ctx context.Context, userID string) error {
-	panic("legacy")
-	// usr, err := repo.client.UserClient().Query().
-	// 	Where(user.IDEQ(userID)).
-	// 	Select(user.FieldID, user.FieldPendingActions).
-	// 	Only(ctx)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// actions := usr.PendingActions
-	// failedActions := []schema.PendingAction{}
-	// for _, action := range actions {
-	// 	if _, err := util.WithTx(ctx, repo.client.Client.(*ent.Client), func(tx *ent.Tx) (*struct{}, error) {
-	// 		switch action.Action {
-	// 		case user_domain.ActionCheckCardUnlocks:
-	// 			meta, err := redoEncoding[user_domain.CheckCardUnlocksMeta](action.Metadata)
-	// 			if err != nil {
-	// 				return nil, err
-	// 			}
-	// 			return nil, actionCheckCardUnlocks(
-	// 				ctx, tx, userID, *meta)
-	// 		}
-
-	// 		return nil, nil
-	// 	}); err != nil {
-	// 		log.Printf("user action failed: %v (%+v): %v \n", action.Action, err, action.Metadata)
-	// 		failedActions = append(failedActions, action)
-	// 	}
-	// }
-
-	// if err := repo.client.UserClient().UpdateOneID(userID).
-	// 	SetPendingActions(failedActions).
-	// 	Exec(ctx); err != nil {
-	// 	return err
-	// }
-
-	// return nil
-}
 
 func actionCheckCardUnlocks(
 	ctx context.Context,
@@ -117,16 +76,6 @@ func actionCheckCardUnlocks(
 	}
 
 	return nil
-}
-
-func redoEncoding[T any](t any) (*T, error) {
-	bytes, err := json.Marshal(t)
-	if err != nil {
-		return nil, err
-	}
-	data := new(T)
-	err = json.Unmarshal(bytes, data)
-	return data, err
 }
 
 // func (repo *UsersRepository) createLevelCards(ctx context.Context, tx *ent.Tx, userID string, level int32) error {
