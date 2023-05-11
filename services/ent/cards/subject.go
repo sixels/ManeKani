@@ -62,12 +62,12 @@ func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, 
 		SetLevel(req.Level).
 		SetName(req.Name).
 		SetNillableValue(req.Value).
-		SetValueImage(req.ValueImage).
+		SetValueImage(*req.ValueImage).
 		SetSlug(req.Slug).
 		SetPriority(req.Priority).
 		SetStudyData(req.StudyData).
 		SetAdditionalStudyData(req.AdditionalStudyData).
-		SetResources(req.Resources).
+		SetResources(*req.Resources).
 		AddDependencyIDs(req.Dependencies...).
 		AddDependentIDs(req.Dependents...).
 		AddSimilarIDs(req.Similars...).
@@ -93,15 +93,13 @@ func (repo *CardsRepository) UpdateSubject(ctx context.Context, id uuid.UUID, re
 	util.UpdateValue(req.Name, query.SetName)
 
 	query.SetNillableValue(req.Value)
-	if req.ValueImage != nil {
-		query.SetValueImage(req.ValueImage)
-	}
+	query.SetNillableValueImage(req.ValueImage)
 
 	util.UpdateValue(req.Slug, query.SetSlug)
 	util.UpdateValue(req.Priority, query.SetPriority)
 	util.UpdateValue(req.StudyData, query.SetStudyData)
 	if req.Resources != nil {
-		query.SetResources(req.Resources)
+		query.SetResources(*req.Resources)
 	}
 
 	util.UpdateValues(req.Dependencies, query.AddDependencyIDs)
