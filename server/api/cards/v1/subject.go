@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"mime/multipart"
 	"net/http"
-	"strings"
 
 	"github.com/sixels/manekani/core/domain/cards"
 	"github.com/sixels/manekani/core/domain/errors"
@@ -15,34 +15,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/oklog/ulid/v2"
 )
 
-type ContentMeta struct {
-	Group       *string         `json:"group,omitempty"`
-	ContentType *string         `json:"content_type,omitempty"`
-	Metadata    *map[string]any `json:"metadata,omitempty"`
-}
-
 type CreateSubjectAPIRequest struct {
-	ValueImageMeta *ContentMeta  `json:"value_image_meta,omitempty" form:"value_image_meta" binding:"-"`
-	ResourcesMeta  []ContentMeta `json:"resources_meta,omitempty" form:"resources_meta" binding:"-"`
+	ResourcesMeta []map[string]string `json:"resource_meta[],omitempty" form:"resource_meta[]" binding:"-"`
 
 	// shadow ValueImage and Resources from CreateSubjectRequest
-	ValueImage struct{} `json:"-" form:"-"`
-	Resources  struct{} `json:"-" form:"-"`
+	ValueImage *multipart.FileHeader   `json:"value_image" form:"value_image" binding:"-"`
+	Resources  []*multipart.FileHeader `json:"resource[]" form:"-" binding:"-"`
 
 	cards.CreateSubjectRequest
-}
-
-type CreateSubjectAPIResponse struct {
-	URLs Urls `json:"urls"`
-
-	cards.Subject
-}
-type Urls struct {
-	ValueImageURL files.UploadURL   `json:"value_image_url"`
-	ResourcesURL  []files.UploadURL `json:"resources_url"`
 }
 
 // CreateSubject godoc
@@ -74,51 +56,37 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 		}
 
 		// upload value image
-		var (
-			subjectImage       *cards.RemoteContent
-			subjectImageUpload files.UploadURL
-		)
-		if req.ValueImageMeta != nil {
-			subjectImage, subjectImageUpload, err = api.startRemoteResourceUpload(
-				ctx,
-				req.ValueImageMeta,
-				fmt.Sprintf("L%d-%s\n", req.Level, req.Slug),
-				"value",
-			)
-			if err != nil {
-				c.Error(fmt.Errorf("could not upload the file: %w", err))
-				c.Status(http.StatusInternalServerError)
-				return
-			}
+		subjectImage, err := uploadFile(ctx, api.Files, uploadFileReq{
+			File: req.ValueImage,
+			Kind: "value",
+			Name: req.Slug,
+		})
+		if err != nil {
+			c.Error(fmt.Errorf("could not upload the subject image: %w", err))
+			c.Status(http.StatusInternalServerError)
+			return
 		}
 
 		// upload resources
 		var (
-			subjectResources       = make(map[string][]cards.RemoteContent, 0)
-			subjectResourcesUpload []files.UploadURL
+			subjectResources = make([]cards.Resource, 0)
 		)
-		if req.ResourcesMeta != nil {
-			for _, resourceMeta := range req.ResourcesMeta {
-				resource, uploadURL, err := api.startRemoteResourceUpload(
-					ctx,
-					&resourceMeta,
-					fmt.Sprintf("%s-%s\n", req.Name, *resourceMeta.Group),
-					"resource",
-				)
-				if err != nil {
-					c.Error(fmt.Errorf("could not upload the file: %w", err))
-					c.Status(http.StatusInternalServerError)
-					return
-				}
-
-				resourceContents, ok := subjectResources[*resourceMeta.Group]
-				if !ok {
-					resourceContents = []cards.RemoteContent{}
-				}
-				resourceContents = append(resourceContents, *resource)
-				subjectResourcesUpload = append(subjectResourcesUpload, uploadURL)
-
-				subjectResources[*resourceMeta.Group] = resourceContents
+		for i, metas := range req.ResourcesMeta {
+			resourcePath, err := uploadFile(ctx, api.Files, uploadFileReq{
+				File: req.Resources[i],
+				Kind: fmt.Sprintf("resource-%d", i),
+				Name: req.Slug,
+			})
+			if err != nil {
+				c.Error(fmt.Errorf("could not upload the subject resource: %w", err))
+				c.Status(http.StatusInternalServerError)
+				return
+			}
+			if resourcePath != nil {
+				subjectResources = append(subjectResources, cards.Resource{
+					URL:      *resourcePath,
+					Metadata: metas,
+				})
 			}
 		}
 
@@ -130,19 +98,11 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 		if err != nil {
 			c.Error(fmt.Errorf("could not create the subject: %w", err))
 			c.Status(http.StatusInternalServerError)
-			// c.JSON(err.(*errors.Error).Status, err)
 			return
 		}
 
 		log.Printf("subject created by user: %s\n", userID)
-		c.JSON(http.StatusCreated, CreateSubjectAPIResponse{
-			Subject: *created,
-			URLs: Urls{
-				ValueImageURL: subjectImageUpload,
-				ResourcesURL:  subjectResourcesUpload,
-			},
-		})
-
+		c.JSON(http.StatusCreated, created)
 	}
 }
 
@@ -289,48 +249,76 @@ func (api *CardsApiV1) AllSubjects() gin.HandlerFunc {
 	}
 }
 
-func (api *CardsApiV1) startRemoteResourceUpload(
-	ctx context.Context,
-	meta *ContentMeta,
-	name string,
-	kind string,
-) (remoteContent *cards.RemoteContent, uploadURL files.UploadURL, err error) {
+// func (api *CardsApiV1) startRemoteResourceUpload(
+// 	ctx context.Context,
+// 	meta *ContentMeta,
+// 	name string,
+// 	kind string,
+// ) (remoteContent *cards.RemoteContent, uploadURL files.UploadURL, err error) {
+// 	namespace := "cards"
+// 	upname := strings.Trim(fmt.Sprintf("%s-%s", ulid.Make(), name), " \n\t\r")
 
-	namespace := "cards"
-	upname := strings.Trim(fmt.Sprintf("%s-%s", ulid.Make(), name), " \n\t\r")
+// 	var contentType string = "application/octet-stream"
+// 	if meta.ContentType != nil {
+// 		contentType = *meta.ContentType
+// 	}
 
-	var contentType string
-	if meta.ContentType != nil {
-		contentType = *meta.ContentType
-	} else {
-		contentType = "application/octet-stream"
-	}
+// 	log.Printf("file content-type: %q\n", contentType)
 
-	log.Printf("file content-type: %q\n", contentType)
+// 	key, uploadURL, err := startFileUpload(ctx, api.Files, files.FileInfo{
+// 		Name:        upname,
+// 		Namespace:   namespace,
+// 		Kind:        kind,
+// 		ContentType: contentType,
+// 	})
+// 	if err != nil {
+// 		return nil, files.UploadURL{}, err
+// 	}
 
-	key, uploadURL, err := startFileUpload(ctx, api.Files, files.FileInfo{
-		Name:        upname,
-		Namespace:   namespace,
-		Kind:        kind,
-		ContentType: contentType,
-	})
-	if err != nil {
-		return nil, files.UploadURL{}, err
-	}
+// 	if meta.Group != nil {
+// 		uploadURL.Resource = *meta.Group
+// 	}
 
-	if meta.Group != nil {
-		uploadURL.Resource = *meta.Group
-	}
+// 	return &cards.RemoteContent{
+// 		// TODO: return the full url to the resource instead of its storage key
+// 		// e.g: https://files.manekani.com/{key}
+// 		URL:         key,
+// 		ContentType: contentType,
+// 		Metadata:    meta.Metadata,
+// 	}, uploadURL, nil
+// }
 
-	return &cards.RemoteContent{
-		// TODO: return the full url to the resource instead of its storage key
-		// e.g: https://files.manekani.com/{key}
-		URL:         key,
-		ContentType: contentType,
-		Metadata:    meta.Metadata,
-	}, uploadURL, nil
+// func startFileUpload(ctx context.Context, filesService *files_service.FilesRepository, info files.FileInfo) (objectKey string, uploadURL files.UploadURL, err error) {
+// 	return filesService.UploadFileURL(ctx, info)
+// }
+
+type uploadFileReq struct {
+	File *multipart.FileHeader
+	Kind string
+	Name string
 }
 
-func startFileUpload(ctx context.Context, filesService *files_service.FilesRepository, info files.FileInfo) (objectKey string, uploadURL files.UploadURL, err error) {
-	return filesService.UploadFileURL(ctx, info)
+func uploadFile(ctx context.Context, fileService *files_service.FilesRepository, req uploadFileReq) (*string, error) {
+	if req.File == nil {
+		return nil, nil
+	}
+
+	fileHandle, err := req.File.Open()
+	if err != nil {
+		return nil, fmt.Errorf("Could not open the form file: %w", err)
+	}
+
+	uploadedURL, err := fileService.CreateFile(ctx, files.CreateFileRequest{
+		Handle: fileHandle,
+		FileInfo: files.FileInfo{
+			Size:      req.File.Size,
+			Namespace: "subject",
+			Kind:      req.Kind,
+			Name:      req.Name,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not upload the file: %w", err)
+	}
+	return &uploadedURL, nil
 }
