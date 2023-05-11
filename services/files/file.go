@@ -68,6 +68,11 @@ func (repo FilesRepository) QueryFile(ctx context.Context, key string) (*files.O
 		return nil, errors.NotFound(fmt.Sprintf("no such file: '%s': %v", key, err))
 	}
 
+	// stat, err := object.Stat()
+	// if err != nil {
+	// 	log.Println("file info", stat.UserMetadata)
+	// }
+
 	return &files.ObjectWrapperResponse{
 		ReadCloser:  object,
 		Size:        info.Size,

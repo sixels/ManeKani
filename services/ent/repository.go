@@ -22,7 +22,7 @@ type EntRepository struct {
 }
 
 func NewRepository() (*EntRepository, error) {
-	dbUrl := os.Getenv("MANEKANI_DB_URL")
+	dbUrl := os.Getenv("DB_URI")
 
 	client, err := open(dbUrl)
 	if err != nil {

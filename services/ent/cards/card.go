@@ -155,7 +155,6 @@ func (repo *CardsRepository) AllCards(ctx context.Context, userID string, req ca
 		return p
 	})
 	filters.In(fs, req.WithDependencies.Separate(), func(ids ...uuid.UUID) predicate.Card {
-		log.Println("dependency:", ids)
 		return card.HasSubjectWith(subject.HasDependenciesWith(subject.IDIn(ids...)))
 	})
 	filters.In(fs, req.WithDependents.Separate(), func(ids ...uuid.UUID) predicate.Card {

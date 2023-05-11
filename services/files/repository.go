@@ -27,7 +27,7 @@ type FilesRepository struct {
 func NewRepository(ctx context.Context) (*FilesRepository, error) {
 	log.Println("creating the Files repository")
 
-	endpoint := os.Getenv("MANEKANI_S3_URL")
+	endpoint := os.Getenv("S3_URL")
 	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
 	secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
 
