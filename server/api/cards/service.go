@@ -1,12 +1,12 @@
 package cards
 
 import (
-	"github.com/sixels/manekani/core/services/cards"
+	"github.com/sixels/manekani/core/adapters/cards"
+	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/services/ent/users"
 	"github.com/sixels/manekani/services/files"
 
-	auth_api "github.com/sixels/manekani/server/api/auth"
-	mkjwt "github.com/sixels/manekani/services/jwt"
+	auth_api "github.com/sixels/manekani/server/auth"
 
 	"github.com/gin-gonic/gin"
 
@@ -14,15 +14,15 @@ import (
 )
 
 type CardsApi struct {
-	V1  cards1.CardsApiV1
-	jwt *mkjwt.JWTService
+	V1   cards1.CardsApiV1
+	auth *auth_api.AuthService
 }
 
 func New(
-	cardsService cards.CardsService,
+	cardsService cards.CardsAdapter,
 	filesService *files.FilesRepository,
 	usersService *users.UsersRepository,
-	jwtService *mkjwt.JWTService,
+	authMiddleware *auth_api.AuthService,
 ) *CardsApi {
 	return &CardsApi{
 		V1: cards1.CardsApiV1{
@@ -30,55 +30,56 @@ func New(
 			Users: usersService,
 			Files: filesService,
 		},
-		jwt: jwtService,
+		auth: authMiddleware,
 	}
 }
 
 func (api *CardsApi) SetupRoutes(router *gin.Engine) {
-	v1 := router.Group("/api/v1")
+	apiRouter := router.Group("/api")
+	v1Router := apiRouter.Group("/v1")
 
 	// session
-	router.
+	apiRouter.
 		GET("/study-session",
-			auth_api.EnsureLogin(),
+			api.auth.EnsureLogin(),
 			api.StudySession())
 
 	// subject
-	v1.
+	v1Router.
 		POST("/subject",
-			auth_api.EnsureCapabilities(api.jwt, mkjwt.TokenCapabilitySubjectCreate),
+			api.auth.EnsureCapabilities(tokens.TokenCapabilitySubjectCreate),
 			api.V1.CreateSubject()).
 		GET("/subject/:id", api.V1.QuerySubject()).
 		PATCH("/subject/:id",
-			auth_api.EnsureCapabilities(api.jwt, mkjwt.TokenCapabilitySubjectUpdate),
+			api.auth.EnsureCapabilities(tokens.TokenCapabilitySubjectUpdate),
 			api.V1.UpdateSubject()).
 		DELETE("/subject/:name",
-			auth_api.EnsureCapabilities(api.jwt, mkjwt.TokenCapabilitySubjectDelete),
+			api.auth.EnsureCapabilities(tokens.TokenCapabilitySubjectDelete),
 			api.V1.DeleteSubject()).
 		GET("/subject", api.V1.AllSubjects())
 
 	// deck
-	v1.
+	v1Router.
 		GET("/deck/:id", api.V1.QueryDeck()).
 		GET("/deck", api.V1.AllDecks()).
-		PATCH("/deck/:id/subscribe", // TODO: use PUT instead of PATCH
-			auth_api.EnsureCapabilities(api.jwt, mkjwt.TokenCapabilityUserUpdate),
+		PUT("/deck/:id/subscribe",
+			api.auth.EnsureCapabilities(tokens.TokenCapabilityUserUpdate),
 			api.V1.SubscribeUserToDeck()).
 		DELETE("/deck/:id/subscribe",
-			auth_api.EnsureCapabilities(api.jwt, mkjwt.TokenCapabilityUserUpdate),
+			api.auth.EnsureCapabilities(tokens.TokenCapabilityUserUpdate),
 			api.V1.UnsubscribeUserFromDeck())
 
 	// cards
-	v1.
+	v1Router.
 		GET("/card",
-			auth_api.EnsureCapabilities(api.jwt),
+			api.auth.EnsureCapabilities(),
 			api.V1.AllUserCards())
 
 	// reviews
-	v1.
-		GET("/review", auth_api.EnsureCapabilities(api.jwt),
+	v1Router.
+		GET("/review", api.auth.EnsureCapabilities(),
 			api.V1.AllUserReviews()).
 		POST("/review",
-			auth_api.EnsureCapabilities(api.jwt, mkjwt.TokenCapabilityReviewCreate),
+			api.auth.EnsureCapabilities(tokens.TokenCapabilityReviewCreate),
 			api.V1.CreateReview())
 }
