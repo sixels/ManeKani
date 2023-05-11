@@ -17,15 +17,15 @@ import (
 // TODO: func (svc *CardsService) UpdateDeck(ctx context.Context, userID string, id uuid.UUID, req domain.UpdateDeckRequest) (*domain.Deck, error)
 // TODO: func (svc *CardsService) DeleteDeck(ctx context.Context, userID string, id uuid.UUID) error
 
-func (svc *CardsService) QueryDeck(ctx context.Context, id uuid.UUID) (*domain.Deck, error) {
+func (svc *CardsAdapter) QueryDeck(ctx context.Context, id uuid.UUID) (*domain.Deck, error) {
 	return svc.repo.QueryDeck(ctx, id)
 }
 
-func (svc *CardsService) AllDecks(ctx context.Context, req domain.QueryManyDecksRequest) ([]domain.DeckPartial, error) {
+func (svc *CardsAdapter) AllDecks(ctx context.Context, req domain.QueryManyDecksRequest) ([]domain.DeckPartial, error) {
 	return svc.repo.AllDecks(ctx, req)
 }
 
-func (svc *CardsService) AddDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) error {
+func (svc *CardsAdapter) AddDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) error {
 	_, err := svc.QueryDeck(ctx, id)
 	if err != nil {
 		return err
@@ -100,10 +100,10 @@ func (svc *CardsService) AddDeckSubscriber(ctx context.Context, id uuid.UUID, us
 	})
 }
 
-func (svc *CardsService) RemoveDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) error {
+func (svc *CardsAdapter) RemoveDeckSubscriber(ctx context.Context, id uuid.UUID, userID string) error {
 	return svc.repo.RemoveDeckSubscriber(ctx, id, userID)
 }
 
-func (svc *CardsService) ResetDeckToLevel(ctx context.Context, id uuid.UUID, userID string, level int32) error {
+func (svc *CardsAdapter) ResetDeckToLevel(ctx context.Context, id uuid.UUID, userID string, level int32) error {
 	return fmt.Errorf("TODO: ResetDeckToLevel")
 }

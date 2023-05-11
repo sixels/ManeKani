@@ -2,13 +2,13 @@ package cards
 
 import "github.com/sixels/manekani/core/ports"
 
-type CardsService struct {
+type CardsAdapter struct {
 	repo      ports.CardsRepository
 	filesRepo ports.FilesRepository
 }
 
-func NewService(cardsRepo ports.CardsRepository, filesRepo ports.FilesRepository) CardsService {
-	return CardsService{
+func CreateAdapter(cardsRepo ports.CardsRepository, filesRepo ports.FilesRepository) CardsAdapter {
+	return CardsAdapter{
 		repo:      cardsRepo,
 		filesRepo: filesRepo,
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/sixels/manekani/server/api/cards/util"
 )
 
-func (svc *CardsService) CreateReview(ctx context.Context, userID string, req domain.CreateReviewAPIRequest) (*domain.Review, error) {
+func (svc *CardsAdapter) CreateReview(ctx context.Context, userID string, req domain.CreateReviewAPIRequest) (*domain.Review, error) {
 	tx := transactions.Begin(ctx)
 	txCards, err := transactions.MakeTransactional(tx, svc.repo)
 	if err != nil {
@@ -60,7 +60,7 @@ func (svc *CardsService) CreateReview(ctx context.Context, userID string, req do
 	})
 }
 
-func (svc *CardsService) AllReviews(ctx context.Context, userID string, req domain.QueryManyReviewsRequest) ([]domain.Review, error) {
+func (svc *CardsAdapter) AllReviews(ctx context.Context, userID string, req domain.QueryManyReviewsRequest) ([]domain.Review, error) {
 	return svc.repo.AllReviews(ctx, userID, req)
 }
 
