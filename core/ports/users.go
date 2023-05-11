@@ -10,4 +10,6 @@ import (
 type UserRepository interface {
 	CreateUser(ctx context.Context, req user.CreateUserRequest) (*user.User, error)
 	IsUsernameAvailable(ctx context.Context, username string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	QueryUser(ctx context.Context, id string) (*user.User, error)
 }

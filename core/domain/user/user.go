@@ -1,6 +1,8 @@
 package user
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/ent/schema"
 )
@@ -21,7 +23,8 @@ type UserBasic struct {
 }
 
 type CreateUserRequest struct {
-	ID       string `json:"id" form:"id"`
-	Email    string `json:"email" form:"email"`
-	Username string `json:"username" form:"username"`
+	ID        string     `json:"id" form:"id"`
+	Email     string     `json:"email" form:"email"`
+	Username  string     `json:"username" form:"username"`
+	CreatedAt *time.Time `json:"created_at,omitempty" form:"created_at"`
 }
