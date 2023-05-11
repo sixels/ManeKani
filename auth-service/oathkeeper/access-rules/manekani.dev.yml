@@ -1,0 +1,35 @@
+- id: "manekani:protected"
+  upstream:
+    preserve_host: true
+    url: "http://manekani:10010"
+  match:
+    # prodchange : the proxy address with api path
+    url: "http://127.0.0.1:8080/api/<.*>"
+    methods:
+      - GET
+      - POST
+      - DELETE
+  authenticators:
+    - handler: bearer_token
+      config:
+        preserve_path: true
+        preserve_query: true
+        forward_http_headers:
+          - Authorization
+          - Cookie
+    - handler: cookie_session
+  mutators:
+    - handler: header
+      config:
+        headers:
+          X-Supplicant: "{{ print .Subject }}"
+  authorizer:
+    handler: allow
+  errors:
+    - handler: redirect
+      config:
+        # prodchange : the login page path
+        to: http://127.0.0.1:4455/login
+        when:
+          - error:
+              - unauthorized
