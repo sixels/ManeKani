@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/user"
 )
@@ -25,8 +26,20 @@ type ApiTokenCreate struct {
 }
 
 // SetToken sets the "token" field.
-func (atc *ApiTokenCreate) SetToken(b []byte) *ApiTokenCreate {
-	atc.mutation.SetToken(b)
+func (atc *ApiTokenCreate) SetToken(s string) *ApiTokenCreate {
+	atc.mutation.SetToken(s)
+	return atc
+}
+
+// SetPrefix sets the "prefix" field.
+func (atc *ApiTokenCreate) SetPrefix(s string) *ApiTokenCreate {
+	atc.mutation.SetPrefix(s)
+	return atc
+}
+
+// SetClaims sets the "claims" field.
+func (atc *ApiTokenCreate) SetClaims(ttc tokens.APITokenClaims) *ApiTokenCreate {
+	atc.mutation.SetClaims(ttc)
 	return atc
 }
 
@@ -143,6 +156,12 @@ func (atc *ApiTokenCreate) check() error {
 	if _, ok := atc.mutation.Token(); !ok {
 		return &ValidationError{Name: "token", err: errors.New(`ent: missing required field "ApiToken.token"`)}
 	}
+	if _, ok := atc.mutation.Prefix(); !ok {
+		return &ValidationError{Name: "prefix", err: errors.New(`ent: missing required field "ApiToken.prefix"`)}
+	}
+	if _, ok := atc.mutation.Claims(); !ok {
+		return &ValidationError{Name: "claims", err: errors.New(`ent: missing required field "ApiToken.claims"`)}
+	}
 	if _, ok := atc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "ApiToken.user"`)}
 	}
@@ -184,8 +203,16 @@ func (atc *ApiTokenCreate) createSpec() (*ApiToken, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = &id
 	}
 	if value, ok := atc.mutation.Token(); ok {
-		_spec.SetField(apitoken.FieldToken, field.TypeBytes, value)
+		_spec.SetField(apitoken.FieldToken, field.TypeString, value)
 		_node.Token = value
+	}
+	if value, ok := atc.mutation.Prefix(); ok {
+		_spec.SetField(apitoken.FieldPrefix, field.TypeString, value)
+		_node.Prefix = value
+	}
+	if value, ok := atc.mutation.Claims(); ok {
+		_spec.SetField(apitoken.FieldClaims, field.TypeJSON, value)
+		_node.Claims = value
 	}
 	if nodes := atc.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -278,6 +305,12 @@ func (u *ApiTokenUpsertOne) UpdateNewValues() *ApiTokenUpsertOne {
 		}
 		if _, exists := u.create.mutation.Token(); exists {
 			s.SetIgnore(apitoken.FieldToken)
+		}
+		if _, exists := u.create.mutation.Prefix(); exists {
+			s.SetIgnore(apitoken.FieldPrefix)
+		}
+		if _, exists := u.create.mutation.Claims(); exists {
+			s.SetIgnore(apitoken.FieldClaims)
 		}
 	}))
 	return u
@@ -491,6 +524,12 @@ func (u *ApiTokenUpsertBulk) UpdateNewValues() *ApiTokenUpsertBulk {
 			}
 			if _, exists := b.mutation.Token(); exists {
 				s.SetIgnore(apitoken.FieldToken)
+			}
+			if _, exists := b.mutation.Prefix(); exists {
+				s.SetIgnore(apitoken.FieldPrefix)
+			}
+			if _, exists := b.mutation.Claims(); exists {
+				s.SetIgnore(apitoken.FieldClaims)
 			}
 		}
 	}))

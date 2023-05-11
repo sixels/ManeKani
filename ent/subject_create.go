@@ -89,8 +89,16 @@ func (sc *SubjectCreate) SetNillableValue(s *string) *SubjectCreate {
 }
 
 // SetValueImage sets the "value_image" field.
-func (sc *SubjectCreate) SetValueImage(cc *cards.RemoteContent) *SubjectCreate {
-	sc.mutation.SetValueImage(cc)
+func (sc *SubjectCreate) SetValueImage(s string) *SubjectCreate {
+	sc.mutation.SetValueImage(s)
+	return sc
+}
+
+// SetNillableValueImage sets the "value_image" field if the given value is not nil.
+func (sc *SubjectCreate) SetNillableValueImage(s *string) *SubjectCreate {
+	if s != nil {
+		sc.SetValueImage(*s)
+	}
 	return sc
 }
 
@@ -107,8 +115,8 @@ func (sc *SubjectCreate) SetPriority(u uint8) *SubjectCreate {
 }
 
 // SetResources sets the "resources" field.
-func (sc *SubjectCreate) SetResources(mc *map[string][]cards.RemoteContent) *SubjectCreate {
-	sc.mutation.SetResources(mc)
+func (sc *SubjectCreate) SetResources(c []cards.Resource) *SubjectCreate {
+	sc.mutation.SetResources(c)
 	return sc
 }
 
@@ -425,8 +433,8 @@ func (sc *SubjectCreate) createSpec() (*Subject, *sqlgraph.CreateSpec) {
 		_node.Value = &value
 	}
 	if value, ok := sc.mutation.ValueImage(); ok {
-		_spec.SetField(subject.FieldValueImage, field.TypeJSON, value)
-		_node.ValueImage = value
+		_spec.SetField(subject.FieldValueImage, field.TypeString, value)
+		_node.ValueImage = &value
 	}
 	if value, ok := sc.mutation.Slug(); ok {
 		_spec.SetField(subject.FieldSlug, field.TypeString, value)
@@ -689,7 +697,7 @@ func (u *SubjectUpsert) ClearValue() *SubjectUpsert {
 }
 
 // SetValueImage sets the "value_image" field.
-func (u *SubjectUpsert) SetValueImage(v *cards.RemoteContent) *SubjectUpsert {
+func (u *SubjectUpsert) SetValueImage(v string) *SubjectUpsert {
 	u.Set(subject.FieldValueImage, v)
 	return u
 }
@@ -737,7 +745,7 @@ func (u *SubjectUpsert) AddPriority(v uint8) *SubjectUpsert {
 }
 
 // SetResources sets the "resources" field.
-func (u *SubjectUpsert) SetResources(v *map[string][]cards.RemoteContent) *SubjectUpsert {
+func (u *SubjectUpsert) SetResources(v []cards.Resource) *SubjectUpsert {
 	u.Set(subject.FieldResources, v)
 	return u
 }
@@ -920,7 +928,7 @@ func (u *SubjectUpsertOne) ClearValue() *SubjectUpsertOne {
 }
 
 // SetValueImage sets the "value_image" field.
-func (u *SubjectUpsertOne) SetValueImage(v *cards.RemoteContent) *SubjectUpsertOne {
+func (u *SubjectUpsertOne) SetValueImage(v string) *SubjectUpsertOne {
 	return u.Update(func(s *SubjectUpsert) {
 		s.SetValueImage(v)
 	})
@@ -976,7 +984,7 @@ func (u *SubjectUpsertOne) UpdatePriority() *SubjectUpsertOne {
 }
 
 // SetResources sets the "resources" field.
-func (u *SubjectUpsertOne) SetResources(v *map[string][]cards.RemoteContent) *SubjectUpsertOne {
+func (u *SubjectUpsertOne) SetResources(v []cards.Resource) *SubjectUpsertOne {
 	return u.Update(func(s *SubjectUpsert) {
 		s.SetResources(v)
 	})
@@ -1330,7 +1338,7 @@ func (u *SubjectUpsertBulk) ClearValue() *SubjectUpsertBulk {
 }
 
 // SetValueImage sets the "value_image" field.
-func (u *SubjectUpsertBulk) SetValueImage(v *cards.RemoteContent) *SubjectUpsertBulk {
+func (u *SubjectUpsertBulk) SetValueImage(v string) *SubjectUpsertBulk {
 	return u.Update(func(s *SubjectUpsert) {
 		s.SetValueImage(v)
 	})
@@ -1386,7 +1394,7 @@ func (u *SubjectUpsertBulk) UpdatePriority() *SubjectUpsertBulk {
 }
 
 // SetResources sets the "resources" field.
-func (u *SubjectUpsertBulk) SetResources(v *map[string][]cards.RemoteContent) *SubjectUpsertBulk {
+func (u *SubjectUpsertBulk) SetResources(v []cards.Resource) *SubjectUpsertBulk {
 	return u.Update(func(s *SubjectUpsert) {
 		s.SetResources(v)
 	})

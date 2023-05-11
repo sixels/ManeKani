@@ -13,6 +13,10 @@ const (
 	FieldID = "id"
 	// FieldToken holds the string denoting the token field in the database.
 	FieldToken = "token"
+	// FieldPrefix holds the string denoting the prefix field in the database.
+	FieldPrefix = "prefix"
+	// FieldClaims holds the string denoting the claims field in the database.
+	FieldClaims = "claims"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// Table holds the table name of the apitoken in the database.
@@ -30,6 +34,8 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldToken,
+	FieldPrefix,
+	FieldClaims,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "api_tokens"

@@ -124,6 +124,13 @@ func Value(v string) predicate.Subject {
 	})
 }
 
+// ValueImage applies equality check predicate on the "value_image" field. It's identical to ValueImageEQ.
+func ValueImage(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldValueImage), v))
+	})
+}
+
 // Slug applies equality check predicate on the "slug" field. It's identical to SlugEQ.
 func Slug(v string) predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
@@ -641,6 +648,91 @@ func ValueContainsFold(v string) predicate.Subject {
 	})
 }
 
+// ValueImageEQ applies the EQ predicate on the "value_image" field.
+func ValueImageEQ(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageNEQ applies the NEQ predicate on the "value_image" field.
+func ValueImageNEQ(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageIn applies the In predicate on the "value_image" field.
+func ValueImageIn(vs ...string) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldValueImage), v...))
+	})
+}
+
+// ValueImageNotIn applies the NotIn predicate on the "value_image" field.
+func ValueImageNotIn(vs ...string) predicate.Subject {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldValueImage), v...))
+	})
+}
+
+// ValueImageGT applies the GT predicate on the "value_image" field.
+func ValueImageGT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageGTE applies the GTE predicate on the "value_image" field.
+func ValueImageGTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageLT applies the LT predicate on the "value_image" field.
+func ValueImageLT(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageLTE applies the LTE predicate on the "value_image" field.
+func ValueImageLTE(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageContains applies the Contains predicate on the "value_image" field.
+func ValueImageContains(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageHasPrefix applies the HasPrefix predicate on the "value_image" field.
+func ValueImageHasPrefix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageHasSuffix applies the HasSuffix predicate on the "value_image" field.
+func ValueImageHasSuffix(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldValueImage), v))
+	})
+}
+
 // ValueImageIsNil applies the IsNil predicate on the "value_image" field.
 func ValueImageIsNil() predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
@@ -652,6 +744,20 @@ func ValueImageIsNil() predicate.Subject {
 func ValueImageNotNil() predicate.Subject {
 	return predicate.Subject(func(s *sql.Selector) {
 		s.Where(sql.NotNull(s.C(FieldValueImage)))
+	})
+}
+
+// ValueImageEqualFold applies the EqualFold predicate on the "value_image" field.
+func ValueImageEqualFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldValueImage), v))
+	})
+}
+
+// ValueImageContainsFold applies the ContainsFold predicate on the "value_image" field.
+func ValueImageContainsFold(v string) predicate.Subject {
+	return predicate.Subject(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldValueImage), v))
 	})
 }
 

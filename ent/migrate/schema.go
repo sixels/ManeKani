@@ -11,7 +11,9 @@ var (
 	// APITokensColumns holds the columns for the "api_tokens" table.
 	APITokensColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "token", Type: field.TypeBytes},
+		{Name: "token", Type: field.TypeString},
+		{Name: "prefix", Type: field.TypeString},
+		{Name: "claims", Type: field.TypeJSON},
 		{Name: "user_api_tokens", Type: field.TypeString},
 	}
 	// APITokensTable holds the schema information for the "api_tokens" table.
@@ -22,9 +24,16 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "api_tokens_users_api_tokens",
-				Columns:    []*schema.Column{APITokensColumns[2]},
+				Columns:    []*schema.Column{APITokensColumns[4]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "apitoken_prefix_user_api_tokens",
+				Unique:  true,
+				Columns: []*schema.Column{APITokensColumns[2], APITokensColumns[4]},
 			},
 		},
 	}
@@ -152,7 +161,7 @@ var (
 		{Name: "level", Type: field.TypeInt32},
 		{Name: "name", Type: field.TypeString, Size: 2147483647},
 		{Name: "value", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "value_image", Type: field.TypeJSON, Nullable: true},
+		{Name: "value_image", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "slug", Type: field.TypeString, Size: 36},
 		{Name: "priority", Type: field.TypeUint8},
 		{Name: "resources", Type: field.TypeJSON, Nullable: true},

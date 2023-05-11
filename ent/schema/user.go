@@ -20,7 +20,7 @@ func (User) Fields() []ent.Field {
 			Size: 36,
 		}).DefaultFunc(uuid.NewString),
 		field.String("username").
-			MinLen(4).MaxLen(20).
+			MinLen(3).MaxLen(20).
 			Unique(),
 		field.JSON("pending_actions", []PendingAction{}).
 			Optional(),

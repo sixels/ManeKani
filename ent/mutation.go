@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/core/domain/cards"
+	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/card"
 	"github.com/sixels/manekani/ent/deck"
@@ -48,7 +49,9 @@ type ApiTokenMutation struct {
 	op            Op
 	typ           string
 	id            *uuid.UUID
-	token         *[]byte
+	token         *string
+	prefix        *string
+	claims        *tokens.APITokenClaims
 	clearedFields map[string]struct{}
 	user          *string
 	cleareduser   bool
@@ -162,12 +165,12 @@ func (m *ApiTokenMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 }
 
 // SetToken sets the "token" field.
-func (m *ApiTokenMutation) SetToken(b []byte) {
-	m.token = &b
+func (m *ApiTokenMutation) SetToken(s string) {
+	m.token = &s
 }
 
 // Token returns the value of the "token" field in the mutation.
-func (m *ApiTokenMutation) Token() (r []byte, exists bool) {
+func (m *ApiTokenMutation) Token() (r string, exists bool) {
 	v := m.token
 	if v == nil {
 		return
@@ -178,7 +181,7 @@ func (m *ApiTokenMutation) Token() (r []byte, exists bool) {
 // OldToken returns the old "token" field's value of the ApiToken entity.
 // If the ApiToken object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ApiTokenMutation) OldToken(ctx context.Context) (v []byte, err error) {
+func (m *ApiTokenMutation) OldToken(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldToken is only allowed on UpdateOne operations")
 	}
@@ -195,6 +198,78 @@ func (m *ApiTokenMutation) OldToken(ctx context.Context) (v []byte, err error) {
 // ResetToken resets all changes to the "token" field.
 func (m *ApiTokenMutation) ResetToken() {
 	m.token = nil
+}
+
+// SetPrefix sets the "prefix" field.
+func (m *ApiTokenMutation) SetPrefix(s string) {
+	m.prefix = &s
+}
+
+// Prefix returns the value of the "prefix" field in the mutation.
+func (m *ApiTokenMutation) Prefix() (r string, exists bool) {
+	v := m.prefix
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrefix returns the old "prefix" field's value of the ApiToken entity.
+// If the ApiToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApiTokenMutation) OldPrefix(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrefix is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrefix requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrefix: %w", err)
+	}
+	return oldValue.Prefix, nil
+}
+
+// ResetPrefix resets all changes to the "prefix" field.
+func (m *ApiTokenMutation) ResetPrefix() {
+	m.prefix = nil
+}
+
+// SetClaims sets the "claims" field.
+func (m *ApiTokenMutation) SetClaims(ttc tokens.APITokenClaims) {
+	m.claims = &ttc
+}
+
+// Claims returns the value of the "claims" field in the mutation.
+func (m *ApiTokenMutation) Claims() (r tokens.APITokenClaims, exists bool) {
+	v := m.claims
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClaims returns the old "claims" field's value of the ApiToken entity.
+// If the ApiToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApiTokenMutation) OldClaims(ctx context.Context) (v tokens.APITokenClaims, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClaims is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClaims requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClaims: %w", err)
+	}
+	return oldValue.Claims, nil
+}
+
+// ResetClaims resets all changes to the "claims" field.
+func (m *ApiTokenMutation) ResetClaims() {
+	m.claims = nil
 }
 
 // SetUserID sets the "user" edge to the User entity by id.
@@ -255,9 +330,15 @@ func (m *ApiTokenMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ApiTokenMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 3)
 	if m.token != nil {
 		fields = append(fields, apitoken.FieldToken)
+	}
+	if m.prefix != nil {
+		fields = append(fields, apitoken.FieldPrefix)
+	}
+	if m.claims != nil {
+		fields = append(fields, apitoken.FieldClaims)
 	}
 	return fields
 }
@@ -269,6 +350,10 @@ func (m *ApiTokenMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case apitoken.FieldToken:
 		return m.Token()
+	case apitoken.FieldPrefix:
+		return m.Prefix()
+	case apitoken.FieldClaims:
+		return m.Claims()
 	}
 	return nil, false
 }
@@ -280,6 +365,10 @@ func (m *ApiTokenMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case apitoken.FieldToken:
 		return m.OldToken(ctx)
+	case apitoken.FieldPrefix:
+		return m.OldPrefix(ctx)
+	case apitoken.FieldClaims:
+		return m.OldClaims(ctx)
 	}
 	return nil, fmt.Errorf("unknown ApiToken field %s", name)
 }
@@ -290,11 +379,25 @@ func (m *ApiTokenMutation) OldField(ctx context.Context, name string) (ent.Value
 func (m *ApiTokenMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case apitoken.FieldToken:
-		v, ok := value.([]byte)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetToken(v)
+		return nil
+	case apitoken.FieldPrefix:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrefix(v)
+		return nil
+	case apitoken.FieldClaims:
+		v, ok := value.(tokens.APITokenClaims)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClaims(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ApiToken field %s", name)
@@ -347,6 +450,12 @@ func (m *ApiTokenMutation) ResetField(name string) error {
 	switch name {
 	case apitoken.FieldToken:
 		m.ResetToken()
+		return nil
+	case apitoken.FieldPrefix:
+		m.ResetPrefix()
+		return nil
+	case apitoken.FieldClaims:
+		m.ResetClaims()
 		return nil
 	}
 	return fmt.Errorf("unknown ApiToken field %s", name)
@@ -3536,11 +3645,12 @@ type SubjectMutation struct {
 	addlevel              *int32
 	name                  *string
 	value                 *string
-	value_image           **cards.RemoteContent
+	value_image           *string
 	slug                  *string
 	priority              *uint8
 	addpriority           *int8
-	resources             **map[string][]cards.RemoteContent
+	resources             *[]cards.Resource
+	appendresources       []cards.Resource
 	study_data            *[]cards.StudyData
 	appendstudy_data      []cards.StudyData
 	additional_study_data **map[string]interface{}
@@ -3920,12 +4030,12 @@ func (m *SubjectMutation) ResetValue() {
 }
 
 // SetValueImage sets the "value_image" field.
-func (m *SubjectMutation) SetValueImage(cc *cards.RemoteContent) {
-	m.value_image = &cc
+func (m *SubjectMutation) SetValueImage(s string) {
+	m.value_image = &s
 }
 
 // ValueImage returns the value of the "value_image" field in the mutation.
-func (m *SubjectMutation) ValueImage() (r *cards.RemoteContent, exists bool) {
+func (m *SubjectMutation) ValueImage() (r string, exists bool) {
 	v := m.value_image
 	if v == nil {
 		return
@@ -3936,7 +4046,7 @@ func (m *SubjectMutation) ValueImage() (r *cards.RemoteContent, exists bool) {
 // OldValueImage returns the old "value_image" field's value of the Subject entity.
 // If the Subject object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SubjectMutation) OldValueImage(ctx context.Context) (v *cards.RemoteContent, err error) {
+func (m *SubjectMutation) OldValueImage(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldValueImage is only allowed on UpdateOne operations")
 	}
@@ -4061,12 +4171,13 @@ func (m *SubjectMutation) ResetPriority() {
 }
 
 // SetResources sets the "resources" field.
-func (m *SubjectMutation) SetResources(mc *map[string][]cards.RemoteContent) {
-	m.resources = &mc
+func (m *SubjectMutation) SetResources(c []cards.Resource) {
+	m.resources = &c
+	m.appendresources = nil
 }
 
 // Resources returns the value of the "resources" field in the mutation.
-func (m *SubjectMutation) Resources() (r *map[string][]cards.RemoteContent, exists bool) {
+func (m *SubjectMutation) Resources() (r []cards.Resource, exists bool) {
 	v := m.resources
 	if v == nil {
 		return
@@ -4077,7 +4188,7 @@ func (m *SubjectMutation) Resources() (r *map[string][]cards.RemoteContent, exis
 // OldResources returns the old "resources" field's value of the Subject entity.
 // If the Subject object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SubjectMutation) OldResources(ctx context.Context) (v *map[string][]cards.RemoteContent, err error) {
+func (m *SubjectMutation) OldResources(ctx context.Context) (v []cards.Resource, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldResources is only allowed on UpdateOne operations")
 	}
@@ -4091,9 +4202,23 @@ func (m *SubjectMutation) OldResources(ctx context.Context) (v *map[string][]car
 	return oldValue.Resources, nil
 }
 
+// AppendResources adds c to the "resources" field.
+func (m *SubjectMutation) AppendResources(c []cards.Resource) {
+	m.appendresources = append(m.appendresources, c...)
+}
+
+// AppendedResources returns the list of values that were appended to the "resources" field in this mutation.
+func (m *SubjectMutation) AppendedResources() ([]cards.Resource, bool) {
+	if len(m.appendresources) == 0 {
+		return nil, false
+	}
+	return m.appendresources, true
+}
+
 // ClearResources clears the value of the "resources" field.
 func (m *SubjectMutation) ClearResources() {
 	m.resources = nil
+	m.appendresources = nil
 	m.clearedFields[subject.FieldResources] = struct{}{}
 }
 
@@ -4106,6 +4231,7 @@ func (m *SubjectMutation) ResourcesCleared() bool {
 // ResetResources resets all changes to the "resources" field.
 func (m *SubjectMutation) ResetResources() {
 	m.resources = nil
+	m.appendresources = nil
 	delete(m.clearedFields, subject.FieldResources)
 }
 
@@ -4676,7 +4802,7 @@ func (m *SubjectMutation) SetField(name string, value ent.Value) error {
 		m.SetValue(v)
 		return nil
 	case subject.FieldValueImage:
-		v, ok := value.(*cards.RemoteContent)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -4697,7 +4823,7 @@ func (m *SubjectMutation) SetField(name string, value ent.Value) error {
 		m.SetPriority(v)
 		return nil
 	case subject.FieldResources:
-		v, ok := value.(*map[string][]cards.RemoteContent)
+		v, ok := value.([]cards.Resource)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

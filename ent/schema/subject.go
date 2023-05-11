@@ -31,11 +31,11 @@ func (Subject) Fields() []ent.Field {
 
 		field.Text("name").NotEmpty(),
 		field.Text("value").NotEmpty().Optional().Nillable(),
-		field.JSON("value_image", &cards.RemoteContent{}).Optional(),
+		field.Text("value_image").Optional().Nillable(),
 		field.Text("slug").NotEmpty().MaxLen(36),
 		field.Uint8("priority").Comment("The priority to appear in lessons/reviews. The maximum priority is 0."),
 
-		field.JSON("resources", &map[string][]cards.RemoteContent{}).Optional(),
+		field.JSON("resources", []cards.Resource{}).Optional(),
 		field.JSON("study_data", []cards.StudyData{}),
 		field.JSON("additional_study_data", &map[string]any{}).Optional(),
 	}

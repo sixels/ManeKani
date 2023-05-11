@@ -5,7 +5,10 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
+
 	"github.com/google/uuid"
+	"github.com/sixels/manekani/core/domain/tokens"
 )
 
 // ApiToken holds the schema definition for the ApiToken entity.
@@ -17,9 +20,14 @@ type ApiToken struct {
 func (ApiToken) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
-		field.Bytes("token").
-			Immutable().
-			Sensitive(),
+		field.String("token").
+			Sensitive().
+			Immutable(),
+		field.String("prefix").
+			Immutable(),
+		field.JSON("claims", tokens.APITokenClaims{}).
+			Sensitive().
+			Immutable(),
 	}
 }
 
@@ -31,5 +39,13 @@ func (ApiToken) Edges() []ent.Edge {
 			Required().
 			Unique().
 			Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+	}
+}
+
+func (ApiToken) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("prefix").
+			Edges("user").
+			Unique(),
 	}
 }

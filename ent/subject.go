@@ -34,13 +34,13 @@ type Subject struct {
 	// Value holds the value of the "value" field.
 	Value *string `json:"value,omitempty"`
 	// ValueImage holds the value of the "value_image" field.
-	ValueImage *cards.RemoteContent `json:"value_image,omitempty"`
+	ValueImage *string `json:"value_image,omitempty"`
 	// Slug holds the value of the "slug" field.
 	Slug string `json:"slug,omitempty"`
 	// The priority to appear in lessons/reviews. The maximum priority is 0.
 	Priority uint8 `json:"priority,omitempty"`
 	// Resources holds the value of the "resources" field.
-	Resources *map[string][]cards.RemoteContent `json:"resources,omitempty"`
+	Resources []cards.Resource `json:"resources,omitempty"`
 	// StudyData holds the value of the "study_data" field.
 	StudyData []cards.StudyData `json:"study_data,omitempty"`
 	// AdditionalStudyData holds the value of the "additional_study_data" field.
@@ -138,11 +138,11 @@ func (*Subject) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case subject.FieldValueImage, subject.FieldResources, subject.FieldStudyData, subject.FieldAdditionalStudyData:
+		case subject.FieldResources, subject.FieldStudyData, subject.FieldAdditionalStudyData:
 			values[i] = new([]byte)
 		case subject.FieldLevel, subject.FieldPriority:
 			values[i] = new(sql.NullInt64)
-		case subject.FieldKind, subject.FieldName, subject.FieldValue, subject.FieldSlug:
+		case subject.FieldKind, subject.FieldName, subject.FieldValue, subject.FieldValueImage, subject.FieldSlug:
 			values[i] = new(sql.NullString)
 		case subject.FieldCreatedAt, subject.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -211,12 +211,11 @@ func (s *Subject) assignValues(columns []string, values []any) error {
 				*s.Value = value.String
 			}
 		case subject.FieldValueImage:
-			if value, ok := values[i].(*[]byte); !ok {
+			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field value_image", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &s.ValueImage); err != nil {
-					return fmt.Errorf("unmarshal field value_image: %w", err)
-				}
+			} else if value.Valid {
+				s.ValueImage = new(string)
+				*s.ValueImage = value.String
 			}
 		case subject.FieldSlug:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -346,8 +345,10 @@ func (s *Subject) String() string {
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
-	builder.WriteString("value_image=")
-	builder.WriteString(fmt.Sprintf("%v", s.ValueImage))
+	if v := s.ValueImage; v != nil {
+		builder.WriteString("value_image=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("slug=")
 	builder.WriteString(s.Slug)

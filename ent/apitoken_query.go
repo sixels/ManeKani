@@ -291,7 +291,7 @@ func (atq *ApiTokenQuery) WithUser(opts ...func(*UserQuery)) *ApiTokenQuery {
 // Example:
 //
 //	var v []struct {
-//		Token []byte `json:"token,omitempty"`
+//		Token string `json:"token,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -319,7 +319,7 @@ func (atq *ApiTokenQuery) GroupBy(field string, fields ...string) *ApiTokenGroup
 // Example:
 //
 //	var v []struct {
-//		Token []byte `json:"token,omitempty"`
+//		Token string `json:"token,omitempty"`
 //	}
 //
 //	client.ApiToken.Query().

@@ -86,8 +86,16 @@ func (su *SubjectUpdate) ClearValue() *SubjectUpdate {
 }
 
 // SetValueImage sets the "value_image" field.
-func (su *SubjectUpdate) SetValueImage(cc *cards.RemoteContent) *SubjectUpdate {
-	su.mutation.SetValueImage(cc)
+func (su *SubjectUpdate) SetValueImage(s string) *SubjectUpdate {
+	su.mutation.SetValueImage(s)
+	return su
+}
+
+// SetNillableValueImage sets the "value_image" field if the given value is not nil.
+func (su *SubjectUpdate) SetNillableValueImage(s *string) *SubjectUpdate {
+	if s != nil {
+		su.SetValueImage(*s)
+	}
 	return su
 }
 
@@ -117,8 +125,14 @@ func (su *SubjectUpdate) AddPriority(u int8) *SubjectUpdate {
 }
 
 // SetResources sets the "resources" field.
-func (su *SubjectUpdate) SetResources(mc *map[string][]cards.RemoteContent) *SubjectUpdate {
-	su.mutation.SetResources(mc)
+func (su *SubjectUpdate) SetResources(c []cards.Resource) *SubjectUpdate {
+	su.mutation.SetResources(c)
+	return su
+}
+
+// AppendResources appends c to the "resources" field.
+func (su *SubjectUpdate) AppendResources(c []cards.Resource) *SubjectUpdate {
+	su.mutation.AppendResources(c)
 	return su
 }
 
@@ -475,10 +489,10 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.ClearField(subject.FieldValue, field.TypeString)
 	}
 	if value, ok := su.mutation.ValueImage(); ok {
-		_spec.SetField(subject.FieldValueImage, field.TypeJSON, value)
+		_spec.SetField(subject.FieldValueImage, field.TypeString, value)
 	}
 	if su.mutation.ValueImageCleared() {
-		_spec.ClearField(subject.FieldValueImage, field.TypeJSON)
+		_spec.ClearField(subject.FieldValueImage, field.TypeString)
 	}
 	if value, ok := su.mutation.Slug(); ok {
 		_spec.SetField(subject.FieldSlug, field.TypeString, value)
@@ -491,6 +505,11 @@ func (su *SubjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := su.mutation.Resources(); ok {
 		_spec.SetField(subject.FieldResources, field.TypeJSON, value)
+	}
+	if value, ok := su.mutation.AppendedResources(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, subject.FieldResources, value)
+		})
 	}
 	if su.mutation.ResourcesCleared() {
 		_spec.ClearField(subject.FieldResources, field.TypeJSON)
@@ -866,8 +885,16 @@ func (suo *SubjectUpdateOne) ClearValue() *SubjectUpdateOne {
 }
 
 // SetValueImage sets the "value_image" field.
-func (suo *SubjectUpdateOne) SetValueImage(cc *cards.RemoteContent) *SubjectUpdateOne {
-	suo.mutation.SetValueImage(cc)
+func (suo *SubjectUpdateOne) SetValueImage(s string) *SubjectUpdateOne {
+	suo.mutation.SetValueImage(s)
+	return suo
+}
+
+// SetNillableValueImage sets the "value_image" field if the given value is not nil.
+func (suo *SubjectUpdateOne) SetNillableValueImage(s *string) *SubjectUpdateOne {
+	if s != nil {
+		suo.SetValueImage(*s)
+	}
 	return suo
 }
 
@@ -897,8 +924,14 @@ func (suo *SubjectUpdateOne) AddPriority(u int8) *SubjectUpdateOne {
 }
 
 // SetResources sets the "resources" field.
-func (suo *SubjectUpdateOne) SetResources(mc *map[string][]cards.RemoteContent) *SubjectUpdateOne {
-	suo.mutation.SetResources(mc)
+func (suo *SubjectUpdateOne) SetResources(c []cards.Resource) *SubjectUpdateOne {
+	suo.mutation.SetResources(c)
+	return suo
+}
+
+// AppendResources appends c to the "resources" field.
+func (suo *SubjectUpdateOne) AppendResources(c []cards.Resource) *SubjectUpdateOne {
+	suo.mutation.AppendResources(c)
 	return suo
 }
 
@@ -1285,10 +1318,10 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 		_spec.ClearField(subject.FieldValue, field.TypeString)
 	}
 	if value, ok := suo.mutation.ValueImage(); ok {
-		_spec.SetField(subject.FieldValueImage, field.TypeJSON, value)
+		_spec.SetField(subject.FieldValueImage, field.TypeString, value)
 	}
 	if suo.mutation.ValueImageCleared() {
-		_spec.ClearField(subject.FieldValueImage, field.TypeJSON)
+		_spec.ClearField(subject.FieldValueImage, field.TypeString)
 	}
 	if value, ok := suo.mutation.Slug(); ok {
 		_spec.SetField(subject.FieldSlug, field.TypeString, value)
@@ -1301,6 +1334,11 @@ func (suo *SubjectUpdateOne) sqlSave(ctx context.Context) (_node *Subject, err e
 	}
 	if value, ok := suo.mutation.Resources(); ok {
 		_spec.SetField(subject.FieldResources, field.TypeJSON, value)
+	}
+	if value, ok := suo.mutation.AppendedResources(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, subject.FieldResources, value)
+		})
 	}
 	if suo.mutation.ResourcesCleared() {
 		_spec.ClearField(subject.FieldResources, field.TypeJSON)

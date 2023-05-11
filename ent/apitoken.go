@@ -3,11 +3,13 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/user"
 )
@@ -18,7 +20,11 @@ type ApiToken struct {
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
 	// Token holds the value of the "token" field.
-	Token []byte `json:"-"`
+	Token string `json:"-"`
+	// Prefix holds the value of the "prefix" field.
+	Prefix string `json:"prefix,omitempty"`
+	// Claims holds the value of the "claims" field.
+	Claims tokens.APITokenClaims `json:"-"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ApiTokenQuery when eager-loading is set.
 	Edges           ApiTokenEdges `json:"edges"`
@@ -52,8 +58,10 @@ func (*ApiToken) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case apitoken.FieldToken:
+		case apitoken.FieldClaims:
 			values[i] = new([]byte)
+		case apitoken.FieldToken, apitoken.FieldPrefix:
+			values[i] = new(sql.NullString)
 		case apitoken.FieldID:
 			values[i] = new(uuid.UUID)
 		case apitoken.ForeignKeys[0]: // user_api_tokens
@@ -80,10 +88,24 @@ func (at *ApiToken) assignValues(columns []string, values []any) error {
 				at.ID = *value
 			}
 		case apitoken.FieldToken:
-			if value, ok := values[i].(*[]byte); !ok {
+			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field token", values[i])
-			} else if value != nil {
-				at.Token = *value
+			} else if value.Valid {
+				at.Token = value.String
+			}
+		case apitoken.FieldPrefix:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field prefix", values[i])
+			} else if value.Valid {
+				at.Prefix = value.String
+			}
+		case apitoken.FieldClaims:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field claims", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &at.Claims); err != nil {
+					return fmt.Errorf("unmarshal field claims: %w", err)
+				}
 			}
 		case apitoken.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -126,6 +148,11 @@ func (at *ApiToken) String() string {
 	builder.WriteString("ApiToken(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", at.ID))
 	builder.WriteString("token=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("prefix=")
+	builder.WriteString(at.Prefix)
+	builder.WriteString(", ")
+	builder.WriteString("claims=<sensitive>")
 	builder.WriteByte(')')
 	return builder.String()
 }

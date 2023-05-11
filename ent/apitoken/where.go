@@ -81,28 +81,35 @@ func IDLTE(id uuid.UUID) predicate.ApiToken {
 }
 
 // Token applies equality check predicate on the "token" field. It's identical to TokenEQ.
-func Token(v []byte) predicate.ApiToken {
+func Token(v string) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldToken), v))
 	})
 }
 
+// Prefix applies equality check predicate on the "prefix" field. It's identical to PrefixEQ.
+func Prefix(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPrefix), v))
+	})
+}
+
 // TokenEQ applies the EQ predicate on the "token" field.
-func TokenEQ(v []byte) predicate.ApiToken {
+func TokenEQ(v string) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldToken), v))
 	})
 }
 
 // TokenNEQ applies the NEQ predicate on the "token" field.
-func TokenNEQ(v []byte) predicate.ApiToken {
+func TokenNEQ(v string) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldToken), v))
 	})
 }
 
 // TokenIn applies the In predicate on the "token" field.
-func TokenIn(vs ...[]byte) predicate.ApiToken {
+func TokenIn(vs ...string) predicate.ApiToken {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -113,7 +120,7 @@ func TokenIn(vs ...[]byte) predicate.ApiToken {
 }
 
 // TokenNotIn applies the NotIn predicate on the "token" field.
-func TokenNotIn(vs ...[]byte) predicate.ApiToken {
+func TokenNotIn(vs ...string) predicate.ApiToken {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -124,30 +131,164 @@ func TokenNotIn(vs ...[]byte) predicate.ApiToken {
 }
 
 // TokenGT applies the GT predicate on the "token" field.
-func TokenGT(v []byte) predicate.ApiToken {
+func TokenGT(v string) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		s.Where(sql.GT(s.C(FieldToken), v))
 	})
 }
 
 // TokenGTE applies the GTE predicate on the "token" field.
-func TokenGTE(v []byte) predicate.ApiToken {
+func TokenGTE(v string) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		s.Where(sql.GTE(s.C(FieldToken), v))
 	})
 }
 
 // TokenLT applies the LT predicate on the "token" field.
-func TokenLT(v []byte) predicate.ApiToken {
+func TokenLT(v string) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		s.Where(sql.LT(s.C(FieldToken), v))
 	})
 }
 
 // TokenLTE applies the LTE predicate on the "token" field.
-func TokenLTE(v []byte) predicate.ApiToken {
+func TokenLTE(v string) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldToken), v))
+	})
+}
+
+// TokenContains applies the Contains predicate on the "token" field.
+func TokenContains(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldToken), v))
+	})
+}
+
+// TokenHasPrefix applies the HasPrefix predicate on the "token" field.
+func TokenHasPrefix(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldToken), v))
+	})
+}
+
+// TokenHasSuffix applies the HasSuffix predicate on the "token" field.
+func TokenHasSuffix(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldToken), v))
+	})
+}
+
+// TokenEqualFold applies the EqualFold predicate on the "token" field.
+func TokenEqualFold(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldToken), v))
+	})
+}
+
+// TokenContainsFold applies the ContainsFold predicate on the "token" field.
+func TokenContainsFold(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldToken), v))
+	})
+}
+
+// PrefixEQ applies the EQ predicate on the "prefix" field.
+func PrefixEQ(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixNEQ applies the NEQ predicate on the "prefix" field.
+func PrefixNEQ(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixIn applies the In predicate on the "prefix" field.
+func PrefixIn(vs ...string) predicate.ApiToken {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldPrefix), v...))
+	})
+}
+
+// PrefixNotIn applies the NotIn predicate on the "prefix" field.
+func PrefixNotIn(vs ...string) predicate.ApiToken {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldPrefix), v...))
+	})
+}
+
+// PrefixGT applies the GT predicate on the "prefix" field.
+func PrefixGT(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixGTE applies the GTE predicate on the "prefix" field.
+func PrefixGTE(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixLT applies the LT predicate on the "prefix" field.
+func PrefixLT(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixLTE applies the LTE predicate on the "prefix" field.
+func PrefixLTE(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixContains applies the Contains predicate on the "prefix" field.
+func PrefixContains(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixHasPrefix applies the HasPrefix predicate on the "prefix" field.
+func PrefixHasPrefix(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixHasSuffix applies the HasSuffix predicate on the "prefix" field.
+func PrefixHasSuffix(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixEqualFold applies the EqualFold predicate on the "prefix" field.
+func PrefixEqualFold(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldPrefix), v))
+	})
+}
+
+// PrefixContainsFold applies the ContainsFold predicate on the "prefix" field.
+func PrefixContainsFold(v string) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldPrefix), v))
 	})
 }
 
