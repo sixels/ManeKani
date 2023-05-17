@@ -2,18 +2,18 @@ package tokens
 
 import "github.com/sixels/manekani/core/domain/tokens"
 
-func MapCapabilities(claims tokens.APITokenClaims) map[tokens.APITokenCapability]bool {
-	return map[tokens.APITokenCapability]bool{
-		tokens.TokenCapabiltyDeckCreate:           claims.Capabilities.TokenCapabiltyDeckCreate,
-		tokens.TokenCapabiltyDeckDelete:           claims.Capabilities.TokenCapabiltyDeckDelete,
-		tokens.TokenCapabiltyDeckUpdate:           claims.Capabilities.TokenCapabiltyDeckUpdate,
-		tokens.TokenCapabilitySubjectCreate:       claims.Capabilities.TokenCapabilitySubjectCreate,
-		tokens.TokenCapabilitySubjectUpdate:       claims.Capabilities.TokenCapabilitySubjectUpdate,
-		tokens.TokenCapabilitySubjectDelete:       claims.Capabilities.TokenCapabilitySubjectDelete,
-		tokens.TokenCapabilityReviewCreate:        claims.Capabilities.TokenCapabilityReviewCreate,
-		tokens.TokenCapabilityStudyMaterialCreate: claims.Capabilities.TokenCapabilityStudyMaterialCreate,
-		tokens.TokenCapabilityStudyMaterialUpdate: claims.Capabilities.TokenCapabilityStudyMaterialUpdate,
-		tokens.TokenCapabilityUserUpdate:          claims.Capabilities.TokenCapabilityUserUpdate,
-		tokens.TokenCapabilityUserDelete:          claims.Capabilities.TokenCapabilityUserDelete,
+func MapPermissions(claims tokens.APITokenClaims) map[tokens.APITokenPermission]bool {
+	return map[tokens.APITokenPermission]bool{
+		tokens.TokenPermissionDeckCreate:          claims.Permissions.TokenPermissionDeckCreate,
+		tokens.TokenPermissionDeckDelete:          claims.Permissions.TokenPermissionDeckDelete,
+		tokens.TokenPermissionDeckUpdate:          claims.Permissions.TokenPermissionDeckUpdate,
+		tokens.TokenPermissionSubjectCreate:       claims.Permissions.TokenPermissionSubjectCreate,
+		tokens.TokenPermissionSubjectUpdate:       claims.Permissions.TokenPermissionSubjectUpdate,
+		tokens.TokenPermissionSubjectDelete:       claims.Permissions.TokenPermissionSubjectDelete,
+		tokens.TokenPermissionReviewCreate:        claims.Permissions.TokenPermissionReviewCreate,
+		tokens.TokenPermissionStudyMaterialCreate: claims.Permissions.TokenPermissionStudyMaterialCreate,
+		tokens.TokenPermissionStudyMaterialUpdate: claims.Permissions.TokenPermissionStudyMaterialUpdate,
+		tokens.TokenPermissionUserUpdate:          claims.Permissions.TokenPermissionUserUpdate,
+		tokens.TokenPermissionUserDelete:          claims.Permissions.TokenPermissionUserDelete,
 	}
 }

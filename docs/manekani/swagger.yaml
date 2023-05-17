@@ -193,42 +193,42 @@ definitions:
       value_image:
         type: string
     type: object
-  tokens.APITokenCapabilities:
-    properties:
-      token_capability_review_create:
-        type: boolean
-      token_capability_study_material_create:
-        type: boolean
-      token_capability_study_material_update:
-        type: boolean
-      token_capability_subject_create:
-        type: boolean
-      token_capability_subject_delete:
-        type: boolean
-      token_capability_subject_update:
-        type: boolean
-      token_capability_user_delete:
-        type: boolean
-      token_capability_user_update:
-        type: boolean
-      token_capabilty_deck_create:
-        type: boolean
-      token_capabilty_deck_delete:
-        type: boolean
-      token_capabilty_deck_update:
-        type: boolean
-    type: object
   tokens.APITokenClaims:
     properties:
-      capabilities:
-        $ref: '#/definitions/tokens.APITokenCapabilities'
+      permissions:
+        $ref: '#/definitions/tokens.APITokenPermissions'
+    type: object
+  tokens.APITokenPermissions:
+    properties:
+      token_permission_deck_create:
+        type: boolean
+      token_permission_deck_delete:
+        type: boolean
+      token_permission_deck_update:
+        type: boolean
+      token_permission_review_create:
+        type: boolean
+      token_permission_study_material_create:
+        type: boolean
+      token_permission_study_material_update:
+        type: boolean
+      token_permission_subject_create:
+        type: boolean
+      token_permission_subject_delete:
+        type: boolean
+      token_permission_subject_update:
+        type: boolean
+      token_permission_user_delete:
+        type: boolean
+      token_permission_user_update:
+        type: boolean
     type: object
   tokens.GenerateTokenRequest:
     properties:
       name:
         type: string
       permissions:
-        $ref: '#/definitions/tokens.APITokenCapabilities'
+        $ref: '#/definitions/tokens.APITokenPermissions'
     type: object
   tokens.UserTokenPartial:
     properties:

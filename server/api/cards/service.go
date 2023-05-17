@@ -47,14 +47,14 @@ func (api *CardsApi) SetupRoutes(router *gin.Engine) {
 	// subject
 	v1Router.
 		POST("/subject",
-			api.auth.EnsureCapabilities(tokens.TokenCapabilitySubjectCreate),
+			api.auth.EnsurePermissions(tokens.TokenPermissionSubjectCreate),
 			api.V1.CreateSubject()).
 		GET("/subject/:id", api.V1.QuerySubject()).
 		PATCH("/subject/:id",
-			api.auth.EnsureCapabilities(tokens.TokenCapabilitySubjectUpdate),
+			api.auth.EnsurePermissions(tokens.TokenPermissionSubjectUpdate),
 			api.V1.UpdateSubject()).
 		DELETE("/subject/:name",
-			api.auth.EnsureCapabilities(tokens.TokenCapabilitySubjectDelete),
+			api.auth.EnsurePermissions(tokens.TokenPermissionSubjectDelete),
 			api.V1.DeleteSubject()).
 		GET("/subject", api.V1.AllSubjects())
 
@@ -63,23 +63,23 @@ func (api *CardsApi) SetupRoutes(router *gin.Engine) {
 		GET("/deck/:id", api.V1.QueryDeck()).
 		GET("/deck", api.V1.AllDecks()).
 		PUT("/deck/:id/subscribe",
-			api.auth.EnsureCapabilities(tokens.TokenCapabilityUserUpdate),
+			api.auth.EnsurePermissions(tokens.TokenPermissionUserUpdate),
 			api.V1.SubscribeUserToDeck()).
 		DELETE("/deck/:id/subscribe",
-			api.auth.EnsureCapabilities(tokens.TokenCapabilityUserUpdate),
+			api.auth.EnsurePermissions(tokens.TokenPermissionUserUpdate),
 			api.V1.UnsubscribeUserFromDeck())
 
 	// cards
 	v1Router.
 		GET("/card",
-			api.auth.EnsureCapabilities(),
+			api.auth.EnsurePermissions(),
 			api.V1.AllUserCards())
 
 	// reviews
 	v1Router.
-		GET("/review", api.auth.EnsureCapabilities(),
+		GET("/review", api.auth.EnsurePermissions(),
 			api.V1.AllUserReviews()).
 		POST("/review",
-			api.auth.EnsureCapabilities(tokens.TokenCapabilityReviewCreate),
+			api.auth.EnsurePermissions(tokens.TokenPermissionReviewCreate),
 			api.V1.CreateReview())
 }

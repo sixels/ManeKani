@@ -61,8 +61,8 @@ func (mid *AuthService) EnsureLogin() gin.HandlerFunc {
 }
 
 // Ensures that a user session or an API token exists and check wheter the
-// authentication method have the given capabilties
-func (mid *AuthService) EnsureCapabilities(caps ...domain.APITokenCapability) gin.HandlerFunc {
+// authentication method have the given permissions
+func (mid *AuthService) EnsurePermissions(caps ...domain.APITokenPermission) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// check api key first
 		bearerToken := c.GetHeader("Authorization")
@@ -77,13 +77,12 @@ func (mid *AuthService) EnsureCapabilities(caps ...domain.APITokenCapability) gi
 				return
 			}
 
-			capMap := domain.MapTokenCapabilities(&token.Claims.Capabilities)
-			for _, cap := range caps {
-				if !*capMap[cap] {
-					c.AbortWithError(http.StatusForbidden,
-						fmt.Errorf("this route requires capability: %v", cap))
-					return
-				}
+			if missingPerms := checkPermissions(&token.Claims.Permissions); len(missingPerms) > 0 {
+				c.AbortWithError(
+					http.StatusForbidden,
+					fmt.Errorf("the token does not have some required permissions: %q", missingPerms),
+				)
+				return
 			}
 
 			c.Set("userID", token.UserID)
@@ -105,4 +104,28 @@ func (mid *AuthService) EnsureCapabilities(caps ...domain.APITokenCapability) gi
 			log.Printf("user %s authorized by login\n", userID)
 		}
 	}
+}
+
+func checkPermissions(c *domain.APITokenPermissions, perms ...domain.APITokenPermission) (missing []domain.APITokenPermission) {
+	permissionMap := map[domain.APITokenPermission]bool{
+		domain.TokenPermissionDeckCreate:          c.TokenPermissionReviewCreate,
+		domain.TokenPermissionDeckDelete:          c.TokenPermissionDeckDelete,
+		domain.TokenPermissionDeckUpdate:          c.TokenPermissionDeckUpdate,
+		domain.TokenPermissionSubjectCreate:       c.TokenPermissionSubjectCreate,
+		domain.TokenPermissionSubjectUpdate:       c.TokenPermissionSubjectUpdate,
+		domain.TokenPermissionSubjectDelete:       c.TokenPermissionSubjectDelete,
+		domain.TokenPermissionReviewCreate:        c.TokenPermissionReviewCreate,
+		domain.TokenPermissionStudyMaterialCreate: c.TokenPermissionStudyMaterialCreate,
+		domain.TokenPermissionStudyMaterialUpdate: c.TokenPermissionStudyMaterialUpdate,
+		domain.TokenPermissionUserUpdate:          c.TokenPermissionUserUpdate,
+		domain.TokenPermissionUserDelete:          c.TokenPermissionUserDelete,
+	}
+
+	for _, cap := range perms {
+		if !permissionMap[cap] {
+			missing = append(missing, cap)
+		}
+	}
+
+	return missing
 }

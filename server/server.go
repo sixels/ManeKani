@@ -19,6 +19,7 @@ import (
 	tokens_api "github.com/sixels/manekani/server/api/tokens"
 	users_api "github.com/sixels/manekani/server/api/users"
 	auth_api "github.com/sixels/manekani/server/auth"
+	"github.com/sixels/manekani/server/docs"
 
 	"github.com/sixels/manekani/services/ent"
 	cards_repo "github.com/sixels/manekani/services/ent/cards"
@@ -64,11 +65,13 @@ func New() *Server {
 	filesAPI := files_api.New(filesRepo)
 	usersAPI := users_api.New(usersRepo, authService)
 
+	docsHandler := docs.New("./docs/swagger.json")
+
 	router := gin.Default()
 
 	return &Server{
 		router:   router,
-		services: []Service{cardsV1, filesAPI, usersAPI, tokensAPI, authService},
+		services: []Service{cardsV1, filesAPI, usersAPI, tokensAPI, authService, docsHandler},
 	}
 }
 

@@ -62,7 +62,7 @@ func (service *TokensAdapter) QueryTokens(ctx context.Context, userID string) ([
 
 func (service *TokensAdapter) CreateToken(ctx context.Context, userID string, req tokens.GenerateTokenRequest) (string, error) {
 	tokenClaims := tokens.APITokenClaims{
-		Capabilities: req.Permissions,
+		Permissions: req.Permissions,
 	}
 
 	prefixBytes, err := crypto.GenerateRandomBytes(PREFIX_LEN / 2)

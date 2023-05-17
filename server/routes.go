@@ -4,16 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func (server *Server) bindRoutes() {
-	// TODO: don't expose swagger routes in production
-	if true {
-		server.router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	}
-
 	server.router.GET("/health", healthCheck)
 
 	for _, service := range server.services {
@@ -22,6 +15,7 @@ func (server *Server) bindRoutes() {
 }
 
 // HealthCheck godoc
+//
 //	@Id				get-health-check
 //	@Summary		Show the status of the server.
 //	@Description	Get the status of the server.
