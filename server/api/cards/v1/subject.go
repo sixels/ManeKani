@@ -27,16 +27,16 @@ type CreateSubjectAPIRequest struct {
 	cards.CreateSubjectRequest
 }
 
-// CreateSubject godoc
-// @Id post-subject-create
-// @Summary Create a new subject
-// @Description Creates a subject with the given values
-// @Tags cards, subject
-// @Accept json
-// @Produce json
-// @Param subject body CreateSubjectAPIRequest true "The subject to be created"
-// @Success 201 {object} CreateSubjectAPIResponse
-// @Router /api/v1/subject [post]
+// CreateSubjectTODO godoc
+//	@IdTODO				post-subject-create
+//	@SummaryTODO		Create a new subject
+//	@DescriptionTODO	Creates a subject with the given values
+//	@TagsTODO			cards, subject
+//	@AcceptTODO			json
+//	@ProduceTODO		json
+//	@ParamTODO			subject body CreateSubjectAPIRequest true "The subject to be created"
+//	@SuccessTODO		201 {object} CreateSubjectAPIResponse
+//	@Router				/apiTODO/v1/subject [post]
 func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -107,15 +107,15 @@ func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
 }
 
 // QuerySubject godoc
-// @Id get-subject-query
-// @Summary Query a subject
-// @Description Search a subject by its name
-// @Tags cards, subject
-// @Accept */*
-// @Produce json
-// @Param name path string true "Subject name"
-// @Success 200 {object} cards.Subject
-// @Router /api/v1/subject/{name} [get]
+//	@Id				get-subject-query
+//	@Summary		Query a subject
+//	@Description	Search a subject by its name
+//	@Tags			cards, subject
+//	@Accept			*/*
+//	@Produce		json
+//	@Param			name	path		string	true	"Subject name"
+//	@Success		200		{object}	cards.Subject
+//	@Router			/api/v1/subject/{name} [get]
 func (api *CardsApiV1) QuerySubject() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, err := uuid.Parse(c.Param("id"))
@@ -137,16 +137,16 @@ func (api *CardsApiV1) QuerySubject() gin.HandlerFunc {
 }
 
 // UpdateSubject godoc
-// @Id patch-subject-update
-// @Summary Update a subject
-// @Description Update a subject with the given values
-// @Tags cards, subject
-// @Accept json
-// @Produce json
-// @Param name path string true "Subject name"
-// @Param subject body cards.UpdateSubjectRequest true "Subject fields to update"
-// @Success 200 {object} cards.Subject
-// @Router /api/v1/subject/{name} [patch]
+//	@Id				patch-subject-update
+//	@Summary		Update a subject
+//	@Description	Update a subject with the given values
+//	@Tags			cards, subject
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	path		string						true	"Subject name"
+//	@Param			subject	body		cards.UpdateSubjectRequest	true	"Subject fields to update"
+//	@Success		200		{object}	cards.Subject
+//	@Router			/api/v1/subject/{name} [patch]
 func (api *CardsApiV1) UpdateSubject() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -184,15 +184,15 @@ func (api *CardsApiV1) UpdateSubject() gin.HandlerFunc {
 }
 
 // DeleteSubject godoc
-// @Id delete-subject-delete
-// @Summary Delete a subject
-// @Description Delete a subject by its name
-// @Tags cards, subject
-// @Accept */*
-// @Produce json
-// @Param name path string true "Subject name"
-// @Success 200
-// @Router /api/v1/subject/{name} [delete]
+//	@Id				delete-subject-delete
+//	@Summary		Delete a subject
+//	@Description	Delete a subject by its name
+//	@Tags			cards, subject
+//	@Accept			*/*
+//	@Produce		json
+//	@Param			name	path	string	true	"Subject name"
+//	@Success		200
+//	@Router			/api/v1/subject/{name} [delete]
 func (api *CardsApiV1) DeleteSubject() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -222,14 +222,14 @@ func (api *CardsApiV1) DeleteSubject() gin.HandlerFunc {
 }
 
 // AllSubjects godoc
-// @Id get-subject-all
-// @Summary Query all subjects
-// @Description Return a list of all subjects
-// @Tags cards, subject
-// @Accept */*
-// @Produce json
-// @Success 200 {array} cards.PartialSubject
-// @Router /api/v1/subject [get]
+//	@Id				get-subject-all
+//	@Summary		Query all subjects
+//	@Description	Return a list of all subjects
+//	@Tags			cards, subject
+//	@Accept			*/*
+//	@Produce		json
+//	@Success		200	{array}	cards.PartialSubject
+//	@Router			/api/v1/subject [get]
 func (api *CardsApiV1) AllSubjects() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		filters := new(cards.QueryManySubjectsRequest)

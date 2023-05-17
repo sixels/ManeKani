@@ -14,9 +14,10 @@ type TokenRepository struct {
 }
 
 func NewRepository(client *ent_repo.EntRepository) *TokenRepository {
+	encryptionKey := os.Getenv("TOKEN_ENCRYPTION_KEY")
 	repo := TokenRepository{
 		client:             client,
-		tokenEncryptionKey: []byte(os.Getenv("TOKEN_ENCRYPTION_KEY")),
+		tokenEncryptionKey: []byte(	encryptionKey),
 	}
 	return &repo
 }

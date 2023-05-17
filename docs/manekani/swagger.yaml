@@ -1,79 +1,32 @@
 basePath: /
 definitions:
-  cards.ContentMeta:
+  apicommon.APIResponse-any:
     properties:
-      attachment:
+      code:
         type: integer
-      content_type:
+      data: {}
+      message:
         type: string
-      group:
-        type: string
-      metadata:
-        additionalProperties: {}
-        type: object
     type: object
-  cards.CreateSubjectForm:
+  apicommon.APIResponse-array_tokens_UserTokenPartial:
     properties:
+      code:
+        type: integer
       data:
-        properties:
-          complimentary_study_data:
-            items:
-              additionalProperties:
-                type: string
-              type: object
-            type: array
-          deck:
-            type: string
-          dependencies:
-            items:
-              type: string
-            type: array
-          dependents:
-            items:
-              type: string
-            type: array
-          kind:
-            type: string
-          level:
-            type: integer
-          name:
-            type: string
-          priority:
-            type: integer
-          resources:
-            additionalProperties:
-              items:
-                $ref: '#/definitions/cards.RemoteContent'
-              type: array
-            type: object
-          similars:
-            items:
-              type: string
-            type: array
-          slug:
-            type: string
-          study_data:
-            items:
-              $ref: '#/definitions/cards.StudyData'
-            type: array
-          value:
-            type: string
-          value_image:
-            $ref: '#/definitions/cards.RemoteContent'
-        required:
-        - deck
-        - level
-        - name
-        - slug
-        type: object
-      resource_meta[]:
         items:
-          $ref: '#/definitions/cards.ContentMeta'
+          $ref: '#/definitions/tokens.UserTokenPartial'
         type: array
-      value_image_meta:
-        $ref: '#/definitions/cards.ContentMeta'
-    required:
-    - data
+      message:
+        type: string
+    type: object
+  apicommon.APIResponse-string:
+    properties:
+      code:
+        type: integer
+      data:
+        type: string
+      message:
+        type: string
     type: object
   cards.PartialSubject:
     properties:
@@ -112,14 +65,13 @@ definitions:
       value:
         type: string
       value_image:
-        $ref: '#/definitions/cards.RemoteContent'
-    type: object
-  cards.RemoteContent:
-    properties:
-      content_type:
         type: string
+    type: object
+  cards.Resource:
+    properties:
       metadata:
-        additionalProperties: {}
+        additionalProperties:
+          type: string
         type: object
       url:
         type: string
@@ -152,12 +104,9 @@ definitions:
     type: object
   cards.Subject:
     properties:
-      complimentary_study_data:
-        items:
-          additionalProperties:
-            type: string
-          type: object
-        type: array
+      additional_study_data:
+        additionalProperties: {}
+        type: object
       created_at:
         type: string
       deck:
@@ -184,11 +133,9 @@ definitions:
       priority:
         type: integer
       resources:
-        additionalProperties:
-          items:
-            $ref: '#/definitions/cards.RemoteContent'
-          type: array
-        type: object
+        items:
+          $ref: '#/definitions/cards.Resource'
+        type: array
       similars:
         items:
           type: string
@@ -204,16 +151,13 @@ definitions:
       value:
         type: string
       value_image:
-        $ref: '#/definitions/cards.RemoteContent'
+        type: string
     type: object
   cards.UpdateSubjectRequest:
     properties:
-      complimentary_study_data:
-        items:
-          additionalProperties:
-            type: string
-          type: object
-        type: array
+      additional_study_data:
+        additionalProperties: {}
+        type: object
       dependencies:
         items:
           type: string
@@ -231,11 +175,9 @@ definitions:
       priority:
         type: integer
       resources:
-        additionalProperties:
-          items:
-            $ref: '#/definitions/cards.RemoteContent'
-          type: array
-        type: object
+        items:
+          $ref: '#/definitions/cards.Resource'
+        type: array
       similars:
         items:
           type: string
@@ -249,9 +191,55 @@ definitions:
       value:
         type: string
       value_image:
-        $ref: '#/definitions/cards.RemoteContent'
+        type: string
     type: object
-host: localhost:8081
+  tokens.APITokenCapabilities:
+    properties:
+      token_capability_review_create:
+        type: boolean
+      token_capability_study_material_create:
+        type: boolean
+      token_capability_study_material_update:
+        type: boolean
+      token_capability_subject_create:
+        type: boolean
+      token_capability_subject_delete:
+        type: boolean
+      token_capability_subject_update:
+        type: boolean
+      token_capability_user_delete:
+        type: boolean
+      token_capability_user_update:
+        type: boolean
+      token_capabilty_deck_create:
+        type: boolean
+      token_capabilty_deck_delete:
+        type: boolean
+      token_capabilty_deck_update:
+        type: boolean
+    type: object
+  tokens.APITokenClaims:
+    properties:
+      capabilities:
+        $ref: '#/definitions/tokens.APITokenCapabilities'
+    type: object
+  tokens.GenerateTokenRequest:
+    properties:
+      name:
+        type: string
+      permissions:
+        $ref: '#/definitions/tokens.APITokenCapabilities'
+    type: object
+  tokens.UserTokenPartial:
+    properties:
+      claims:
+        $ref: '#/definitions/tokens.APITokenClaims'
+      id:
+        type: string
+      prefix:
+        type: string
+    type: object
+host: 127.0.0.1:8080
 info:
   contact:
     email: sixels@protonmail.com
@@ -265,6 +253,107 @@ info:
   title: ManeKani API
   version: "1.0"
 paths:
+  /api/tokens:
+    get:
+      consumes:
+      - '*/*'
+      description: Get all user's API tokens
+      operationId: get-token-query
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-array_tokens_UserTokenPartial'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+      security:
+      - Login: []
+      summary: Get all user's API tokens
+      tags:
+      - user
+      - tokens
+    post:
+      consumes:
+      - application/json
+      description: Creates a new API token with the given permissions
+      operationId: post-token-create
+      parameters:
+      - description: The API token options
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tokens.GenerateTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+      security:
+      - Login: []
+      summary: Create a new API token
+      tags:
+      - user
+      - tokens
+  /api/tokens/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an API token by the given ID
+      operationId: delete-token-delete
+      parameters:
+      - description: The API token ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apicommon.APIResponse-any'
+      security:
+      - Login: []
+      summary: Delete an API token
+      tags:
+      - user
+      - tokens
   /api/v1/subject:
     get:
       consumes:
@@ -281,29 +370,6 @@ paths:
               $ref: '#/definitions/cards.PartialSubject'
             type: array
       summary: Query all subjects
-      tags:
-      - cards
-      - subject
-    post:
-      consumes:
-      - multipart/form-data
-      description: Creates a subject with the given values
-      operationId: post-subject-create
-      parameters:
-      - description: The subject to be created
-        in: body
-        name: subject
-        required: true
-        schema:
-          $ref: '#/definitions/cards.CreateSubjectForm'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/cards.Subject'
-      summary: Create a new subject
       tags:
       - cards
       - subject
@@ -378,6 +444,9 @@ paths:
       tags:
       - cards
       - subject
+  /apiTODO/v1/subject:
+    post:
+      responses: {}
   /health:
     get:
       consumes:
@@ -397,6 +466,18 @@ paths:
       - health
 schemes:
 - http
+securityDefinitions:
+  ApiKey:
+    description: API key authentication
+    in: header
+    name: Authorization
+    type: apiKey
+  Login:
+    description: Login at http://127.0.0.1:4455/login and copy the contents of the
+      'ory_kratos_session' cookie
+    in: cookie
+    name: ory_kratos_session
+    type: apiKey
 swagger: "2.0"
 tags:
 - description: API status
@@ -409,3 +490,7 @@ tags:
   name: radical
 - description: Vocabulary cards actions
   name: vocabulary
+- description: User related
+  name: user
+- description: API token related
+  name: tokens

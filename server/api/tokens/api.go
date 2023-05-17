@@ -16,7 +16,7 @@ func New(repo *tokens.TokensAdapter, auth *auth.AuthService) *TokenApi {
 }
 
 func (api *TokenApi) SetupRoutes(router *gin.Engine) {
-	handler := router.Group("/api/token")
+	handler := router.Group("/api/tokens")
 
 	handler.GET("/", api.auth.EnsureLogin(), api.QueryTokens())
 	handler.POST("/", api.auth.EnsureLogin(), api.CreateToken())

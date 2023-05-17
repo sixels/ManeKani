@@ -11,7 +11,7 @@ import (
 func (server *Server) bindRoutes() {
 	// TODO: don't expose swagger routes in production
 	if true {
-		server.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		server.router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
 	server.router.GET("/health", healthCheck)
@@ -22,14 +22,14 @@ func (server *Server) bindRoutes() {
 }
 
 // HealthCheck godoc
-// @Id get-health-check
-// @Summary Show the status of the server.
-// @Description Get the status of the server.
-// @Tags health
-// @Accept */*
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Router /health [get]
+//	@Id				get-health-check
+//	@Summary		Show the status of the server.
+//	@Description	Get the status of the server.
+//	@Tags			health
+//	@Accept			*/*
+//	@Produce		json
+//	@Success		200	{object}	map[string]interface{}
+//	@Router			/health [get]
 func healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]interface{}{
 		"data": "server is online",

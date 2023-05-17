@@ -6,6 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type GenerateTokenRequest struct {
+	Name        string               `json:"name"`
+	Permissions APITokenCapabilities `json:"permissions"`
+}
+
 type CreateTokenRequest struct {
 	TokenHash string         `json:"token"`
 	Prefix    string         `json:"prefix"`
@@ -29,16 +34,16 @@ const (
 )
 
 type UserToken struct {
-	Claims APITokenClaims
-	Prefix string
-	UserID string
-	ID     uuid.UUID
+	ID     uuid.UUID      `json:"id"`
+	Claims APITokenClaims `json:"claims"`
+	Prefix string         `json:"prefix"`
+	UserID string         `json:"user_id"`
 }
 
 type UserTokenPartial struct {
-	ID     uuid.UUID
-	Prefix string
-	Claims APITokenClaims
+	ID     uuid.UUID      `json:"id"`
+	Prefix string         `json:"prefix"`
+	Claims APITokenClaims `json:"claims"`
 }
 
 type APITokenClaims struct {

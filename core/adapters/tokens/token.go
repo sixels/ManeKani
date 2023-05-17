@@ -60,9 +60,9 @@ func (service *TokensAdapter) QueryTokens(ctx context.Context, userID string) ([
 	return tokens, nil
 }
 
-func (service *TokensAdapter) CreateToken(ctx context.Context, userID string, capabilities tokens.APITokenCapabilities) (string, error) {
+func (service *TokensAdapter) CreateToken(ctx context.Context, userID string, req tokens.GenerateTokenRequest) (string, error) {
 	tokenClaims := tokens.APITokenClaims{
-		Capabilities: capabilities,
+		Capabilities: req.Permissions,
 	}
 
 	prefixBytes, err := crypto.GenerateRandomBytes(PREFIX_LEN / 2)
