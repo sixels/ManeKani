@@ -5,19 +5,35 @@ dsn: memory
 serve:
   public:
     # prodchange : the public kratos api path
-    base_url: http://127.0.0.1:4433/
+    base_url: 'http://127.0.0.1:4433/'
     cors:
       enabled: true
+      allowed_origins:
+        - 'http://127.0.0.1:8082'
+      allowed_methods:
+        - POST
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+      allowed_headers:
+        - Authorization
+        - Cookie
+        - Content-Type
+      exposed_headers:
+        - Content-Type
+        - Set-Cookie
   admin:
     base_url: http://kratos:4434/
 
 selfservice:
   # prodchange : the default redirect after authenticating
-  default_browser_return_url: http://127.0.0.1:8080/
+  default_browser_return_url: 'http://127.0.0.1:8082/dashboard'
   # prodchange(list) : the allowed redirects after authentication (you may want to allow kratos selfservice ui and the api client, for instance)
   allowed_return_urls:
     - http://127.0.0.1:4455
     - http://127.0.0.1:8080
+    - http://127.0.0.1:8082
 
   methods:
     password:

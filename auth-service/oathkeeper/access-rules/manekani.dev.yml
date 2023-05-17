@@ -1,3 +1,20 @@
+- id: "manekani:docs"
+  upstream:
+    preserve_host: true
+    url: "http://manekani:10010"
+  match:
+    url: "http://127.0.0.1:8080/docs/<.*>"
+    methods:
+      - GET
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  errors:
+    - handler: json
+  mutators:
+    - handler: noop
+
 - id: "manekani:protected"
   upstream:
     preserve_host: true
@@ -9,6 +26,8 @@
       - GET
       - POST
       - DELETE
+      - PUT
+      - PATCH
   authenticators:
     - handler: bearer_token
       config:
