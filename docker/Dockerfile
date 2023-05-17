@@ -10,4 +10,4 @@ RUN go mod download && go mod verify
 
 EXPOSE 10010
 
-CMD ["air"]
+CMD ["air", "--build.exclude_dir", "ent,auth-service,docs"]
