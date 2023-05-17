@@ -55,12 +55,11 @@ services:
 
   manekani:
     environment:
-      - TOKEN_SIGN_KEY=iDBNNgcX3slubbIUQ5bEuHosTQVqDF2Z
       - TOKEN_ENCRYPTION_KEY=cE0SC2E2A4qNoeCdlWo8vA218Uzqbnw4
 
       - S3_URL=minio:9000
-      - AWS_ACCESS_KEY_ID=8R9qnWUT1iC08FCm
-      - AWS_SECRET_ACCESS_KEY=QE1X3kAEQG3vv1K2wtth9gnqOWptF1jx
+      - AWS_ACCESS_KEY_ID=nVQ3bEvgakztwLHc
+      - AWS_SECRET_ACCESS_KEY=BnjCq4zvkk6vwlLYeiq0uNfMTyIFdKQn
 
       - DB_URI=postgres://manekani:secret@postgres-manekani/manekani
 
