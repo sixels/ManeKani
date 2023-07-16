@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
+	ulid "github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/predicate"
 	"github.com/sixels/manekani/ent/user"
@@ -19,11 +19,9 @@ import (
 // ApiTokenQuery is the builder for querying ApiToken entities.
 type ApiTokenQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
+	ctx        *QueryContext
+	order      []apitoken.OrderOption
+	inters     []Interceptor
 	predicates []predicate.ApiToken
 	withUser   *UserQuery
 	withFKs    bool
@@ -38,34 +36,34 @@ func (atq *ApiTokenQuery) Where(ps ...predicate.ApiToken) *ApiTokenQuery {
 	return atq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (atq *ApiTokenQuery) Limit(limit int) *ApiTokenQuery {
-	atq.limit = &limit
+	atq.ctx.Limit = &limit
 	return atq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (atq *ApiTokenQuery) Offset(offset int) *ApiTokenQuery {
-	atq.offset = &offset
+	atq.ctx.Offset = &offset
 	return atq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (atq *ApiTokenQuery) Unique(unique bool) *ApiTokenQuery {
-	atq.unique = &unique
+	atq.ctx.Unique = &unique
 	return atq
 }
 
-// Order adds an order step to the query.
-func (atq *ApiTokenQuery) Order(o ...OrderFunc) *ApiTokenQuery {
+// Order specifies how the records should be ordered.
+func (atq *ApiTokenQuery) Order(o ...apitoken.OrderOption) *ApiTokenQuery {
 	atq.order = append(atq.order, o...)
 	return atq
 }
 
 // QueryUser chains the current query on the "user" edge.
 func (atq *ApiTokenQuery) QueryUser() *UserQuery {
-	query := &UserQuery{config: atq.config}
+	query := (&UserClient{config: atq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := atq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -88,7 +86,7 @@ func (atq *ApiTokenQuery) QueryUser() *UserQuery {
 // First returns the first ApiToken entity from the query.
 // Returns a *NotFoundError when no ApiToken was found.
 func (atq *ApiTokenQuery) First(ctx context.Context) (*ApiToken, error) {
-	nodes, err := atq.Limit(1).All(ctx)
+	nodes, err := atq.Limit(1).All(setContextOp(ctx, atq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -109,9 +107,9 @@ func (atq *ApiTokenQuery) FirstX(ctx context.Context) *ApiToken {
 
 // FirstID returns the first ApiToken ID from the query.
 // Returns a *NotFoundError when no ApiToken ID was found.
-func (atq *ApiTokenQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
-	if ids, err = atq.Limit(1).IDs(ctx); err != nil {
+func (atq *ApiTokenQuery) FirstID(ctx context.Context) (id ulid.ULID, err error) {
+	var ids []ulid.ULID
+	if ids, err = atq.Limit(1).IDs(setContextOp(ctx, atq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -122,7 +120,7 @@ func (atq *ApiTokenQuery) FirstID(ctx context.Context) (id uuid.UUID, err error)
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (atq *ApiTokenQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (atq *ApiTokenQuery) FirstIDX(ctx context.Context) ulid.ULID {
 	id, err := atq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -134,7 +132,7 @@ func (atq *ApiTokenQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one ApiToken entity is found.
 // Returns a *NotFoundError when no ApiToken entities are found.
 func (atq *ApiTokenQuery) Only(ctx context.Context) (*ApiToken, error) {
-	nodes, err := atq.Limit(2).All(ctx)
+	nodes, err := atq.Limit(2).All(setContextOp(ctx, atq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -160,9 +158,9 @@ func (atq *ApiTokenQuery) OnlyX(ctx context.Context) *ApiToken {
 // OnlyID is like Only, but returns the only ApiToken ID in the query.
 // Returns a *NotSingularError when more than one ApiToken ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (atq *ApiTokenQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
-	if ids, err = atq.Limit(2).IDs(ctx); err != nil {
+func (atq *ApiTokenQuery) OnlyID(ctx context.Context) (id ulid.ULID, err error) {
+	var ids []ulid.ULID
+	if ids, err = atq.Limit(2).IDs(setContextOp(ctx, atq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -177,7 +175,7 @@ func (atq *ApiTokenQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) 
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (atq *ApiTokenQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (atq *ApiTokenQuery) OnlyIDX(ctx context.Context) ulid.ULID {
 	id, err := atq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -187,10 +185,12 @@ func (atq *ApiTokenQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of ApiTokens.
 func (atq *ApiTokenQuery) All(ctx context.Context) ([]*ApiToken, error) {
+	ctx = setContextOp(ctx, atq.ctx, "All")
 	if err := atq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return atq.sqlAll(ctx)
+	qr := querierAll[[]*ApiToken, *ApiTokenQuery]()
+	return withInterceptors[[]*ApiToken](ctx, atq, qr, atq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -203,16 +203,19 @@ func (atq *ApiTokenQuery) AllX(ctx context.Context) []*ApiToken {
 }
 
 // IDs executes the query and returns a list of ApiToken IDs.
-func (atq *ApiTokenQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
-	if err := atq.Select(apitoken.FieldID).Scan(ctx, &ids); err != nil {
+func (atq *ApiTokenQuery) IDs(ctx context.Context) (ids []ulid.ULID, err error) {
+	if atq.ctx.Unique == nil && atq.path != nil {
+		atq.Unique(true)
+	}
+	ctx = setContextOp(ctx, atq.ctx, "IDs")
+	if err = atq.Select(apitoken.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (atq *ApiTokenQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (atq *ApiTokenQuery) IDsX(ctx context.Context) []ulid.ULID {
 	ids, err := atq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -222,10 +225,11 @@ func (atq *ApiTokenQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (atq *ApiTokenQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, atq.ctx, "Count")
 	if err := atq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return atq.sqlCount(ctx)
+	return withInterceptors[int](ctx, atq, querierCount[*ApiTokenQuery](), atq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -239,10 +243,15 @@ func (atq *ApiTokenQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (atq *ApiTokenQuery) Exist(ctx context.Context) (bool, error) {
-	if err := atq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, atq.ctx, "Exist")
+	switch _, err := atq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return atq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -262,22 +271,21 @@ func (atq *ApiTokenQuery) Clone() *ApiTokenQuery {
 	}
 	return &ApiTokenQuery{
 		config:     atq.config,
-		limit:      atq.limit,
-		offset:     atq.offset,
-		order:      append([]OrderFunc{}, atq.order...),
+		ctx:        atq.ctx.Clone(),
+		order:      append([]apitoken.OrderOption{}, atq.order...),
+		inters:     append([]Interceptor{}, atq.inters...),
 		predicates: append([]predicate.ApiToken{}, atq.predicates...),
 		withUser:   atq.withUser.Clone(),
 		// clone intermediate query.
-		sql:    atq.sql.Clone(),
-		path:   atq.path,
-		unique: atq.unique,
+		sql:  atq.sql.Clone(),
+		path: atq.path,
 	}
 }
 
 // WithUser tells the query-builder to eager-load the nodes that are connected to
 // the "user" edge. The optional arguments are used to configure the query builder of the edge.
 func (atq *ApiTokenQuery) WithUser(opts ...func(*UserQuery)) *ApiTokenQuery {
-	query := &UserQuery{config: atq.config}
+	query := (&UserClient{config: atq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -291,25 +299,20 @@ func (atq *ApiTokenQuery) WithUser(opts ...func(*UserQuery)) *ApiTokenQuery {
 // Example:
 //
 //	var v []struct {
-//		Token string `json:"token,omitempty"`
+//		Name string `json:"name,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.ApiToken.Query().
-//		GroupBy(apitoken.FieldToken).
+//		GroupBy(apitoken.FieldName).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (atq *ApiTokenQuery) GroupBy(field string, fields ...string) *ApiTokenGroupBy {
-	grbuild := &ApiTokenGroupBy{config: atq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := atq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return atq.sqlQuery(ctx), nil
-	}
+	atq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &ApiTokenGroupBy{build: atq}
+	grbuild.flds = &atq.ctx.Fields
 	grbuild.label = apitoken.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -319,18 +322,18 @@ func (atq *ApiTokenQuery) GroupBy(field string, fields ...string) *ApiTokenGroup
 // Example:
 //
 //	var v []struct {
-//		Token string `json:"token,omitempty"`
+//		Name string `json:"name,omitempty"`
 //	}
 //
 //	client.ApiToken.Query().
-//		Select(apitoken.FieldToken).
+//		Select(apitoken.FieldName).
 //		Scan(ctx, &v)
 func (atq *ApiTokenQuery) Select(fields ...string) *ApiTokenSelect {
-	atq.fields = append(atq.fields, fields...)
-	selbuild := &ApiTokenSelect{ApiTokenQuery: atq}
-	selbuild.label = apitoken.Label
-	selbuild.flds, selbuild.scan = &atq.fields, selbuild.Scan
-	return selbuild
+	atq.ctx.Fields = append(atq.ctx.Fields, fields...)
+	sbuild := &ApiTokenSelect{ApiTokenQuery: atq}
+	sbuild.label = apitoken.Label
+	sbuild.flds, sbuild.scan = &atq.ctx.Fields, sbuild.Scan
+	return sbuild
 }
 
 // Aggregate returns a ApiTokenSelect configured with the given aggregations.
@@ -339,7 +342,17 @@ func (atq *ApiTokenQuery) Aggregate(fns ...AggregateFunc) *ApiTokenSelect {
 }
 
 func (atq *ApiTokenQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range atq.fields {
+	for _, inter := range atq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, atq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range atq.ctx.Fields {
 		if !apitoken.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -409,6 +422,9 @@ func (atq *ApiTokenQuery) loadUser(ctx context.Context, query *UserQuery, nodes 
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -428,41 +444,22 @@ func (atq *ApiTokenQuery) loadUser(ctx context.Context, query *UserQuery, nodes 
 
 func (atq *ApiTokenQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := atq.querySpec()
-	_spec.Node.Columns = atq.fields
-	if len(atq.fields) > 0 {
-		_spec.Unique = atq.unique != nil && *atq.unique
+	_spec.Node.Columns = atq.ctx.Fields
+	if len(atq.ctx.Fields) > 0 {
+		_spec.Unique = atq.ctx.Unique != nil && *atq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, atq.driver, _spec)
 }
 
-func (atq *ApiTokenQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := atq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (atq *ApiTokenQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   apitoken.Table,
-			Columns: apitoken.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: apitoken.FieldID,
-			},
-		},
-		From:   atq.sql,
-		Unique: true,
-	}
-	if unique := atq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(apitoken.Table, apitoken.Columns, sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes))
+	_spec.From = atq.sql
+	if unique := atq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if atq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := atq.fields; len(fields) > 0 {
+	if fields := atq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, apitoken.FieldID)
 		for i := range fields {
@@ -478,10 +475,10 @@ func (atq *ApiTokenQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := atq.limit; limit != nil {
+	if limit := atq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := atq.offset; offset != nil {
+	if offset := atq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := atq.order; len(ps) > 0 {
@@ -497,7 +494,7 @@ func (atq *ApiTokenQuery) querySpec() *sqlgraph.QuerySpec {
 func (atq *ApiTokenQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(atq.driver.Dialect())
 	t1 := builder.Table(apitoken.Table)
-	columns := atq.fields
+	columns := atq.ctx.Fields
 	if len(columns) == 0 {
 		columns = apitoken.Columns
 	}
@@ -506,7 +503,7 @@ func (atq *ApiTokenQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = atq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if atq.unique != nil && *atq.unique {
+	if atq.ctx.Unique != nil && *atq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range atq.predicates {
@@ -515,12 +512,12 @@ func (atq *ApiTokenQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range atq.order {
 		p(selector)
 	}
-	if offset := atq.offset; offset != nil {
+	if offset := atq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := atq.limit; limit != nil {
+	if limit := atq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -528,13 +525,8 @@ func (atq *ApiTokenQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // ApiTokenGroupBy is the group-by builder for ApiToken entities.
 type ApiTokenGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *ApiTokenQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -543,58 +535,46 @@ func (atgb *ApiTokenGroupBy) Aggregate(fns ...AggregateFunc) *ApiTokenGroupBy {
 	return atgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (atgb *ApiTokenGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := atgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, atgb.build.ctx, "GroupBy")
+	if err := atgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	atgb.sql = query
-	return atgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*ApiTokenQuery, *ApiTokenGroupBy](ctx, atgb.build, atgb, atgb.build.inters, v)
 }
 
-func (atgb *ApiTokenGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range atgb.fields {
-		if !apitoken.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (atgb *ApiTokenGroupBy) sqlScan(ctx context.Context, root *ApiTokenQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(atgb.fns))
+	for _, fn := range atgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := atgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*atgb.flds)+len(atgb.fns))
+		for _, f := range *atgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*atgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := atgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := atgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (atgb *ApiTokenGroupBy) sqlQuery() *sql.Selector {
-	selector := atgb.sql.Select()
-	aggregation := make([]string, 0, len(atgb.fns))
-	for _, fn := range atgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(atgb.fields)+len(atgb.fns))
-		for _, f := range atgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(atgb.fields...)...)
-}
-
 // ApiTokenSelect is the builder for selecting fields of ApiToken entities.
 type ApiTokenSelect struct {
 	*ApiTokenQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
@@ -605,26 +585,27 @@ func (ats *ApiTokenSelect) Aggregate(fns ...AggregateFunc) *ApiTokenSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (ats *ApiTokenSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ats.ctx, "Select")
 	if err := ats.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ats.sql = ats.ApiTokenQuery.sqlQuery(ctx)
-	return ats.sqlScan(ctx, v)
+	return scanWithInterceptors[*ApiTokenQuery, *ApiTokenSelect](ctx, ats.ApiTokenQuery, ats, ats.inters, v)
 }
 
-func (ats *ApiTokenSelect) sqlScan(ctx context.Context, v any) error {
+func (ats *ApiTokenSelect) sqlScan(ctx context.Context, root *ApiTokenQuery, v any) error {
+	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(ats.fns))
 	for _, fn := range ats.fns {
-		aggregation = append(aggregation, fn(ats.sql))
+		aggregation = append(aggregation, fn(selector))
 	}
 	switch n := len(*ats.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
-		ats.sql.Select(aggregation...)
+		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
-		ats.sql.AppendSelect(aggregation...)
+		selector.AppendSelect(aggregation...)
 	}
 	rows := &sql.Rows{}
-	query, args := ats.sql.Query()
+	query, args := selector.Query()
 	if err := ats.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

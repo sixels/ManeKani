@@ -13,286 +13,182 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Review(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Review(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Review(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Review(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Review(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Review(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Review(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Review(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id uuid.UUID) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Review(sql.FieldLTE(FieldID, id))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Review(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // StartProgress applies equality check predicate on the "start_progress" field. It's identical to StartProgressEQ.
 func StartProgress(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldStartProgress), v))
-	})
+	return predicate.Review(sql.FieldEQ(FieldStartProgress, v))
 }
 
 // EndProgress applies equality check predicate on the "end_progress" field. It's identical to EndProgressEQ.
 func EndProgress(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldEndProgress), v))
-	})
+	return predicate.Review(sql.FieldEQ(FieldEndProgress, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Review(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Review(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.Review(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.Review(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Review(sql.FieldGT(FieldCreatedAt, v))
 }
 
 // CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Review(sql.FieldGTE(FieldCreatedAt, v))
 }
 
 // CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Review(sql.FieldLT(FieldCreatedAt, v))
 }
 
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Review(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // StartProgressEQ applies the EQ predicate on the "start_progress" field.
 func StartProgressEQ(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldStartProgress), v))
-	})
+	return predicate.Review(sql.FieldEQ(FieldStartProgress, v))
 }
 
 // StartProgressNEQ applies the NEQ predicate on the "start_progress" field.
 func StartProgressNEQ(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldStartProgress), v))
-	})
+	return predicate.Review(sql.FieldNEQ(FieldStartProgress, v))
 }
 
 // StartProgressIn applies the In predicate on the "start_progress" field.
 func StartProgressIn(vs ...uint8) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldStartProgress), v...))
-	})
+	return predicate.Review(sql.FieldIn(FieldStartProgress, vs...))
 }
 
 // StartProgressNotIn applies the NotIn predicate on the "start_progress" field.
 func StartProgressNotIn(vs ...uint8) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldStartProgress), v...))
-	})
+	return predicate.Review(sql.FieldNotIn(FieldStartProgress, vs...))
 }
 
 // StartProgressGT applies the GT predicate on the "start_progress" field.
 func StartProgressGT(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldStartProgress), v))
-	})
+	return predicate.Review(sql.FieldGT(FieldStartProgress, v))
 }
 
 // StartProgressGTE applies the GTE predicate on the "start_progress" field.
 func StartProgressGTE(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldStartProgress), v))
-	})
+	return predicate.Review(sql.FieldGTE(FieldStartProgress, v))
 }
 
 // StartProgressLT applies the LT predicate on the "start_progress" field.
 func StartProgressLT(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldStartProgress), v))
-	})
+	return predicate.Review(sql.FieldLT(FieldStartProgress, v))
 }
 
 // StartProgressLTE applies the LTE predicate on the "start_progress" field.
 func StartProgressLTE(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldStartProgress), v))
-	})
+	return predicate.Review(sql.FieldLTE(FieldStartProgress, v))
 }
 
 // EndProgressEQ applies the EQ predicate on the "end_progress" field.
 func EndProgressEQ(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldEndProgress), v))
-	})
+	return predicate.Review(sql.FieldEQ(FieldEndProgress, v))
 }
 
 // EndProgressNEQ applies the NEQ predicate on the "end_progress" field.
 func EndProgressNEQ(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldEndProgress), v))
-	})
+	return predicate.Review(sql.FieldNEQ(FieldEndProgress, v))
 }
 
 // EndProgressIn applies the In predicate on the "end_progress" field.
 func EndProgressIn(vs ...uint8) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldEndProgress), v...))
-	})
+	return predicate.Review(sql.FieldIn(FieldEndProgress, vs...))
 }
 
 // EndProgressNotIn applies the NotIn predicate on the "end_progress" field.
 func EndProgressNotIn(vs ...uint8) predicate.Review {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldEndProgress), v...))
-	})
+	return predicate.Review(sql.FieldNotIn(FieldEndProgress, vs...))
 }
 
 // EndProgressGT applies the GT predicate on the "end_progress" field.
 func EndProgressGT(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldEndProgress), v))
-	})
+	return predicate.Review(sql.FieldGT(FieldEndProgress, v))
 }
 
 // EndProgressGTE applies the GTE predicate on the "end_progress" field.
 func EndProgressGTE(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldEndProgress), v))
-	})
+	return predicate.Review(sql.FieldGTE(FieldEndProgress, v))
 }
 
 // EndProgressLT applies the LT predicate on the "end_progress" field.
 func EndProgressLT(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldEndProgress), v))
-	})
+	return predicate.Review(sql.FieldLT(FieldEndProgress, v))
 }
 
 // EndProgressLTE applies the LTE predicate on the "end_progress" field.
 func EndProgressLTE(v uint8) predicate.Review {
-	return predicate.Review(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldEndProgress), v))
-	})
+	return predicate.Review(sql.FieldLTE(FieldEndProgress, v))
 }
 
 // HasCard applies the HasEdge predicate on the "card" edge.
@@ -300,7 +196,6 @@ func HasCard() predicate.Review {
 	return predicate.Review(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CardTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, CardTable, CardColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -310,11 +205,7 @@ func HasCard() predicate.Review {
 // HasCardWith applies the HasEdge predicate on the "card" edge with a given conditions (other predicates).
 func HasCardWith(preds ...predicate.Card) predicate.Review {
 	return predicate.Review(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CardInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, CardTable, CardColumn),
-		)
+		step := newCardStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

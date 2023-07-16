@@ -3,22 +3,28 @@ package tokens
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/sixels/manekani/core/adapters/tokens"
-	"github.com/sixels/manekani/server/auth"
 )
 
 type TokenApi struct {
-	tokens *tokens.TokensAdapter
-	auth   *auth.AuthService
+	tokens tokens.TokensAdapter
 }
 
-func New(repo *tokens.TokensAdapter, auth *auth.AuthService) *TokenApi {
-	return &TokenApi{tokens: repo, auth: auth}
+func (api *TokenApi) ServiceName() string {
+	return "tokens"
+}
+
+func New(repo tokens.TokensAdapter) *TokenApi {
+	return &TokenApi{tokens: repo}
 }
 
 func (api *TokenApi) SetupRoutes(router *gin.Engine) {
-	handler := router.Group("/api/tokens")
+	RegisterHandlers(router, api)
 
-	handler.GET("/", api.auth.EnsureLogin(), api.QueryTokens())
-	handler.POST("/", api.auth.EnsureLogin(), api.CreateToken())
-	handler.DELETE("/:id", api.auth.EnsureLogin(), api.DeleteToken())
+	// handler := router.Group("/api/tokens")
+	// router.GET("/auth/validate-token", api.ValidateToken())
+
+	// handler.GET("/", api.QueryTokens())
+	// handler.POST("/", api.CreateToken())
+	// handler.DELETE("/:id", api.DeleteToken())
+
 }

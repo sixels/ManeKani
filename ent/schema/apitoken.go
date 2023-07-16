@@ -7,8 +7,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
-	"github.com/google/uuid"
 	"github.com/sixels/manekani/core/domain/tokens"
+	ulident "github.com/sixels/manekani/ent/schema/common/ulid_ent"
 )
 
 // ApiToken holds the schema definition for the ApiToken entity.
@@ -19,7 +19,17 @@ type ApiToken struct {
 // Fields of the ApiToken.
 func (ApiToken) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).Default(uuid.New),
+		ulident.ID(),
+		field.String("name").
+			NotEmpty().
+			MaxLen(20).
+			Immutable(),
+		field.Enum("status").
+			GoType(tokens.APITokenStatus("")),
+		field.Time("used_at").
+			Optional().
+			Nillable(),
+
 		field.String("token").
 			Sensitive().
 			Immutable(),
@@ -44,7 +54,7 @@ func (ApiToken) Edges() []ent.Edge {
 
 func (ApiToken) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("prefix").
+		index.Fields("name").
 			Edges("user").
 			Unique(),
 	}

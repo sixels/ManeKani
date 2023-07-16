@@ -9,58 +9,58 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/core/adapters/tokens/hash"
 	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/services/ent/users/crypto"
 )
 
 type (
-	GetTokenError    string
-	CreateTokenError string
+	GetTokenError    error
+	CreateTokenError error
+)
+
+var (
+	ErrGetInvalidToken       GetTokenError    = errors.New("api token is malformed")
+	ErrCreateTokenHash       CreateTokenError = errors.New("could not hash the api token")
+	ErrCreateTokenStore      CreateTokenError = errors.New("could not store the api token")
+	ErrValidateInactiveToken CreateTokenError = errors.New("api token is inactive")
 )
 
 const (
-	GetTokenErrorInvalidToken GetTokenError    = "invalid token"
-	CreateTokenErrorHash      CreateTokenError = "could not hash the api token"
-	CreateTokenErrorStore     CreateTokenError = "could not store the api token"
+	PREFIX_LEN      int    = 8
+	TOKEN_SEPARATOR string = "-"
 )
 
-const (
-	PREFIX_LEN       int    = 8
-	PREFIX_SEPARATOR string = "-"
-)
-
-func (service *TokensAdapter) GetToken(ctx context.Context, key string) (*tokens.UserToken, error) {
-	tokenParts := strings.SplitN(key, PREFIX_SEPARATOR, 2)
+func (adp *TokensAdapter) GetToken(ctx context.Context, key string) (tokens.UserToken, error) {
+	tokenParts := strings.SplitN(key, TOKEN_SEPARATOR, 2)
 	if len(tokenParts) != 2 {
-		return nil, errors.New(string(GetTokenErrorInvalidToken))
+		return tokens.UserToken{}, ErrGetInvalidToken
 	}
 
 	prefix, tokenEncoded := tokenParts[0], tokenParts[1]
-
-	log.Println("prefix:", prefix)
 
 	tokenBytes := base58.Decode(tokenEncoded)
 	prefixBytes, err := hex.DecodeString(prefix)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New(string(GetTokenErrorInvalidToken))
+		return tokens.UserToken{}, ErrGetInvalidToken
 	}
 
 	tokenHash := hash.Argon2IDHash(tokenBytes, prefixBytes)
 
-	return service.repo.GetToken(ctx, tokenHash)
+	return adp.repo.GetToken(ctx, tokenHash)
 }
 
-func (service *TokensAdapter) QueryTokens(ctx context.Context, userID string) ([]tokens.UserTokenPartial, error) {
-	tokens, err := service.repo.QueryTokens(ctx, userID)
+func (adp *TokensAdapter) QueryTokens(ctx context.Context, userID string) ([]tokens.UserTokenPartial, error) {
+	tokens, err := adp.repo.QueryTokens(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 	return tokens, nil
 }
 
-func (service *TokensAdapter) CreateToken(ctx context.Context, userID string, req tokens.GenerateTokenRequest) (string, error) {
+func (adp *TokensAdapter) CreateToken(ctx context.Context, userID string, req tokens.GenerateTokenRequest) (string, error) {
 	tokenClaims := tokens.APITokenClaims{
 		Permissions: req.Permissions,
 	}
@@ -70,7 +70,6 @@ func (service *TokensAdapter) CreateToken(ctx context.Context, userID string, re
 		return "", err
 	}
 	prefix := hex.EncodeToString(prefixBytes)
-	// TODO: check if prefix is unique for the given user
 
 	// generate a random token
 	tokenBytes := genUUIDBytes()
@@ -78,20 +77,22 @@ func (service *TokensAdapter) CreateToken(ctx context.Context, userID string, re
 
 	// hash the token and store it safely
 	tokenHash := hash.Argon2IDHash(tokenBytes, prefixBytes)
-	if err := service.repo.CreateToken(ctx, userID, tokens.CreateTokenRequest{
+	if err := adp.repo.CreateToken(ctx, userID, tokens.CreateTokenRequest{
 		TokenHash: tokenHash,
 		Prefix:    prefix,
 		Claims:    tokenClaims,
+		Name:      req.Name,
+		Status:    tokens.TokenStatusActive,
 	}); err != nil {
 		log.Println(err)
-		return "", errors.New(string(CreateTokenErrorStore))
+		return "", ErrCreateTokenStore
 	}
 
-	return prefix + PREFIX_SEPARATOR + token, nil
+	return prefix + TOKEN_SEPARATOR + token, nil
 }
 
-func (service *TokensAdapter) DeleteToken(ctx context.Context, userID string, tokenID uuid.UUID) error {
-	owner, err := service.repo.TokenOwner(ctx, userID, tokenID)
+func (adp *TokensAdapter) DeleteToken(ctx context.Context, userID string, tokenID ulid.ULID) error {
+	owner, err := adp.repo.TokenOwner(ctx, userID, tokenID)
 	if err != nil {
 		log.Println(err)
 		return errors.New("could not delete the token")
@@ -99,7 +100,20 @@ func (service *TokensAdapter) DeleteToken(ctx context.Context, userID string, to
 	if userID != owner {
 		return errors.New("token not found")
 	}
-	return service.repo.DeleteToken(ctx, tokenID)
+	return adp.repo.DeleteToken(ctx, tokenID)
+}
+
+func (adp *TokensAdapter) ValidateToken(ctx context.Context, token string) (tokens.UserToken, error) {
+	tk, err := adp.GetToken(ctx, token)
+	if err != nil {
+		return tokens.UserToken{}, err
+	}
+
+	if tk.Status != tokens.TokenStatusActive {
+		return tokens.UserToken{}, ErrValidateInactiveToken
+	}
+
+	return tk, nil
 }
 
 func genUUIDBytes() []byte {

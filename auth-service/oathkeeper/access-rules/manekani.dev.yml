@@ -37,6 +37,7 @@
           - Authorization
           - Cookie
     - handler: cookie_session
+    - handler: anonymous
   mutators:
     - handler: header
       config:

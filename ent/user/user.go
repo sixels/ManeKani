@@ -2,6 +2,11 @@
 
 package user
 
+import (
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+)
+
 const (
 	// Label holds the string label denoting the user type in the database.
 	Label = "user"
@@ -92,3 +97,126 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() string
 )
+
+// OrderOption defines the ordering options for the User queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByUsername orders the results by the username field.
+func ByUsername(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUsername, opts...).ToFunc()
+}
+
+// ByEmail orders the results by the email field.
+func ByEmail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+}
+
+// ByDecksCount orders the results by decks count.
+func ByDecksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDecksStep(), opts...)
+	}
+}
+
+// ByDecks orders the results by decks terms.
+func ByDecks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDecksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySubjectsCount orders the results by subjects count.
+func BySubjectsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubjectsStep(), opts...)
+	}
+}
+
+// BySubjects orders the results by subjects terms.
+func BySubjects(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubjectsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySubscribedDecksCount orders the results by subscribed_decks count.
+func BySubscribedDecksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubscribedDecksStep(), opts...)
+	}
+}
+
+// BySubscribedDecks orders the results by subscribed_decks terms.
+func BySubscribedDecks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubscribedDecksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByAPITokensCount orders the results by api_tokens count.
+func ByAPITokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAPITokensStep(), opts...)
+	}
+}
+
+// ByAPITokens orders the results by api_tokens terms.
+func ByAPITokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAPITokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByDecksProgressCount orders the results by decks_progress count.
+func ByDecksProgressCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDecksProgressStep(), opts...)
+	}
+}
+
+// ByDecksProgress orders the results by decks_progress terms.
+func ByDecksProgress(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDecksProgressStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newDecksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DecksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, DecksTable, DecksColumn),
+	)
+}
+func newSubjectsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubjectsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SubjectsTable, SubjectsColumn),
+	)
+}
+func newSubscribedDecksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubscribedDecksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, SubscribedDecksTable, SubscribedDecksPrimaryKey...),
+	)
+}
+func newAPITokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(APITokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, APITokensTable, APITokensColumn),
+	)
+}
+func newDecksProgressStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DecksProgressInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, DecksProgressTable, DecksProgressColumn),
+	)
+}

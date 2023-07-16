@@ -5,6 +5,8 @@ package review
 import (
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -70,3 +72,40 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// OrderOption defines the ordering options for the Review queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByStartProgress orders the results by the start_progress field.
+func ByStartProgress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStartProgress, opts...).ToFunc()
+}
+
+// ByEndProgress orders the results by the end_progress field.
+func ByEndProgress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEndProgress, opts...).ToFunc()
+}
+
+// ByCardField orders the results by card field.
+func ByCardField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCardStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newCardStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CardInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, CardTable, CardColumn),
+	)
+}

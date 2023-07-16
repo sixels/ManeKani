@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/ent/deck"
@@ -28,8 +29,9 @@ type Deck struct {
 	Description string `json:"description,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DeckQuery when eager-loading is set.
-	Edges      DeckEdges `json:"edges"`
-	user_decks *string
+	Edges        DeckEdges `json:"edges"`
+	user_decks   *string
+	selectValues sql.SelectValues
 }
 
 // DeckEdges holds the relations/edges for other nodes in the graph.
@@ -101,7 +103,7 @@ func (*Deck) scanValues(columns []string) ([]any, error) {
 		case deck.ForeignKeys[0]: // user_decks
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Deck", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -152,36 +154,44 @@ func (d *Deck) assignValues(columns []string, values []any) error {
 				d.user_decks = new(string)
 				*d.user_decks = value.String
 			}
+		default:
+			d.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Deck.
+// This includes values selected through modifiers, order, etc.
+func (d *Deck) Value(name string) (ent.Value, error) {
+	return d.selectValues.Get(name)
+}
+
 // QuerySubscribers queries the "subscribers" edge of the Deck entity.
 func (d *Deck) QuerySubscribers() *UserQuery {
-	return (&DeckClient{config: d.config}).QuerySubscribers(d)
+	return NewDeckClient(d.config).QuerySubscribers(d)
 }
 
 // QueryOwner queries the "owner" edge of the Deck entity.
 func (d *Deck) QueryOwner() *UserQuery {
-	return (&DeckClient{config: d.config}).QueryOwner(d)
+	return NewDeckClient(d.config).QueryOwner(d)
 }
 
 // QuerySubjects queries the "subjects" edge of the Deck entity.
 func (d *Deck) QuerySubjects() *SubjectQuery {
-	return (&DeckClient{config: d.config}).QuerySubjects(d)
+	return NewDeckClient(d.config).QuerySubjects(d)
 }
 
 // QueryUsersProgress queries the "users_progress" edge of the Deck entity.
 func (d *Deck) QueryUsersProgress() *DeckProgressQuery {
-	return (&DeckClient{config: d.config}).QueryUsersProgress(d)
+	return NewDeckClient(d.config).QueryUsersProgress(d)
 }
 
 // Update returns a builder for updating this Deck.
 // Note that you need to call Deck.Unwrap() before calling this method if this Deck
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (d *Deck) Update() *DeckUpdateOne {
-	return (&DeckClient{config: d.config}).UpdateOne(d)
+	return NewDeckClient(d.config).UpdateOne(d)
 }
 
 // Unwrap unwraps the Deck entity that was returned from a transaction after it was closed,
@@ -217,9 +227,3 @@ func (d *Deck) String() string {
 
 // Decks is a parsable slice of Deck.
 type Decks []*Deck
-
-func (d Decks) config(cfg config) {
-	for _i := range d {
-		d[_i].config = cfg
-	}
-}

@@ -83,50 +83,8 @@ func (dpc *DeckProgressCreate) Mutation() *DeckProgressMutation {
 
 // Save creates the DeckProgress in the database.
 func (dpc *DeckProgressCreate) Save(ctx context.Context) (*DeckProgress, error) {
-	var (
-		err  error
-		node *DeckProgress
-	)
 	dpc.defaults()
-	if len(dpc.hooks) == 0 {
-		if err = dpc.check(); err != nil {
-			return nil, err
-		}
-		node, err = dpc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DeckProgressMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = dpc.check(); err != nil {
-				return nil, err
-			}
-			dpc.mutation = mutation
-			if node, err = dpc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(dpc.hooks) - 1; i >= 0; i-- {
-			if dpc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = dpc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, dpc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*DeckProgress)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from DeckProgressMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, dpc.sqlSave, dpc.mutation, dpc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -179,6 +137,9 @@ func (dpc *DeckProgressCreate) check() error {
 }
 
 func (dpc *DeckProgressCreate) sqlSave(ctx context.Context) (*DeckProgress, error) {
+	if err := dpc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := dpc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, dpc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -188,19 +149,15 @@ func (dpc *DeckProgressCreate) sqlSave(ctx context.Context) (*DeckProgress, erro
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	dpc.mutation.id = &_node.ID
+	dpc.mutation.done = true
 	return _node, nil
 }
 
 func (dpc *DeckProgressCreate) createSpec() (*DeckProgress, *sqlgraph.CreateSpec) {
 	var (
 		_node = &DeckProgress{config: dpc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: deckprogress.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: deckprogress.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(deckprogress.Table, sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = dpc.conflict
 	if value, ok := dpc.mutation.Level(); ok {
@@ -215,10 +172,7 @@ func (dpc *DeckProgressCreate) createSpec() (*DeckProgress, *sqlgraph.CreateSpec
 			Columns: []string{deckprogress.CardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: card.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(card.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -234,10 +188,7 @@ func (dpc *DeckProgressCreate) createSpec() (*DeckProgress, *sqlgraph.CreateSpec
 			Columns: []string{deckprogress.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -254,10 +205,7 @@ func (dpc *DeckProgressCreate) createSpec() (*DeckProgress, *sqlgraph.CreateSpec
 			Columns: []string{deckprogress.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -455,8 +403,8 @@ func (dpcb *DeckProgressCreateBulk) Save(ctx context.Context) ([]*DeckProgress, 
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, dpcb.builders[i+1].mutation)
 				} else {

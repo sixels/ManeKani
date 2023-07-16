@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (dpd *DeckProgressDelete) Where(ps ...predicate.DeckProgress) *DeckProgress
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (dpd *DeckProgressDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(dpd.hooks) == 0 {
-		affected, err = dpd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DeckProgressMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			dpd.mutation = mutation
-			affected, err = dpd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(dpd.hooks) - 1; i >= 0; i-- {
-			if dpd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = dpd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, dpd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, dpd.sqlExec, dpd.mutation, dpd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (dpd *DeckProgressDelete) ExecX(ctx context.Context) int {
 }
 
 func (dpd *DeckProgressDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: deckprogress.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: deckprogress.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(deckprogress.Table, sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt))
 	if ps := dpd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (dpd *DeckProgressDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	dpd.mutation.done = true
 	return affected, err
 }
 
 // DeckProgressDeleteOne is the builder for deleting a single DeckProgress entity.
 type DeckProgressDeleteOne struct {
 	dpd *DeckProgressDelete
+}
+
+// Where appends a list predicates to the DeckProgressDelete builder.
+func (dpdo *DeckProgressDeleteOne) Where(ps ...predicate.DeckProgress) *DeckProgressDeleteOne {
+	dpdo.dpd.mutation.Where(ps...)
+	return dpdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (dpdo *DeckProgressDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (dpdo *DeckProgressDeleteOne) ExecX(ctx context.Context) {
-	dpdo.dpd.ExecX(ctx)
+	if err := dpdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

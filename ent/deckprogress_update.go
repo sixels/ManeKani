@@ -129,40 +129,7 @@ func (dpu *DeckProgressUpdate) ClearDeck() *DeckProgressUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (dpu *DeckProgressUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(dpu.hooks) == 0 {
-		if err = dpu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = dpu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DeckProgressMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = dpu.check(); err != nil {
-				return 0, err
-			}
-			dpu.mutation = mutation
-			affected, err = dpu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(dpu.hooks) - 1; i >= 0; i-- {
-			if dpu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = dpu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, dpu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, dpu.sqlSave, dpu.mutation, dpu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -204,16 +171,10 @@ func (dpu *DeckProgressUpdate) check() error {
 }
 
 func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   deckprogress.Table,
-			Columns: deckprogress.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: deckprogress.FieldID,
-			},
-		},
+	if err := dpu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(deckprogress.Table, deckprogress.Columns, sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt))
 	if ps := dpu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -235,10 +196,7 @@ func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deckprogress.CardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: card.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(card.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -251,10 +209,7 @@ func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deckprogress.CardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: card.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(card.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -270,10 +225,7 @@ func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deckprogress.CardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: card.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(card.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -289,10 +241,7 @@ func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deckprogress.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -305,10 +254,7 @@ func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deckprogress.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -324,10 +270,7 @@ func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deckprogress.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -340,10 +283,7 @@ func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deckprogress.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -359,6 +299,7 @@ func (dpu *DeckProgressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	dpu.mutation.done = true
 	return n, nil
 }
 
@@ -466,6 +407,12 @@ func (dpuo *DeckProgressUpdateOne) ClearDeck() *DeckProgressUpdateOne {
 	return dpuo
 }
 
+// Where appends a list predicates to the DeckProgressUpdate builder.
+func (dpuo *DeckProgressUpdateOne) Where(ps ...predicate.DeckProgress) *DeckProgressUpdateOne {
+	dpuo.mutation.Where(ps...)
+	return dpuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (dpuo *DeckProgressUpdateOne) Select(field string, fields ...string) *DeckProgressUpdateOne {
@@ -475,46 +422,7 @@ func (dpuo *DeckProgressUpdateOne) Select(field string, fields ...string) *DeckP
 
 // Save executes the query and returns the updated DeckProgress entity.
 func (dpuo *DeckProgressUpdateOne) Save(ctx context.Context) (*DeckProgress, error) {
-	var (
-		err  error
-		node *DeckProgress
-	)
-	if len(dpuo.hooks) == 0 {
-		if err = dpuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = dpuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DeckProgressMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = dpuo.check(); err != nil {
-				return nil, err
-			}
-			dpuo.mutation = mutation
-			node, err = dpuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(dpuo.hooks) - 1; i >= 0; i-- {
-			if dpuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = dpuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, dpuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*DeckProgress)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from DeckProgressMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, dpuo.sqlSave, dpuo.mutation, dpuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -556,16 +464,10 @@ func (dpuo *DeckProgressUpdateOne) check() error {
 }
 
 func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProgress, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   deckprogress.Table,
-			Columns: deckprogress.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: deckprogress.FieldID,
-			},
-		},
+	if err := dpuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(deckprogress.Table, deckprogress.Columns, sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt))
 	id, ok := dpuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "DeckProgress.id" for update`)}
@@ -604,10 +506,7 @@ func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProg
 			Columns: []string{deckprogress.CardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: card.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(card.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -620,10 +519,7 @@ func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProg
 			Columns: []string{deckprogress.CardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: card.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(card.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -639,10 +535,7 @@ func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProg
 			Columns: []string{deckprogress.CardsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: card.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(card.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -658,10 +551,7 @@ func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProg
 			Columns: []string{deckprogress.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -674,10 +564,7 @@ func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProg
 			Columns: []string{deckprogress.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -693,10 +580,7 @@ func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProg
 			Columns: []string{deckprogress.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -709,10 +593,7 @@ func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProg
 			Columns: []string{deckprogress.DeckColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -731,5 +612,6 @@ func (dpuo *DeckProgressUpdateOne) sqlSave(ctx context.Context) (_node *DeckProg
 		}
 		return nil, err
 	}
+	dpuo.mutation.done = true
 	return _node, nil
 }

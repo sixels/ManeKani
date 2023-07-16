@@ -9,6 +9,10 @@ type FilesApi struct {
 	files *files.FilesRepository
 }
 
+func (api *FilesApi) ServiceName() string {
+	return "files"
+}
+
 func New(filesService *files.FilesRepository) *FilesApi {
 	return &FilesApi{
 		files: filesService,

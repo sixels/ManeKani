@@ -10,144 +10,92 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.DeckProgress(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.DeckProgress(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.DeckProgress(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.DeckProgress(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.DeckProgress(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.DeckProgress(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.DeckProgress(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.DeckProgress(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id int) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.DeckProgress(sql.FieldLTE(FieldID, id))
 }
 
 // Level applies equality check predicate on the "level" field. It's identical to LevelEQ.
 func Level(v uint32) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLevel), v))
-	})
+	return predicate.DeckProgress(sql.FieldEQ(FieldLevel, v))
 }
 
 // LevelEQ applies the EQ predicate on the "level" field.
 func LevelEQ(v uint32) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLevel), v))
-	})
+	return predicate.DeckProgress(sql.FieldEQ(FieldLevel, v))
 }
 
 // LevelNEQ applies the NEQ predicate on the "level" field.
 func LevelNEQ(v uint32) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldLevel), v))
-	})
+	return predicate.DeckProgress(sql.FieldNEQ(FieldLevel, v))
 }
 
 // LevelIn applies the In predicate on the "level" field.
 func LevelIn(vs ...uint32) predicate.DeckProgress {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldLevel), v...))
-	})
+	return predicate.DeckProgress(sql.FieldIn(FieldLevel, vs...))
 }
 
 // LevelNotIn applies the NotIn predicate on the "level" field.
 func LevelNotIn(vs ...uint32) predicate.DeckProgress {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldLevel), v...))
-	})
+	return predicate.DeckProgress(sql.FieldNotIn(FieldLevel, vs...))
 }
 
 // LevelGT applies the GT predicate on the "level" field.
 func LevelGT(v uint32) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldLevel), v))
-	})
+	return predicate.DeckProgress(sql.FieldGT(FieldLevel, v))
 }
 
 // LevelGTE applies the GTE predicate on the "level" field.
 func LevelGTE(v uint32) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldLevel), v))
-	})
+	return predicate.DeckProgress(sql.FieldGTE(FieldLevel, v))
 }
 
 // LevelLT applies the LT predicate on the "level" field.
 func LevelLT(v uint32) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldLevel), v))
-	})
+	return predicate.DeckProgress(sql.FieldLT(FieldLevel, v))
 }
 
 // LevelLTE applies the LTE predicate on the "level" field.
 func LevelLTE(v uint32) predicate.DeckProgress {
-	return predicate.DeckProgress(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldLevel), v))
-	})
+	return predicate.DeckProgress(sql.FieldLTE(FieldLevel, v))
 }
 
 // HasCards applies the HasEdge predicate on the "cards" edge.
@@ -155,7 +103,6 @@ func HasCards() predicate.DeckProgress {
 	return predicate.DeckProgress(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CardsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, CardsTable, CardsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -165,11 +112,7 @@ func HasCards() predicate.DeckProgress {
 // HasCardsWith applies the HasEdge predicate on the "cards" edge with a given conditions (other predicates).
 func HasCardsWith(preds ...predicate.Card) predicate.DeckProgress {
 	return predicate.DeckProgress(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CardsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, CardsTable, CardsColumn),
-		)
+		step := newCardsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -183,7 +126,6 @@ func HasUser() predicate.DeckProgress {
 	return predicate.DeckProgress(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -193,11 +135,7 @@ func HasUser() predicate.DeckProgress {
 // HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
 func HasUserWith(preds ...predicate.User) predicate.DeckProgress {
 	return predicate.DeckProgress(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
-		)
+		step := newUserStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -211,7 +149,6 @@ func HasDeck() predicate.DeckProgress {
 	return predicate.DeckProgress(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(DeckTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, DeckTable, DeckColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -221,11 +158,7 @@ func HasDeck() predicate.DeckProgress {
 // HasDeckWith applies the HasEdge predicate on the "deck" edge with a given conditions (other predicates).
 func HasDeckWith(preds ...predicate.Deck) predicate.DeckProgress {
 	return predicate.DeckProgress(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(DeckInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, DeckTable, DeckColumn),
-		)
+		step := newDeckStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

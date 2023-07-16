@@ -182,41 +182,8 @@ func (du *DeckUpdate) RemoveUsersProgress(d ...*DeckProgress) *DeckUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (du *DeckUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	du.defaults()
-	if len(du.hooks) == 0 {
-		if err = du.check(); err != nil {
-			return 0, err
-		}
-		affected, err = du.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DeckMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = du.check(); err != nil {
-				return 0, err
-			}
-			du.mutation = mutation
-			affected, err = du.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(du.hooks) - 1; i >= 0; i-- {
-			if du.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = du.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, du.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, du.sqlSave, du.mutation, du.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -268,16 +235,10 @@ func (du *DeckUpdate) check() error {
 }
 
 func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   deck.Table,
-			Columns: deck.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: deck.FieldID,
-			},
-		},
+	if err := du.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(deck.Table, deck.Columns, sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID))
 	if ps := du.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -302,10 +263,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: deck.SubscribersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -318,10 +276,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: deck.SubscribersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -337,10 +292,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: deck.SubscribersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -356,10 +308,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deck.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -372,10 +321,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deck.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -391,10 +337,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -407,10 +350,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -426,10 +366,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -445,10 +382,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deck.UsersProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -461,10 +395,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deck.UsersProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -480,10 +411,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{deck.UsersProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -499,6 +427,7 @@ func (du *DeckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	du.mutation.done = true
 	return n, nil
 }
 
@@ -658,6 +587,12 @@ func (duo *DeckUpdateOne) RemoveUsersProgress(d ...*DeckProgress) *DeckUpdateOne
 	return duo.RemoveUsersProgresIDs(ids...)
 }
 
+// Where appends a list predicates to the DeckUpdate builder.
+func (duo *DeckUpdateOne) Where(ps ...predicate.Deck) *DeckUpdateOne {
+	duo.mutation.Where(ps...)
+	return duo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (duo *DeckUpdateOne) Select(field string, fields ...string) *DeckUpdateOne {
@@ -667,47 +602,8 @@ func (duo *DeckUpdateOne) Select(field string, fields ...string) *DeckUpdateOne 
 
 // Save executes the query and returns the updated Deck entity.
 func (duo *DeckUpdateOne) Save(ctx context.Context) (*Deck, error) {
-	var (
-		err  error
-		node *Deck
-	)
 	duo.defaults()
-	if len(duo.hooks) == 0 {
-		if err = duo.check(); err != nil {
-			return nil, err
-		}
-		node, err = duo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DeckMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = duo.check(); err != nil {
-				return nil, err
-			}
-			duo.mutation = mutation
-			node, err = duo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(duo.hooks) - 1; i >= 0; i-- {
-			if duo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = duo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, duo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Deck)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from DeckMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, duo.sqlSave, duo.mutation, duo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -759,16 +655,10 @@ func (duo *DeckUpdateOne) check() error {
 }
 
 func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   deck.Table,
-			Columns: deck.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: deck.FieldID,
-			},
-		},
+	if err := duo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(deck.Table, deck.Columns, sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID))
 	id, ok := duo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Deck.id" for update`)}
@@ -810,10 +700,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: deck.SubscribersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -826,10 +713,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: deck.SubscribersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -845,10 +729,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: deck.SubscribersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -864,10 +745,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: []string{deck.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -880,10 +758,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: []string{deck.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -899,10 +774,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -915,10 +787,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -934,10 +803,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -953,10 +819,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: []string{deck.UsersProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -969,10 +832,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: []string{deck.UsersProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -988,10 +848,7 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 			Columns: []string{deck.UsersProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1010,5 +867,6 @@ func (duo *DeckUpdateOne) sqlSave(ctx context.Context) (_node *Deck, err error) 
 		}
 		return nil, err
 	}
+	duo.mutation.done = true
 	return _node, nil
 }

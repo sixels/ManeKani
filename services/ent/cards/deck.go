@@ -18,6 +18,22 @@ import (
 
 var _ ports.DecksManager = (*CardsRepository)(nil)
 
+func (repo *CardsRepository) CreateDeck(ctx context.Context, userID string, req cards.CreateDeckRequest) (*cards.Deck, error) {
+	deck, err := repo.client.DeckClient().Create().
+		SetName(req.Name).
+		SetDescription(req.Description).
+		SetOwnerID(userID).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deck.Edges.Owner = &ent.User{
+		ID: userID,
+	}
+
+	return util.Ptr(DeckFromEnt(deck)), nil
+}
+
 func (repo *CardsRepository) QueryDeck(ctx context.Context, deckID uuid.UUID) (*cards.Deck, error) {
 	deck, err := repo.client.DeckClient().Query().
 		WithOwner(func(uq *ent.UserQuery) {

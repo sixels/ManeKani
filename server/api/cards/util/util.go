@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sixels/manekani/server/auth"
 )
 
 func CtxUserID(c *gin.Context) (string, error) {
-	ctxUser, ok := c.Get("userID")
+	ctxUser, ok := c.Get(string(auth.UserIDContext))
 	if !ok {
 		return "", fmt.Errorf("user is not set in the context")
 	}

@@ -6,10 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/predicate"
 	"github.com/sixels/manekani/ent/user"
@@ -25,6 +27,32 @@ type ApiTokenUpdate struct {
 // Where appends a list predicates to the ApiTokenUpdate builder.
 func (atu *ApiTokenUpdate) Where(ps ...predicate.ApiToken) *ApiTokenUpdate {
 	atu.mutation.Where(ps...)
+	return atu
+}
+
+// SetStatus sets the "status" field.
+func (atu *ApiTokenUpdate) SetStatus(tts tokens.APITokenStatus) *ApiTokenUpdate {
+	atu.mutation.SetStatus(tts)
+	return atu
+}
+
+// SetUsedAt sets the "used_at" field.
+func (atu *ApiTokenUpdate) SetUsedAt(t time.Time) *ApiTokenUpdate {
+	atu.mutation.SetUsedAt(t)
+	return atu
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (atu *ApiTokenUpdate) SetNillableUsedAt(t *time.Time) *ApiTokenUpdate {
+	if t != nil {
+		atu.SetUsedAt(*t)
+	}
+	return atu
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (atu *ApiTokenUpdate) ClearUsedAt() *ApiTokenUpdate {
+	atu.mutation.ClearUsedAt()
 	return atu
 }
 
@@ -52,40 +80,7 @@ func (atu *ApiTokenUpdate) ClearUser() *ApiTokenUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (atu *ApiTokenUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(atu.hooks) == 0 {
-		if err = atu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = atu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ApiTokenMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = atu.check(); err != nil {
-				return 0, err
-			}
-			atu.mutation = mutation
-			affected, err = atu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(atu.hooks) - 1; i >= 0; i-- {
-			if atu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = atu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, atu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, atu.sqlSave, atu.mutation, atu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -112,6 +107,11 @@ func (atu *ApiTokenUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (atu *ApiTokenUpdate) check() error {
+	if v, ok := atu.mutation.Status(); ok {
+		if err := apitoken.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "ApiToken.status": %w`, err)}
+		}
+	}
 	if _, ok := atu.mutation.UserID(); atu.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "ApiToken.user"`)
 	}
@@ -119,22 +119,25 @@ func (atu *ApiTokenUpdate) check() error {
 }
 
 func (atu *ApiTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   apitoken.Table,
-			Columns: apitoken.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: apitoken.FieldID,
-			},
-		},
+	if err := atu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(apitoken.Table, apitoken.Columns, sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes))
 	if ps := atu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := atu.mutation.Status(); ok {
+		_spec.SetField(apitoken.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := atu.mutation.UsedAt(); ok {
+		_spec.SetField(apitoken.FieldUsedAt, field.TypeTime, value)
+	}
+	if atu.mutation.UsedAtCleared() {
+		_spec.ClearField(apitoken.FieldUsedAt, field.TypeTime)
 	}
 	if atu.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -144,10 +147,7 @@ func (atu *ApiTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{apitoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -160,10 +160,7 @@ func (atu *ApiTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{apitoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -179,6 +176,7 @@ func (atu *ApiTokenUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	atu.mutation.done = true
 	return n, nil
 }
 
@@ -188,6 +186,32 @@ type ApiTokenUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *ApiTokenMutation
+}
+
+// SetStatus sets the "status" field.
+func (atuo *ApiTokenUpdateOne) SetStatus(tts tokens.APITokenStatus) *ApiTokenUpdateOne {
+	atuo.mutation.SetStatus(tts)
+	return atuo
+}
+
+// SetUsedAt sets the "used_at" field.
+func (atuo *ApiTokenUpdateOne) SetUsedAt(t time.Time) *ApiTokenUpdateOne {
+	atuo.mutation.SetUsedAt(t)
+	return atuo
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (atuo *ApiTokenUpdateOne) SetNillableUsedAt(t *time.Time) *ApiTokenUpdateOne {
+	if t != nil {
+		atuo.SetUsedAt(*t)
+	}
+	return atuo
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (atuo *ApiTokenUpdateOne) ClearUsedAt() *ApiTokenUpdateOne {
+	atuo.mutation.ClearUsedAt()
+	return atuo
 }
 
 // SetUserID sets the "user" edge to the User entity by ID.
@@ -212,6 +236,12 @@ func (atuo *ApiTokenUpdateOne) ClearUser() *ApiTokenUpdateOne {
 	return atuo
 }
 
+// Where appends a list predicates to the ApiTokenUpdate builder.
+func (atuo *ApiTokenUpdateOne) Where(ps ...predicate.ApiToken) *ApiTokenUpdateOne {
+	atuo.mutation.Where(ps...)
+	return atuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (atuo *ApiTokenUpdateOne) Select(field string, fields ...string) *ApiTokenUpdateOne {
@@ -221,46 +251,7 @@ func (atuo *ApiTokenUpdateOne) Select(field string, fields ...string) *ApiTokenU
 
 // Save executes the query and returns the updated ApiToken entity.
 func (atuo *ApiTokenUpdateOne) Save(ctx context.Context) (*ApiToken, error) {
-	var (
-		err  error
-		node *ApiToken
-	)
-	if len(atuo.hooks) == 0 {
-		if err = atuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = atuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ApiTokenMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = atuo.check(); err != nil {
-				return nil, err
-			}
-			atuo.mutation = mutation
-			node, err = atuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(atuo.hooks) - 1; i >= 0; i-- {
-			if atuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = atuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, atuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*ApiToken)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ApiTokenMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, atuo.sqlSave, atuo.mutation, atuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -287,6 +278,11 @@ func (atuo *ApiTokenUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (atuo *ApiTokenUpdateOne) check() error {
+	if v, ok := atuo.mutation.Status(); ok {
+		if err := apitoken.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "ApiToken.status": %w`, err)}
+		}
+	}
 	if _, ok := atuo.mutation.UserID(); atuo.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "ApiToken.user"`)
 	}
@@ -294,16 +290,10 @@ func (atuo *ApiTokenUpdateOne) check() error {
 }
 
 func (atuo *ApiTokenUpdateOne) sqlSave(ctx context.Context) (_node *ApiToken, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   apitoken.Table,
-			Columns: apitoken.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: apitoken.FieldID,
-			},
-		},
+	if err := atuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(apitoken.Table, apitoken.Columns, sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes))
 	id, ok := atuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "ApiToken.id" for update`)}
@@ -328,6 +318,15 @@ func (atuo *ApiTokenUpdateOne) sqlSave(ctx context.Context) (_node *ApiToken, er
 			}
 		}
 	}
+	if value, ok := atuo.mutation.Status(); ok {
+		_spec.SetField(apitoken.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := atuo.mutation.UsedAt(); ok {
+		_spec.SetField(apitoken.FieldUsedAt, field.TypeTime, value)
+	}
+	if atuo.mutation.UsedAtCleared() {
+		_spec.ClearField(apitoken.FieldUsedAt, field.TypeTime)
+	}
 	if atuo.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -336,10 +335,7 @@ func (atuo *ApiTokenUpdateOne) sqlSave(ctx context.Context) (_node *ApiToken, er
 			Columns: []string{apitoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -352,10 +348,7 @@ func (atuo *ApiTokenUpdateOne) sqlSave(ctx context.Context) (_node *ApiToken, er
 			Columns: []string{apitoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -374,5 +367,6 @@ func (atuo *ApiTokenUpdateOne) sqlSave(ctx context.Context) (_node *ApiToken, er
 		}
 		return nil, err
 	}
+	atuo.mutation.done = true
 	return _node, nil
 }

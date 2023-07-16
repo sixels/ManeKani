@@ -10,7 +10,10 @@ import (
 var (
 	// APITokensColumns holds the columns for the "api_tokens" table.
 	APITokensColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
+		{Name: "id", Type: field.TypeBytes},
+		{Name: "name", Type: field.TypeString, Size: 20},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "frozen"}},
+		{Name: "used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "token", Type: field.TypeString},
 		{Name: "prefix", Type: field.TypeString},
 		{Name: "claims", Type: field.TypeJSON},
@@ -24,16 +27,16 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "api_tokens_users_api_tokens",
-				Columns:    []*schema.Column{APITokensColumns[4]},
+				Columns:    []*schema.Column{APITokensColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "apitoken_prefix_user_api_tokens",
+				Name:    "apitoken_name_user_api_tokens",
 				Unique:  true,
-				Columns: []*schema.Column{APITokensColumns[2], APITokensColumns[4]},
+				Columns: []*schema.Column{APITokensColumns[1], APITokensColumns[7]},
 			},
 		},
 	}

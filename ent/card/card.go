@@ -5,6 +5,8 @@ package card
 import (
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -112,3 +114,105 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// OrderOption defines the ordering options for the Card queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByProgress orders the results by the progress field.
+func ByProgress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProgress, opts...).ToFunc()
+}
+
+// ByTotalErrors orders the results by the total_errors field.
+func ByTotalErrors(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotalErrors, opts...).ToFunc()
+}
+
+// ByUnlockedAt orders the results by the unlocked_at field.
+func ByUnlockedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnlockedAt, opts...).ToFunc()
+}
+
+// ByStartedAt orders the results by the started_at field.
+func ByStartedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStartedAt, opts...).ToFunc()
+}
+
+// ByPassedAt orders the results by the passed_at field.
+func ByPassedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPassedAt, opts...).ToFunc()
+}
+
+// ByAvailableAt orders the results by the available_at field.
+func ByAvailableAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAvailableAt, opts...).ToFunc()
+}
+
+// ByBurnedAt orders the results by the burned_at field.
+func ByBurnedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBurnedAt, opts...).ToFunc()
+}
+
+// ByDeckProgressField orders the results by deck_progress field.
+func ByDeckProgressField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDeckProgressStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// BySubjectField orders the results by subject field.
+func BySubjectField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubjectStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByReviewsCount orders the results by reviews count.
+func ByReviewsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReviewsStep(), opts...)
+	}
+}
+
+// ByReviews orders the results by reviews terms.
+func ByReviews(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReviewsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newDeckProgressStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DeckProgressInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, DeckProgressTable, DeckProgressColumn),
+	)
+}
+func newSubjectStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubjectInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, SubjectTable, SubjectColumn),
+	)
+}
+func newReviewsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReviewsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReviewsTable, ReviewsColumn),
+	)
+}

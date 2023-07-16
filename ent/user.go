@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/sixels/manekani/ent/schema"
 	"github.com/sixels/manekani/ent/user"
@@ -25,7 +26,8 @@ type User struct {
 	Email string `json:"email,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges UserEdges `json:"edges"`
+	Edges        UserEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
@@ -100,7 +102,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		case user.FieldID, user.FieldUsername, user.FieldEmail:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type User", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -140,41 +142,49 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.Email = value.String
 			}
+		default:
+			u.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the User.
+// This includes values selected through modifiers, order, etc.
+func (u *User) Value(name string) (ent.Value, error) {
+	return u.selectValues.Get(name)
+}
+
 // QueryDecks queries the "decks" edge of the User entity.
 func (u *User) QueryDecks() *DeckQuery {
-	return (&UserClient{config: u.config}).QueryDecks(u)
+	return NewUserClient(u.config).QueryDecks(u)
 }
 
 // QuerySubjects queries the "subjects" edge of the User entity.
 func (u *User) QuerySubjects() *SubjectQuery {
-	return (&UserClient{config: u.config}).QuerySubjects(u)
+	return NewUserClient(u.config).QuerySubjects(u)
 }
 
 // QuerySubscribedDecks queries the "subscribed_decks" edge of the User entity.
 func (u *User) QuerySubscribedDecks() *DeckQuery {
-	return (&UserClient{config: u.config}).QuerySubscribedDecks(u)
+	return NewUserClient(u.config).QuerySubscribedDecks(u)
 }
 
 // QueryAPITokens queries the "api_tokens" edge of the User entity.
 func (u *User) QueryAPITokens() *ApiTokenQuery {
-	return (&UserClient{config: u.config}).QueryAPITokens(u)
+	return NewUserClient(u.config).QueryAPITokens(u)
 }
 
 // QueryDecksProgress queries the "decks_progress" edge of the User entity.
 func (u *User) QueryDecksProgress() *DeckProgressQuery {
-	return (&UserClient{config: u.config}).QueryDecksProgress(u)
+	return NewUserClient(u.config).QueryDecksProgress(u)
 }
 
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (u *User) Update() *UserUpdateOne {
-	return (&UserClient{config: u.config}).UpdateOne(u)
+	return NewUserClient(u.config).UpdateOne(u)
 }
 
 // Unwrap unwraps the User entity that was returned from a transaction after it was closed,
@@ -207,9 +217,3 @@ func (u *User) String() string {
 
 // Users is a parsable slice of User.
 type Users []*User
-
-func (u Users) config(cfg config) {
-	for _i := range u {
-		u[_i].config = cfg
-	}
-}

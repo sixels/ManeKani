@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (dd *DeckDelete) Where(ps ...predicate.Deck) *DeckDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (dd *DeckDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(dd.hooks) == 0 {
-		affected, err = dd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DeckMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			dd.mutation = mutation
-			affected, err = dd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(dd.hooks) - 1; i >= 0; i-- {
-			if dd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = dd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, dd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, dd.sqlExec, dd.mutation, dd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (dd *DeckDelete) ExecX(ctx context.Context) int {
 }
 
 func (dd *DeckDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: deck.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: deck.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(deck.Table, sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID))
 	if ps := dd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (dd *DeckDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	dd.mutation.done = true
 	return affected, err
 }
 
 // DeckDeleteOne is the builder for deleting a single Deck entity.
 type DeckDeleteOne struct {
 	dd *DeckDelete
+}
+
+// Where appends a list predicates to the DeckDelete builder.
+func (ddo *DeckDeleteOne) Where(ps ...predicate.Deck) *DeckDeleteOne {
+	ddo.dd.mutation.Where(ps...)
+	return ddo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (ddo *DeckDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (ddo *DeckDeleteOne) ExecX(ctx context.Context) {
-	ddo.dd.ExecX(ctx)
+	if err := ddo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

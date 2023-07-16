@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/ent/deck"
@@ -25,6 +26,7 @@ type DeckProgress struct {
 	Edges               DeckProgressEdges `json:"edges"`
 	deck_users_progress *uuid.UUID
 	user_decks_progress *string
+	selectValues        sql.SelectValues
 }
 
 // DeckProgressEdges holds the relations/edges for other nodes in the graph.
@@ -87,7 +89,7 @@ func (*DeckProgress) scanValues(columns []string) ([]any, error) {
 		case deckprogress.ForeignKeys[1]: // user_decks_progress
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type DeckProgress", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -127,31 +129,39 @@ func (dp *DeckProgress) assignValues(columns []string, values []any) error {
 				dp.user_decks_progress = new(string)
 				*dp.user_decks_progress = value.String
 			}
+		default:
+			dp.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the DeckProgress.
+// This includes values selected through modifiers, order, etc.
+func (dp *DeckProgress) Value(name string) (ent.Value, error) {
+	return dp.selectValues.Get(name)
+}
+
 // QueryCards queries the "cards" edge of the DeckProgress entity.
 func (dp *DeckProgress) QueryCards() *CardQuery {
-	return (&DeckProgressClient{config: dp.config}).QueryCards(dp)
+	return NewDeckProgressClient(dp.config).QueryCards(dp)
 }
 
 // QueryUser queries the "user" edge of the DeckProgress entity.
 func (dp *DeckProgress) QueryUser() *UserQuery {
-	return (&DeckProgressClient{config: dp.config}).QueryUser(dp)
+	return NewDeckProgressClient(dp.config).QueryUser(dp)
 }
 
 // QueryDeck queries the "deck" edge of the DeckProgress entity.
 func (dp *DeckProgress) QueryDeck() *DeckQuery {
-	return (&DeckProgressClient{config: dp.config}).QueryDeck(dp)
+	return NewDeckProgressClient(dp.config).QueryDeck(dp)
 }
 
 // Update returns a builder for updating this DeckProgress.
 // Note that you need to call DeckProgress.Unwrap() before calling this method if this DeckProgress
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (dp *DeckProgress) Update() *DeckProgressUpdateOne {
-	return (&DeckProgressClient{config: dp.config}).UpdateOne(dp)
+	return NewDeckProgressClient(dp.config).UpdateOne(dp)
 }
 
 // Unwrap unwraps the DeckProgress entity that was returned from a transaction after it was closed,
@@ -178,9 +188,3 @@ func (dp *DeckProgress) String() string {
 
 // DeckProgresses is a parsable slice of DeckProgress.
 type DeckProgresses []*DeckProgress
-
-func (dp DeckProgresses) config(cfg config) {
-	for _i := range dp {
-		dp[_i].config = cfg
-	}
-}

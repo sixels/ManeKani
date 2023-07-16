@@ -2,18 +2,18 @@ package tokens
 
 import "github.com/sixels/manekani/core/domain/tokens"
 
-func MapPermissions(claims tokens.APITokenClaims) map[tokens.APITokenPermission]bool {
+func MapPermissions(perms tokens.APITokenPermissions) map[tokens.APITokenPermission]bool {
 	return map[tokens.APITokenPermission]bool{
-		tokens.TokenPermissionDeckCreate:          claims.Permissions.TokenPermissionDeckCreate,
-		tokens.TokenPermissionDeckDelete:          claims.Permissions.TokenPermissionDeckDelete,
-		tokens.TokenPermissionDeckUpdate:          claims.Permissions.TokenPermissionDeckUpdate,
-		tokens.TokenPermissionSubjectCreate:       claims.Permissions.TokenPermissionSubjectCreate,
-		tokens.TokenPermissionSubjectUpdate:       claims.Permissions.TokenPermissionSubjectUpdate,
-		tokens.TokenPermissionSubjectDelete:       claims.Permissions.TokenPermissionSubjectDelete,
-		tokens.TokenPermissionReviewCreate:        claims.Permissions.TokenPermissionReviewCreate,
-		tokens.TokenPermissionStudyMaterialCreate: claims.Permissions.TokenPermissionStudyMaterialCreate,
-		tokens.TokenPermissionStudyMaterialUpdate: claims.Permissions.TokenPermissionStudyMaterialUpdate,
-		tokens.TokenPermissionUserUpdate:          claims.Permissions.TokenPermissionUserUpdate,
-		tokens.TokenPermissionUserDelete:          claims.Permissions.TokenPermissionUserDelete,
+		tokens.TokenPermissionDeckCreate:          perms.DeckCreate,
+		tokens.TokenPermissionDeckDelete:          perms.DeckDelete,
+		tokens.TokenPermissionDeckUpdate:          perms.DeckUpdate,
+		tokens.TokenPermissionSubjectCreate:       perms.SubjectCreate,
+		tokens.TokenPermissionSubjectUpdate:       perms.SubjectUpdate,
+		tokens.TokenPermissionSubjectDelete:       perms.SubjectDelete,
+		tokens.TokenPermissionReviewCreate:        perms.ReviewCreate,
+		tokens.TokenPermissionStudyMaterialCreate: perms.StudyMaterialCreate,
+		tokens.TokenPermissionStudyMaterialUpdate: perms.StudyMaterialUpdate,
+		tokens.TokenPermissionUserUpdate:          perms.UserUpdate,
+		tokens.TokenPermissionUserDelete:          perms.UserDelete,
 	}
 }

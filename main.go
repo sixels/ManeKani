@@ -1,88 +1,67 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"os"
-	"path"
 
-	server "github.com/sixels/manekani/server"
+	subjectsapi "github.com/sixels/manekani/server/api/cards"
+	fileapi "github.com/sixels/manekani/server/api/files"
+	tokenapi "github.com/sixels/manekani/server/api/tokens"
+	userapi "github.com/sixels/manekani/server/api/users"
+	"github.com/sixels/manekani/server/auth"
+	"github.com/sixels/manekani/server/docs"
 
 	"github.com/joho/godotenv"
+	"github.com/sixels/manekani/core/adapters/cards"
+	"github.com/sixels/manekani/core/adapters/tokens"
+	server "github.com/sixels/manekani/server"
+	"github.com/sixels/manekani/services/ent"
+	card "github.com/sixels/manekani/services/ent/cards"
+	"github.com/sixels/manekani/services/ent/token"
+	"github.com/sixels/manekani/services/ent/users"
+	file "github.com/sixels/manekani/services/files"
 )
 
-//	@title			ManeKani API
-//	@version		1.0
-//	@description	ManeKani API.
-//	@termsOfService	http://swagger.io/terms/
-
-//	@contact.name	API Support
-//	@contact.url	http://www.swagger.io/support
-//	@contact.email	sixels@protonmail.com
-
-//	@license.name	Apache 2.0
-//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
-
-//	@tag.name			health
-//	@tag.description	API status
-
-//	@tag.name			cards
-//	@tag.description	Cards API related
-
-//	@tag.name			kanji
-//	@tag.description	Kanji cards actions
-
-//	@tag.name			radical
-//	@tag.description	Radical cards actions
-
-//	@tag.name			vocabulary
-//	@tag.description	Vocabulary cards actions
-
-//	@tag.name			user
-//	@tag.description	User related
-
-//	@tag.name			tokens
-//	@tag.description	API token related
-
-//	@securitydefinitions.apikey	Login
-//	@in							cookie
-//	@name						ory_kratos_session
-//	@description				Login at http://127.0.0.1:4455/login and copy the contents of the 'ory_kratos_session' cookie
-
-//	@securityDefinitions.apikey	ApiKey
-//	@in							header
-//	@name						Authorization
-//	@description				API key authentication
-
-//	@host		127.0.0.1:8080
-//	@BasePath	/
-//	@schemes	http
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("warn: could not load the .env file")
 	}
-	logFile := setLogFile()
-	if logFile != nil {
-		defer logFile.Close()
+
+	serverPort := os.Getenv("MANEKANI_SERVER_PORT")
+	if serverPort == "" {
+		serverPort = "10010"
 	}
 
-	fmt.Println("Starting the server")
-
-	server.New().
-		Start(logFile)
-}
-
-func setLogFile() *os.File {
-	// TODO: check XDG_DATA_HOME directory too
-	dataDir := os.Getenv("MANEKANI_DATA_HOME")
-	if dataDir != "" {
-		logFile := path.Join(dataDir, "manekani.log")
-		f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			log.Fatalf("error opening log file: %v", err)
-		}
-		log.SetOutput(f)
-		return f
+	entClient, err := ent.NewRepository()
+	if err != nil {
+		panic(err)
 	}
-	return nil
+	filesRepository, err := file.NewRepository(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	tokenProvider := tokens.CreateAdapter(token.NewRepository(entClient))
+	subjectProvider := cards.CreateAdapter(card.NewRepository(entClient), filesRepository)
+
+	authenticator := auth.NewAuthService(&tokenProvider)
+	authmws, err := authenticator.Middlewares()
+	if err != nil {
+		panic(err)
+	}
+
+	s := server.New(":" + serverPort).
+		WithMiddleware(authmws...).
+		WithService(docs.New()).
+		WithService(tokenapi.New(tokenProvider)).
+		WithService(subjectsapi.New(subjectProvider)).
+		WithService(fileapi.New(filesRepository)).
+		WithService(userapi.New(users.NewRepository(entClient)))
+
+	// api.RegisterHandlers(s.Router(), s.API())
+
+	log.Printf("Starting the server at :%s\n", serverPort)
+	s.
+		Start()
 }

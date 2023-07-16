@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/core/domain/cards"
@@ -50,6 +51,7 @@ type Subject struct {
 	Edges         SubjectEdges `json:"edges"`
 	deck_subjects *uuid.UUID
 	user_subjects *string
+	selectValues  sql.SelectValues
 }
 
 // SubjectEdges holds the relations/edges for other nodes in the graph.
@@ -153,7 +155,7 @@ func (*Subject) scanValues(columns []string) ([]any, error) {
 		case subject.ForeignKeys[1]: // user_subjects
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Subject", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -267,46 +269,54 @@ func (s *Subject) assignValues(columns []string, values []any) error {
 				s.user_subjects = new(string)
 				*s.user_subjects = value.String
 			}
+		default:
+			s.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// GetValue returns the ent.Value that was dynamically selected and assigned to the Subject.
+// This includes values selected through modifiers, order, etc.
+func (s *Subject) GetValue(name string) (ent.Value, error) {
+	return s.selectValues.Get(name)
+}
+
 // QueryCards queries the "cards" edge of the Subject entity.
 func (s *Subject) QueryCards() *CardQuery {
-	return (&SubjectClient{config: s.config}).QueryCards(s)
+	return NewSubjectClient(s.config).QueryCards(s)
 }
 
 // QuerySimilar queries the "similar" edge of the Subject entity.
 func (s *Subject) QuerySimilar() *SubjectQuery {
-	return (&SubjectClient{config: s.config}).QuerySimilar(s)
+	return NewSubjectClient(s.config).QuerySimilar(s)
 }
 
 // QueryDependencies queries the "dependencies" edge of the Subject entity.
 func (s *Subject) QueryDependencies() *SubjectQuery {
-	return (&SubjectClient{config: s.config}).QueryDependencies(s)
+	return NewSubjectClient(s.config).QueryDependencies(s)
 }
 
 // QueryDependents queries the "dependents" edge of the Subject entity.
 func (s *Subject) QueryDependents() *SubjectQuery {
-	return (&SubjectClient{config: s.config}).QueryDependents(s)
+	return NewSubjectClient(s.config).QueryDependents(s)
 }
 
 // QueryDeck queries the "deck" edge of the Subject entity.
 func (s *Subject) QueryDeck() *DeckQuery {
-	return (&SubjectClient{config: s.config}).QueryDeck(s)
+	return NewSubjectClient(s.config).QueryDeck(s)
 }
 
 // QueryOwner queries the "owner" edge of the Subject entity.
 func (s *Subject) QueryOwner() *UserQuery {
-	return (&SubjectClient{config: s.config}).QueryOwner(s)
+	return NewSubjectClient(s.config).QueryOwner(s)
 }
 
 // Update returns a builder for updating this Subject.
 // Note that you need to call Subject.Unwrap() before calling this method if this Subject
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (s *Subject) Update() *SubjectUpdateOne {
-	return (&SubjectClient{config: s.config}).UpdateOne(s)
+	return NewSubjectClient(s.config).UpdateOne(s)
 }
 
 // Unwrap unwraps the Subject entity that was returned from a transaction after it was closed,
@@ -370,9 +380,3 @@ func (s *Subject) String() string {
 
 // Subjects is a parsable slice of Subject.
 type Subjects []*Subject
-
-func (s Subjects) config(cfg config) {
-	for _i := range s {
-		s[_i].config = cfg
-	}
-}

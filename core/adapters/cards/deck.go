@@ -13,7 +13,10 @@ import (
 	"github.com/sixels/manekani/server/api/cards/util"
 )
 
-// TODO: func (svc *CardsService) CreateDeck(ctx context.Context, userID string, req domain.CreateDeckRequest) (*domain.Deck, error)
+func (svc *CardsAdapter) CreateDeck(ctx context.Context, userID string, req domain.CreateDeckRequest) (*domain.Deck, error) {
+	return svc.repo.CreateDeck(ctx, userID, req)
+}
+
 // TODO: func (svc *CardsService) UpdateDeck(ctx context.Context, userID string, id uuid.UUID, req domain.UpdateDeckRequest) (*domain.Deck, error)
 // TODO: func (svc *CardsService) DeleteDeck(ctx context.Context, userID string, id uuid.UUID) error
 

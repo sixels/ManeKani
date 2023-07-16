@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	ulid "github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/card"
 	"github.com/sixels/manekani/ent/deck"
@@ -22,10 +23,28 @@ import (
 func init() {
 	apitokenFields := schema.ApiToken{}.Fields()
 	_ = apitokenFields
+	// apitokenDescName is the schema descriptor for name field.
+	apitokenDescName := apitokenFields[1].Descriptor()
+	// apitoken.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	apitoken.NameValidator = func() func(string) error {
+		validators := apitokenDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// apitokenDescID is the schema descriptor for id field.
 	apitokenDescID := apitokenFields[0].Descriptor()
 	// apitoken.DefaultID holds the default value on creation for the id field.
-	apitoken.DefaultID = apitokenDescID.Default.(func() uuid.UUID)
+	apitoken.DefaultID = apitokenDescID.Default.(func() ulid.ULID)
 	cardMixin := schema.Card{}.Mixin()
 	cardMixinFields0 := cardMixin[0].Fields()
 	_ = cardMixinFields0

@@ -3,7 +3,12 @@
 package apitoken
 
 import (
-	"github.com/google/uuid"
+	"fmt"
+
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	ulid "github.com/oklog/ulid/v2"
+	"github.com/sixels/manekani/core/domain/tokens"
 )
 
 const (
@@ -11,6 +16,12 @@ const (
 	Label = "api_token"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
+	// FieldUsedAt holds the string denoting the used_at field in the database.
+	FieldUsedAt = "used_at"
 	// FieldToken holds the string denoting the token field in the database.
 	FieldToken = "token"
 	// FieldPrefix holds the string denoting the prefix field in the database.
@@ -33,6 +44,9 @@ const (
 // Columns holds all SQL columns for apitoken fields.
 var Columns = []string{
 	FieldID,
+	FieldName,
+	FieldStatus,
+	FieldUsedAt,
 	FieldToken,
 	FieldPrefix,
 	FieldClaims,
@@ -60,6 +74,65 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// NameValidator is a validator for the "name" field. It is called by the builders before save.
+	NameValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
+	DefaultID func() ulid.ULID
 )
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s tokens.APITokenStatus) error {
+	switch s {
+	case "active", "frozen":
+		return nil
+	default:
+		return fmt.Errorf("apitoken: invalid enum value for status field: %q", s)
+	}
+}
+
+// OrderOption defines the ordering options for the ApiToken queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByUsedAt orders the results by the used_at field.
+func ByUsedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUsedAt, opts...).ToFunc()
+}
+
+// ByToken orders the results by the token field.
+func ByToken(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldToken, opts...).ToFunc()
+}
+
+// ByPrefix orders the results by the prefix field.
+func ByPrefix(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrefix, opts...).ToFunc()
+}
+
+// ByUserField orders the results by user field.
+func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newUserStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+	)
+}

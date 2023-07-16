@@ -9,7 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"entgo.io/ent"
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	ulid "github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/core/domain/cards"
 	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/ent/apitoken"
@@ -21,8 +24,6 @@ import (
 	"github.com/sixels/manekani/ent/schema"
 	"github.com/sixels/manekani/ent/subject"
 	"github.com/sixels/manekani/ent/user"
-
-	"entgo.io/ent"
 )
 
 const (
@@ -48,7 +49,10 @@ type ApiTokenMutation struct {
 	config
 	op            Op
 	typ           string
-	id            *uuid.UUID
+	id            *ulid.ULID
+	name          *string
+	status        *tokens.APITokenStatus
+	used_at       *time.Time
 	token         *string
 	prefix        *string
 	claims        *tokens.APITokenClaims
@@ -80,7 +84,7 @@ func newApiTokenMutation(c config, op Op, opts ...apitokenOption) *ApiTokenMutat
 }
 
 // withApiTokenID sets the ID field of the mutation.
-func withApiTokenID(id uuid.UUID) apitokenOption {
+func withApiTokenID(id ulid.ULID) apitokenOption {
 	return func(m *ApiTokenMutation) {
 		var (
 			err   error
@@ -132,13 +136,13 @@ func (m ApiTokenMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of ApiToken entities.
-func (m *ApiTokenMutation) SetID(id uuid.UUID) {
+func (m *ApiTokenMutation) SetID(id ulid.ULID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *ApiTokenMutation) ID() (id uuid.UUID, exists bool) {
+func (m *ApiTokenMutation) ID() (id ulid.ULID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -149,12 +153,12 @@ func (m *ApiTokenMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *ApiTokenMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *ApiTokenMutation) IDs(ctx context.Context) ([]ulid.ULID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []ulid.ULID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -162,6 +166,127 @@ func (m *ApiTokenMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetName sets the "name" field.
+func (m *ApiTokenMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ApiTokenMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ApiToken entity.
+// If the ApiToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApiTokenMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ApiTokenMutation) ResetName() {
+	m.name = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *ApiTokenMutation) SetStatus(tts tokens.APITokenStatus) {
+	m.status = &tts
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *ApiTokenMutation) Status() (r tokens.APITokenStatus, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the ApiToken entity.
+// If the ApiToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApiTokenMutation) OldStatus(ctx context.Context) (v tokens.APITokenStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *ApiTokenMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetUsedAt sets the "used_at" field.
+func (m *ApiTokenMutation) SetUsedAt(t time.Time) {
+	m.used_at = &t
+}
+
+// UsedAt returns the value of the "used_at" field in the mutation.
+func (m *ApiTokenMutation) UsedAt() (r time.Time, exists bool) {
+	v := m.used_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsedAt returns the old "used_at" field's value of the ApiToken entity.
+// If the ApiToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApiTokenMutation) OldUsedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsedAt: %w", err)
+	}
+	return oldValue.UsedAt, nil
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (m *ApiTokenMutation) ClearUsedAt() {
+	m.used_at = nil
+	m.clearedFields[apitoken.FieldUsedAt] = struct{}{}
+}
+
+// UsedAtCleared returns if the "used_at" field was cleared in this mutation.
+func (m *ApiTokenMutation) UsedAtCleared() bool {
+	_, ok := m.clearedFields[apitoken.FieldUsedAt]
+	return ok
+}
+
+// ResetUsedAt resets all changes to the "used_at" field.
+func (m *ApiTokenMutation) ResetUsedAt() {
+	m.used_at = nil
+	delete(m.clearedFields, apitoken.FieldUsedAt)
 }
 
 // SetToken sets the "token" field.
@@ -316,9 +441,24 @@ func (m *ApiTokenMutation) Where(ps ...predicate.ApiToken) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the ApiTokenMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ApiTokenMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ApiToken, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *ApiTokenMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ApiTokenMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (ApiToken).
@@ -330,7 +470,16 @@ func (m *ApiTokenMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ApiTokenMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 6)
+	if m.name != nil {
+		fields = append(fields, apitoken.FieldName)
+	}
+	if m.status != nil {
+		fields = append(fields, apitoken.FieldStatus)
+	}
+	if m.used_at != nil {
+		fields = append(fields, apitoken.FieldUsedAt)
+	}
 	if m.token != nil {
 		fields = append(fields, apitoken.FieldToken)
 	}
@@ -348,6 +497,12 @@ func (m *ApiTokenMutation) Fields() []string {
 // schema.
 func (m *ApiTokenMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case apitoken.FieldName:
+		return m.Name()
+	case apitoken.FieldStatus:
+		return m.Status()
+	case apitoken.FieldUsedAt:
+		return m.UsedAt()
 	case apitoken.FieldToken:
 		return m.Token()
 	case apitoken.FieldPrefix:
@@ -363,6 +518,12 @@ func (m *ApiTokenMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *ApiTokenMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case apitoken.FieldName:
+		return m.OldName(ctx)
+	case apitoken.FieldStatus:
+		return m.OldStatus(ctx)
+	case apitoken.FieldUsedAt:
+		return m.OldUsedAt(ctx)
 	case apitoken.FieldToken:
 		return m.OldToken(ctx)
 	case apitoken.FieldPrefix:
@@ -378,6 +539,27 @@ func (m *ApiTokenMutation) OldField(ctx context.Context, name string) (ent.Value
 // type.
 func (m *ApiTokenMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case apitoken.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case apitoken.FieldStatus:
+		v, ok := value.(tokens.APITokenStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case apitoken.FieldUsedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsedAt(v)
+		return nil
 	case apitoken.FieldToken:
 		v, ok := value.(string)
 		if !ok {
@@ -428,7 +610,11 @@ func (m *ApiTokenMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ApiTokenMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(apitoken.FieldUsedAt) {
+		fields = append(fields, apitoken.FieldUsedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -441,6 +627,11 @@ func (m *ApiTokenMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ApiTokenMutation) ClearField(name string) error {
+	switch name {
+	case apitoken.FieldUsedAt:
+		m.ClearUsedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown ApiToken nullable field %s", name)
 }
 
@@ -448,6 +639,15 @@ func (m *ApiTokenMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *ApiTokenMutation) ResetField(name string) error {
 	switch name {
+	case apitoken.FieldName:
+		m.ResetName()
+		return nil
+	case apitoken.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case apitoken.FieldUsedAt:
+		m.ResetUsedAt()
+		return nil
 	case apitoken.FieldToken:
 		m.ResetToken()
 		return nil
@@ -1235,9 +1435,24 @@ func (m *CardMutation) Where(ps ...predicate.Card) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the CardMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CardMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Card, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *CardMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CardMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Card).
@@ -2143,9 +2358,24 @@ func (m *DeckMutation) Where(ps ...predicate.Deck) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the DeckMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *DeckMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Deck, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *DeckMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *DeckMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Deck).
@@ -2771,9 +3001,24 @@ func (m *DeckProgressMutation) Where(ps ...predicate.DeckProgress) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the DeckProgressMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *DeckProgressMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.DeckProgress, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *DeckProgressMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *DeckProgressMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (DeckProgress).
@@ -3369,9 +3614,24 @@ func (m *ReviewMutation) Where(ps ...predicate.Review) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the ReviewMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ReviewMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Review, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *ReviewMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ReviewMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Review).
@@ -4634,9 +4894,24 @@ func (m *SubjectMutation) Where(ps ...predicate.Subject) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the SubjectMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SubjectMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Subject, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *SubjectMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SubjectMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Subject).
@@ -5204,8 +5479,8 @@ type UserMutation struct {
 	subscribed_decks        map[uuid.UUID]struct{}
 	removedsubscribed_decks map[uuid.UUID]struct{}
 	clearedsubscribed_decks bool
-	api_tokens              map[uuid.UUID]struct{}
-	removedapi_tokens       map[uuid.UUID]struct{}
+	api_tokens              map[ulid.ULID]struct{}
+	removedapi_tokens       map[ulid.ULID]struct{}
 	clearedapi_tokens       bool
 	decks_progress          map[int]struct{}
 	removeddecks_progress   map[int]struct{}
@@ -5619,9 +5894,9 @@ func (m *UserMutation) ResetSubscribedDecks() {
 }
 
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by ids.
-func (m *UserMutation) AddAPITokenIDs(ids ...uuid.UUID) {
+func (m *UserMutation) AddAPITokenIDs(ids ...ulid.ULID) {
 	if m.api_tokens == nil {
-		m.api_tokens = make(map[uuid.UUID]struct{})
+		m.api_tokens = make(map[ulid.ULID]struct{})
 	}
 	for i := range ids {
 		m.api_tokens[ids[i]] = struct{}{}
@@ -5639,9 +5914,9 @@ func (m *UserMutation) APITokensCleared() bool {
 }
 
 // RemoveAPITokenIDs removes the "api_tokens" edge to the ApiToken entity by IDs.
-func (m *UserMutation) RemoveAPITokenIDs(ids ...uuid.UUID) {
+func (m *UserMutation) RemoveAPITokenIDs(ids ...ulid.ULID) {
 	if m.removedapi_tokens == nil {
-		m.removedapi_tokens = make(map[uuid.UUID]struct{})
+		m.removedapi_tokens = make(map[ulid.ULID]struct{})
 	}
 	for i := range ids {
 		delete(m.api_tokens, ids[i])
@@ -5650,7 +5925,7 @@ func (m *UserMutation) RemoveAPITokenIDs(ids ...uuid.UUID) {
 }
 
 // RemovedAPITokens returns the removed IDs of the "api_tokens" edge to the ApiToken entity.
-func (m *UserMutation) RemovedAPITokensIDs() (ids []uuid.UUID) {
+func (m *UserMutation) RemovedAPITokensIDs() (ids []ulid.ULID) {
 	for id := range m.removedapi_tokens {
 		ids = append(ids, id)
 	}
@@ -5658,7 +5933,7 @@ func (m *UserMutation) RemovedAPITokensIDs() (ids []uuid.UUID) {
 }
 
 // APITokensIDs returns the "api_tokens" edge IDs in the mutation.
-func (m *UserMutation) APITokensIDs() (ids []uuid.UUID) {
+func (m *UserMutation) APITokensIDs() (ids []ulid.ULID) {
 	for id := range m.api_tokens {
 		ids = append(ids, id)
 	}
@@ -5731,9 +6006,24 @@ func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the UserMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.User, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *UserMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (User).

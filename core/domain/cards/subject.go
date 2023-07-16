@@ -78,17 +78,17 @@ type (
 
 		Name       string  `json:"name" form:"name" binding:"required"`
 		Value      *string `json:"value,omitempty" form:"value" binding:"-"`
-		ValueImage *string `json:"value_image,omitempty" form:"value_image" binding:"-"`
+		ValueImage *string `json:"value_image,omitempty" form:"value_image" binding:"-" swaggerignore:"true"`
 		Slug       string  `json:"slug" form:"slug" binding:"required"`
-		Priority   uint8   `json:"priority" form:"priority"`
+		Priority   uint8   `json:"priority" form:"priority" binding:"required"`
 
 		StudyData           []StudyData     `json:"study_data,omitempty" form:"study_data" binding:"-"`
-		Resources           *[]Resource     `json:"resources,omitempty" form:"resources" binding:"-"`
-		AdditionalStudyData *map[string]any `json:"additional_study_data" form:"additional_study_data" binding:"-"`
+		Resources           *[]Resource     `json:"resources,omitempty" form:"resources" binding:"-" swaggerignore:"true"`
+		AdditionalStudyData *map[string]any `json:"additional_study_data,omitempty" form:"additional_study_data" binding:"-"`
 
-		Dependencies []uuid.UUID `json:"dependencies,omitempty" form:"dependencies"`
-		Dependents   []uuid.UUID `json:"dependents,omitempty" form:"dependents"`
-		Similars     []uuid.UUID `json:"similars,omitempty" form:"similars"`
+		Dependencies []uuid.UUID `json:"dependencies,omitempty" form:"dependencies" binding:"-"`
+		Dependents   []uuid.UUID `json:"dependents,omitempty" form:"dependents" binding:"-"`
+		Similars     []uuid.UUID `json:"similars,omitempty" form:"similars" binding:"-"`
 
 		Deck uuid.UUID `json:"deck" form:"deck" binding:"required"`
 	}

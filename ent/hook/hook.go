@@ -15,11 +15,10 @@ type ApiTokenFunc func(context.Context, *ent.ApiTokenMutation) (ent.Value, error
 
 // Mutate calls f(ctx, m).
 func (f ApiTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.ApiTokenMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ApiTokenMutation", m)
+	if mv, ok := m.(*ent.ApiTokenMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ApiTokenMutation", m)
 }
 
 // The CardFunc type is an adapter to allow the use of ordinary
@@ -28,11 +27,10 @@ type CardFunc func(context.Context, *ent.CardMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f CardFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.CardMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CardMutation", m)
+	if mv, ok := m.(*ent.CardMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CardMutation", m)
 }
 
 // The DeckFunc type is an adapter to allow the use of ordinary
@@ -41,11 +39,10 @@ type DeckFunc func(context.Context, *ent.DeckMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f DeckFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.DeckMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DeckMutation", m)
+	if mv, ok := m.(*ent.DeckMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DeckMutation", m)
 }
 
 // The DeckProgressFunc type is an adapter to allow the use of ordinary
@@ -54,11 +51,10 @@ type DeckProgressFunc func(context.Context, *ent.DeckProgressMutation) (ent.Valu
 
 // Mutate calls f(ctx, m).
 func (f DeckProgressFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.DeckProgressMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DeckProgressMutation", m)
+	if mv, ok := m.(*ent.DeckProgressMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DeckProgressMutation", m)
 }
 
 // The ReviewFunc type is an adapter to allow the use of ordinary
@@ -67,11 +63,10 @@ type ReviewFunc func(context.Context, *ent.ReviewMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f ReviewFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.ReviewMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReviewMutation", m)
+	if mv, ok := m.(*ent.ReviewMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReviewMutation", m)
 }
 
 // The SubjectFunc type is an adapter to allow the use of ordinary
@@ -80,11 +75,10 @@ type SubjectFunc func(context.Context, *ent.SubjectMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f SubjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.SubjectMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectMutation", m)
+	if mv, ok := m.(*ent.SubjectMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubjectMutation", m)
 }
 
 // The UserFunc type is an adapter to allow the use of ordinary
@@ -93,11 +87,10 @@ type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.UserMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
+	if mv, ok := m.(*ent.UserMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
 }
 
 // Condition is a hook condition function.

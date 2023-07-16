@@ -73,7 +73,8 @@ authenticators:
   bearer_token:
     enabled: true
     config:
-      check_session_url: http://manekani:10010/auth/tk/validate
+      check_session_url: http://manekani:10010/auth/validate-token
+      force_method: GET
       token_from:
         header: "Authorization"
 

@@ -6,12 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
+	ulid "github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/user"
@@ -23,6 +24,32 @@ type ApiTokenCreate struct {
 	mutation *ApiTokenMutation
 	hooks    []Hook
 	conflict []sql.ConflictOption
+}
+
+// SetName sets the "name" field.
+func (atc *ApiTokenCreate) SetName(s string) *ApiTokenCreate {
+	atc.mutation.SetName(s)
+	return atc
+}
+
+// SetStatus sets the "status" field.
+func (atc *ApiTokenCreate) SetStatus(tts tokens.APITokenStatus) *ApiTokenCreate {
+	atc.mutation.SetStatus(tts)
+	return atc
+}
+
+// SetUsedAt sets the "used_at" field.
+func (atc *ApiTokenCreate) SetUsedAt(t time.Time) *ApiTokenCreate {
+	atc.mutation.SetUsedAt(t)
+	return atc
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (atc *ApiTokenCreate) SetNillableUsedAt(t *time.Time) *ApiTokenCreate {
+	if t != nil {
+		atc.SetUsedAt(*t)
+	}
+	return atc
 }
 
 // SetToken sets the "token" field.
@@ -44,13 +71,13 @@ func (atc *ApiTokenCreate) SetClaims(ttc tokens.APITokenClaims) *ApiTokenCreate 
 }
 
 // SetID sets the "id" field.
-func (atc *ApiTokenCreate) SetID(u uuid.UUID) *ApiTokenCreate {
+func (atc *ApiTokenCreate) SetID(u ulid.ULID) *ApiTokenCreate {
 	atc.mutation.SetID(u)
 	return atc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (atc *ApiTokenCreate) SetNillableID(u *uuid.UUID) *ApiTokenCreate {
+func (atc *ApiTokenCreate) SetNillableID(u *ulid.ULID) *ApiTokenCreate {
 	if u != nil {
 		atc.SetID(*u)
 	}
@@ -75,50 +102,8 @@ func (atc *ApiTokenCreate) Mutation() *ApiTokenMutation {
 
 // Save creates the ApiToken in the database.
 func (atc *ApiTokenCreate) Save(ctx context.Context) (*ApiToken, error) {
-	var (
-		err  error
-		node *ApiToken
-	)
 	atc.defaults()
-	if len(atc.hooks) == 0 {
-		if err = atc.check(); err != nil {
-			return nil, err
-		}
-		node, err = atc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ApiTokenMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = atc.check(); err != nil {
-				return nil, err
-			}
-			atc.mutation = mutation
-			if node, err = atc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(atc.hooks) - 1; i >= 0; i-- {
-			if atc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = atc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, atc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*ApiToken)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ApiTokenMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, atc.sqlSave, atc.mutation, atc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -153,6 +138,22 @@ func (atc *ApiTokenCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (atc *ApiTokenCreate) check() error {
+	if _, ok := atc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "ApiToken.name"`)}
+	}
+	if v, ok := atc.mutation.Name(); ok {
+		if err := apitoken.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "ApiToken.name": %w`, err)}
+		}
+	}
+	if _, ok := atc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "ApiToken.status"`)}
+	}
+	if v, ok := atc.mutation.Status(); ok {
+		if err := apitoken.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "ApiToken.status": %w`, err)}
+		}
+	}
 	if _, ok := atc.mutation.Token(); !ok {
 		return &ValidationError{Name: "token", err: errors.New(`ent: missing required field "ApiToken.token"`)}
 	}
@@ -169,6 +170,9 @@ func (atc *ApiTokenCreate) check() error {
 }
 
 func (atc *ApiTokenCreate) sqlSave(ctx context.Context) (*ApiToken, error) {
+	if err := atc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := atc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, atc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -177,30 +181,38 @@ func (atc *ApiTokenCreate) sqlSave(ctx context.Context) (*ApiToken, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*ulid.ULID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
 		}
 	}
+	atc.mutation.id = &_node.ID
+	atc.mutation.done = true
 	return _node, nil
 }
 
 func (atc *ApiTokenCreate) createSpec() (*ApiToken, *sqlgraph.CreateSpec) {
 	var (
 		_node = &ApiToken{config: atc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: apitoken.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: apitoken.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(apitoken.Table, sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes))
 	)
 	_spec.OnConflict = atc.conflict
 	if id, ok := atc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
+	}
+	if value, ok := atc.mutation.Name(); ok {
+		_spec.SetField(apitoken.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
+	if value, ok := atc.mutation.Status(); ok {
+		_spec.SetField(apitoken.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
+	}
+	if value, ok := atc.mutation.UsedAt(); ok {
+		_spec.SetField(apitoken.FieldUsedAt, field.TypeTime, value)
+		_node.UsedAt = &value
 	}
 	if value, ok := atc.mutation.Token(); ok {
 		_spec.SetField(apitoken.FieldToken, field.TypeString, value)
@@ -222,10 +234,7 @@ func (atc *ApiTokenCreate) createSpec() (*ApiToken, *sqlgraph.CreateSpec) {
 			Columns: []string{apitoken.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -241,7 +250,7 @@ func (atc *ApiTokenCreate) createSpec() (*ApiToken, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.ApiToken.Create().
-//		SetToken(v).
+//		SetName(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -250,7 +259,7 @@ func (atc *ApiTokenCreate) createSpec() (*ApiToken, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ApiTokenUpsert) {
-//			SetToken(v+v).
+//			SetName(v+v).
 //		}).
 //		Exec(ctx)
 func (atc *ApiTokenCreate) OnConflict(opts ...sql.ConflictOption) *ApiTokenUpsertOne {
@@ -286,6 +295,36 @@ type (
 	}
 )
 
+// SetStatus sets the "status" field.
+func (u *ApiTokenUpsert) SetStatus(v tokens.APITokenStatus) *ApiTokenUpsert {
+	u.Set(apitoken.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ApiTokenUpsert) UpdateStatus() *ApiTokenUpsert {
+	u.SetExcluded(apitoken.FieldStatus)
+	return u
+}
+
+// SetUsedAt sets the "used_at" field.
+func (u *ApiTokenUpsert) SetUsedAt(v time.Time) *ApiTokenUpsert {
+	u.Set(apitoken.FieldUsedAt, v)
+	return u
+}
+
+// UpdateUsedAt sets the "used_at" field to the value that was provided on create.
+func (u *ApiTokenUpsert) UpdateUsedAt() *ApiTokenUpsert {
+	u.SetExcluded(apitoken.FieldUsedAt)
+	return u
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (u *ApiTokenUpsert) ClearUsedAt() *ApiTokenUpsert {
+	u.SetNull(apitoken.FieldUsedAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -302,6 +341,9 @@ func (u *ApiTokenUpsertOne) UpdateNewValues() *ApiTokenUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(apitoken.FieldID)
+		}
+		if _, exists := u.create.mutation.Name(); exists {
+			s.SetIgnore(apitoken.FieldName)
 		}
 		if _, exists := u.create.mutation.Token(); exists {
 			s.SetIgnore(apitoken.FieldToken)
@@ -343,6 +385,41 @@ func (u *ApiTokenUpsertOne) Update(set func(*ApiTokenUpsert)) *ApiTokenUpsertOne
 	return u
 }
 
+// SetStatus sets the "status" field.
+func (u *ApiTokenUpsertOne) SetStatus(v tokens.APITokenStatus) *ApiTokenUpsertOne {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ApiTokenUpsertOne) UpdateStatus() *ApiTokenUpsertOne {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetUsedAt sets the "used_at" field.
+func (u *ApiTokenUpsertOne) SetUsedAt(v time.Time) *ApiTokenUpsertOne {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.SetUsedAt(v)
+	})
+}
+
+// UpdateUsedAt sets the "used_at" field to the value that was provided on create.
+func (u *ApiTokenUpsertOne) UpdateUsedAt() *ApiTokenUpsertOne {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.UpdateUsedAt()
+	})
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (u *ApiTokenUpsertOne) ClearUsedAt() *ApiTokenUpsertOne {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.ClearUsedAt()
+	})
+}
+
 // Exec executes the query.
 func (u *ApiTokenUpsertOne) Exec(ctx context.Context) error {
 	if len(u.create.conflict) == 0 {
@@ -359,7 +436,7 @@ func (u *ApiTokenUpsertOne) ExecX(ctx context.Context) {
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *ApiTokenUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+func (u *ApiTokenUpsertOne) ID(ctx context.Context) (id ulid.ULID, err error) {
 	if u.create.driver.Dialect() == dialect.MySQL {
 		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
 		// fields from the database since MySQL does not support the RETURNING clause.
@@ -373,7 +450,7 @@ func (u *ApiTokenUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *ApiTokenUpsertOne) IDX(ctx context.Context) uuid.UUID {
+func (u *ApiTokenUpsertOne) IDX(ctx context.Context) ulid.ULID {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -406,8 +483,8 @@ func (atcb *ApiTokenCreateBulk) Save(ctx context.Context) ([]*ApiToken, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, atcb.builders[i+1].mutation)
 				} else {
@@ -475,7 +552,7 @@ func (atcb *ApiTokenCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ApiTokenUpsert) {
-//			SetToken(v+v).
+//			SetName(v+v).
 //		}).
 //		Exec(ctx)
 func (atcb *ApiTokenCreateBulk) OnConflict(opts ...sql.ConflictOption) *ApiTokenUpsertBulk {
@@ -522,6 +599,9 @@ func (u *ApiTokenUpsertBulk) UpdateNewValues() *ApiTokenUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(apitoken.FieldID)
 			}
+			if _, exists := b.mutation.Name(); exists {
+				s.SetIgnore(apitoken.FieldName)
+			}
 			if _, exists := b.mutation.Token(); exists {
 				s.SetIgnore(apitoken.FieldToken)
 			}
@@ -561,6 +641,41 @@ func (u *ApiTokenUpsertBulk) Update(set func(*ApiTokenUpsert)) *ApiTokenUpsertBu
 		set(&ApiTokenUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *ApiTokenUpsertBulk) SetStatus(v tokens.APITokenStatus) *ApiTokenUpsertBulk {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ApiTokenUpsertBulk) UpdateStatus() *ApiTokenUpsertBulk {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetUsedAt sets the "used_at" field.
+func (u *ApiTokenUpsertBulk) SetUsedAt(v time.Time) *ApiTokenUpsertBulk {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.SetUsedAt(v)
+	})
+}
+
+// UpdateUsedAt sets the "used_at" field to the value that was provided on create.
+func (u *ApiTokenUpsertBulk) UpdateUsedAt() *ApiTokenUpsertBulk {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.UpdateUsedAt()
+	})
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (u *ApiTokenUpsertBulk) ClearUsedAt() *ApiTokenUpsertBulk {
+	return u.Update(func(s *ApiTokenUpsert) {
+		s.ClearUsedAt()
+	})
 }
 
 // Exec executes the query.

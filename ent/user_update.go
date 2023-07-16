@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	ulid "github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/deck"
 	"github.com/sixels/manekani/ent/deckprogress"
@@ -110,14 +111,14 @@ func (uu *UserUpdate) AddSubscribedDecks(d ...*Deck) *UserUpdate {
 }
 
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
-func (uu *UserUpdate) AddAPITokenIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) AddAPITokenIDs(ids ...ulid.ULID) *UserUpdate {
 	uu.mutation.AddAPITokenIDs(ids...)
 	return uu
 }
 
 // AddAPITokens adds the "api_tokens" edges to the ApiToken entity.
 func (uu *UserUpdate) AddAPITokens(a ...*ApiToken) *UserUpdate {
-	ids := make([]uuid.UUID, len(a))
+	ids := make([]ulid.ULID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
@@ -214,14 +215,14 @@ func (uu *UserUpdate) ClearAPITokens() *UserUpdate {
 }
 
 // RemoveAPITokenIDs removes the "api_tokens" edge to ApiToken entities by IDs.
-func (uu *UserUpdate) RemoveAPITokenIDs(ids ...uuid.UUID) *UserUpdate {
+func (uu *UserUpdate) RemoveAPITokenIDs(ids ...ulid.ULID) *UserUpdate {
 	uu.mutation.RemoveAPITokenIDs(ids...)
 	return uu
 }
 
 // RemoveAPITokens removes "api_tokens" edges to ApiToken entities.
 func (uu *UserUpdate) RemoveAPITokens(a ...*ApiToken) *UserUpdate {
-	ids := make([]uuid.UUID, len(a))
+	ids := make([]ulid.ULID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
@@ -251,40 +252,7 @@ func (uu *UserUpdate) RemoveDecksProgress(d ...*DeckProgress) *UserUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(uu.hooks) == 0 {
-		if err = uu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = uu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*UserMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = uu.check(); err != nil {
-				return 0, err
-			}
-			uu.mutation = mutation
-			affected, err = uu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(uu.hooks) - 1; i >= 0; i-- {
-			if uu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = uu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, uu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, uu.sqlSave, uu.mutation, uu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -325,16 +293,10 @@ func (uu *UserUpdate) check() error {
 }
 
 func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   user.Table,
-			Columns: user.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: user.FieldID,
-			},
-		},
+	if err := uu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	if ps := uu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -367,10 +329,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -383,10 +342,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -402,10 +358,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -421,10 +374,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -437,10 +387,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -456,10 +403,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -475,10 +419,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: user.SubscribedDecksPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -491,10 +432,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: user.SubscribedDecksPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -510,10 +448,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: user.SubscribedDecksPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -529,10 +464,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.APITokensColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: apitoken.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -545,10 +477,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.APITokensColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: apitoken.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes),
 			},
 		}
 		for _, k := range nodes {
@@ -564,10 +493,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.APITokensColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: apitoken.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes),
 			},
 		}
 		for _, k := range nodes {
@@ -583,10 +509,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.DecksProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -599,10 +522,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.DecksProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -618,10 +538,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.DecksProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -637,6 +554,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	uu.mutation.done = true
 	return n, nil
 }
 
@@ -724,14 +642,14 @@ func (uuo *UserUpdateOne) AddSubscribedDecks(d ...*Deck) *UserUpdateOne {
 }
 
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
-func (uuo *UserUpdateOne) AddAPITokenIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddAPITokenIDs(ids ...ulid.ULID) *UserUpdateOne {
 	uuo.mutation.AddAPITokenIDs(ids...)
 	return uuo
 }
 
 // AddAPITokens adds the "api_tokens" edges to the ApiToken entity.
 func (uuo *UserUpdateOne) AddAPITokens(a ...*ApiToken) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(a))
+	ids := make([]ulid.ULID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
@@ -828,14 +746,14 @@ func (uuo *UserUpdateOne) ClearAPITokens() *UserUpdateOne {
 }
 
 // RemoveAPITokenIDs removes the "api_tokens" edge to ApiToken entities by IDs.
-func (uuo *UserUpdateOne) RemoveAPITokenIDs(ids ...uuid.UUID) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveAPITokenIDs(ids ...ulid.ULID) *UserUpdateOne {
 	uuo.mutation.RemoveAPITokenIDs(ids...)
 	return uuo
 }
 
 // RemoveAPITokens removes "api_tokens" edges to ApiToken entities.
 func (uuo *UserUpdateOne) RemoveAPITokens(a ...*ApiToken) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(a))
+	ids := make([]ulid.ULID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
@@ -863,6 +781,12 @@ func (uuo *UserUpdateOne) RemoveDecksProgress(d ...*DeckProgress) *UserUpdateOne
 	return uuo.RemoveDecksProgresIDs(ids...)
 }
 
+// Where appends a list predicates to the UserUpdate builder.
+func (uuo *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
+	uuo.mutation.Where(ps...)
+	return uuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (uuo *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne {
@@ -872,46 +796,7 @@ func (uuo *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne 
 
 // Save executes the query and returns the updated User entity.
 func (uuo *UserUpdateOne) Save(ctx context.Context) (*User, error) {
-	var (
-		err  error
-		node *User
-	)
-	if len(uuo.hooks) == 0 {
-		if err = uuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = uuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*UserMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = uuo.check(); err != nil {
-				return nil, err
-			}
-			uuo.mutation = mutation
-			node, err = uuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(uuo.hooks) - 1; i >= 0; i-- {
-			if uuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = uuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, uuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*User)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from UserMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, uuo.sqlSave, uuo.mutation, uuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -952,16 +837,10 @@ func (uuo *UserUpdateOne) check() error {
 }
 
 func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   user.Table,
-			Columns: user.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeString,
-				Column: user.FieldID,
-			},
-		},
+	if err := uuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	id, ok := uuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "User.id" for update`)}
@@ -1011,10 +890,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1027,10 +903,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1046,10 +919,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.DecksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1065,10 +935,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1081,10 +948,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1100,10 +964,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1119,10 +980,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: user.SubscribedDecksPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1135,10 +993,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: user.SubscribedDecksPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1154,10 +1009,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: user.SubscribedDecksPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: deck.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1173,10 +1025,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.APITokensColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: apitoken.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1189,10 +1038,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.APITokensColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: apitoken.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes),
 			},
 		}
 		for _, k := range nodes {
@@ -1208,10 +1054,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.APITokensColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: apitoken.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeBytes),
 			},
 		}
 		for _, k := range nodes {
@@ -1227,10 +1070,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.DecksProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1243,10 +1083,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.DecksProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1262,10 +1099,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.DecksProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1284,5 +1118,6 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		return nil, err
 	}
+	uuo.mutation.done = true
 	return _node, nil
 }

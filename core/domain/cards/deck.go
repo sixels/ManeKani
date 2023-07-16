@@ -8,6 +8,7 @@ import (
 )
 
 type (
+	// TODO: deck image
 	Deck struct {
 		ID        uuid.UUID `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
@@ -26,6 +27,11 @@ type (
 		Description string `json:"description"`
 
 		Owner string `json:"owner"`
+	}
+
+	CreateDeckRequest struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
 	}
 
 	QueryManyDecksRequest struct {

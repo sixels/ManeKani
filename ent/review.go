@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/ent/card"
@@ -31,6 +32,7 @@ type Review struct {
 	// The values are being populated by the ReviewQuery when eager-loading is set.
 	Edges        ReviewEdges `json:"edges"`
 	card_reviews *uuid.UUID
+	selectValues sql.SelectValues
 }
 
 // ReviewEdges holds the relations/edges for other nodes in the graph.
@@ -71,7 +73,7 @@ func (*Review) scanValues(columns []string) ([]any, error) {
 		case review.ForeignKeys[0]: // card_reviews
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Review", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -124,21 +126,29 @@ func (r *Review) assignValues(columns []string, values []any) error {
 				r.card_reviews = new(uuid.UUID)
 				*r.card_reviews = *value.S.(*uuid.UUID)
 			}
+		default:
+			r.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Review.
+// This includes values selected through modifiers, order, etc.
+func (r *Review) Value(name string) (ent.Value, error) {
+	return r.selectValues.Get(name)
+}
+
 // QueryCard queries the "card" edge of the Review entity.
 func (r *Review) QueryCard() *CardQuery {
-	return (&ReviewClient{config: r.config}).QueryCard(r)
+	return NewReviewClient(r.config).QueryCard(r)
 }
 
 // Update returns a builder for updating this Review.
 // Note that you need to call Review.Unwrap() before calling this method if this Review
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (r *Review) Update() *ReviewUpdateOne {
-	return (&ReviewClient{config: r.config}).UpdateOne(r)
+	return NewReviewClient(r.config).UpdateOne(r)
 }
 
 // Unwrap unwraps the Review entity that was returned from a transaction after it was closed,
@@ -174,9 +184,3 @@ func (r *Review) String() string {
 
 // Reviews is a parsable slice of Review.
 type Reviews []*Review
-
-func (r Reviews) config(cfg config) {
-	for _i := range r {
-		r[_i].config = cfg
-	}
-}

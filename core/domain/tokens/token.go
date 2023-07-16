@@ -1,8 +1,29 @@
 package tokens
 
 import (
-	"github.com/google/uuid"
+	"time"
+
+	"github.com/oklog/ulid/v2"
 )
+
+type UserToken struct {
+	ID     ulid.ULID      `json:"id"`
+	UserID string         `json:"user_id"`
+	Name   string         `json:"name"`
+	Claims APITokenClaims `json:"claims"`
+	Prefix string         `json:"prefix"`
+	Status APITokenStatus `json:"status"`
+	UsedAt *time.Time     `json:"used_at"`
+}
+
+type UserTokenPartial struct {
+	ID     ulid.ULID      `json:"id"`
+	Name   string         `json:"name"`
+	Claims APITokenClaims `json:"claims"`
+	Prefix string         `json:"prefix"`
+	Status APITokenStatus `json:"status"`
+	UsedAt *time.Time     `json:"used_at"`
+}
 
 type GenerateTokenRequest struct {
 	Name        string              `json:"name"`
@@ -10,9 +31,29 @@ type GenerateTokenRequest struct {
 }
 
 type CreateTokenRequest struct {
+	Name      string         `json:"name"`
+	Status    APITokenStatus `json:"status"`
 	TokenHash string         `json:"token"`
 	Prefix    string         `json:"prefix"`
 	Claims    APITokenClaims `json:"claims"`
+}
+
+type APITokenClaims struct {
+	Permissions APITokenPermissions `json:"permissions"`
+}
+
+type APITokenPermissions struct {
+	DeckCreate          bool `json:"deck_create,omitempty"`
+	DeckDelete          bool `json:"deck_delete,omitempty"`
+	DeckUpdate          bool `json:"deck_update,omitempty"`
+	SubjectCreate       bool `json:"subject_create,omitempty"`
+	SubjectUpdate       bool `json:"subject_update,omitempty"`
+	SubjectDelete       bool `json:"subject_delete,omitempty"`
+	ReviewCreate        bool `json:"review_create,omitempty"`
+	StudyMaterialCreate bool `json:"study_material_create,omitempty"`
+	StudyMaterialUpdate bool `json:"study_material_update,omitempty"`
+	UserUpdate          bool `json:"user_update,omitempty"`
+	UserDelete          bool `json:"user_delete,omitempty"`
 }
 
 type APITokenPermission string
@@ -31,33 +72,17 @@ const (
 	TokenPermissionUserDelete          APITokenPermission = "user:delete"
 )
 
-type UserToken struct {
-	ID     uuid.UUID      `json:"id"`
-	Claims APITokenClaims `json:"claims"`
-	Prefix string         `json:"prefix"`
-	UserID string         `json:"user_id"`
-}
+type APITokenStatus string
 
-type UserTokenPartial struct {
-	ID     uuid.UUID      `json:"id"`
-	Prefix string         `json:"prefix"`
-	Claims APITokenClaims `json:"claims"`
-}
+const (
+	TokenStatusActive APITokenStatus = "active"
+	TokenStatusFrozen APITokenStatus = "frozen"
+)
 
-type APITokenClaims struct {
-	Permissions APITokenPermissions `json:"permissions"`
-}
-
-type APITokenPermissions struct {
-	TokenPermissionDeckCreate          bool `json:"token_permission_deck_create,omitempty"`
-	TokenPermissionDeckDelete          bool `json:"token_permission_deck_delete,omitempty"`
-	TokenPermissionDeckUpdate          bool `json:"token_permission_deck_update,omitempty"`
-	TokenPermissionSubjectCreate       bool `json:"token_permission_subject_create,omitempty"`
-	TokenPermissionSubjectUpdate       bool `json:"token_permission_subject_update,omitempty"`
-	TokenPermissionSubjectDelete       bool `json:"token_permission_subject_delete,omitempty"`
-	TokenPermissionReviewCreate        bool `json:"token_permission_review_create,omitempty"`
-	TokenPermissionStudyMaterialCreate bool `json:"token_permission_study_material_create,omitempty"`
-	TokenPermissionStudyMaterialUpdate bool `json:"token_permission_study_material_update,omitempty"`
-	TokenPermissionUserUpdate          bool `json:"token_permission_user_update,omitempty"`
-	TokenPermissionUserDelete          bool `json:"token_permission_user_delete,omitempty"`
+// Values provides list valid values for Enum.
+func (APITokenStatus) Values() (statuses []string) {
+	return []string{
+		string(TokenStatusActive),
+		string(TokenStatusFrozen),
+	}
 }

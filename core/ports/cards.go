@@ -20,6 +20,7 @@ type (
 
 	// TODO: create, update, delete deck
 	DecksManager interface {
+		CreateDeck(ctx context.Context, ownerID string, req domain.CreateDeckRequest) (*domain.Deck, error)
 		QueryDeck(ctx context.Context, id uuid.UUID) (*domain.Deck, error)
 		AllDecks(ctx context.Context, req domain.QueryManyDecksRequest) ([]domain.DeckPartial, error)
 		DeckOwner(ctx context.Context, id uuid.UUID) (string, error)

@@ -22,11 +22,9 @@ import (
 // DeckProgressQuery is the builder for querying DeckProgress entities.
 type DeckProgressQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
+	ctx        *QueryContext
+	order      []deckprogress.OrderOption
+	inters     []Interceptor
 	predicates []predicate.DeckProgress
 	withCards  *CardQuery
 	withUser   *UserQuery
@@ -43,34 +41,34 @@ func (dpq *DeckProgressQuery) Where(ps ...predicate.DeckProgress) *DeckProgressQ
 	return dpq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (dpq *DeckProgressQuery) Limit(limit int) *DeckProgressQuery {
-	dpq.limit = &limit
+	dpq.ctx.Limit = &limit
 	return dpq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (dpq *DeckProgressQuery) Offset(offset int) *DeckProgressQuery {
-	dpq.offset = &offset
+	dpq.ctx.Offset = &offset
 	return dpq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (dpq *DeckProgressQuery) Unique(unique bool) *DeckProgressQuery {
-	dpq.unique = &unique
+	dpq.ctx.Unique = &unique
 	return dpq
 }
 
-// Order adds an order step to the query.
-func (dpq *DeckProgressQuery) Order(o ...OrderFunc) *DeckProgressQuery {
+// Order specifies how the records should be ordered.
+func (dpq *DeckProgressQuery) Order(o ...deckprogress.OrderOption) *DeckProgressQuery {
 	dpq.order = append(dpq.order, o...)
 	return dpq
 }
 
 // QueryCards chains the current query on the "cards" edge.
 func (dpq *DeckProgressQuery) QueryCards() *CardQuery {
-	query := &CardQuery{config: dpq.config}
+	query := (&CardClient{config: dpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := dpq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -92,7 +90,7 @@ func (dpq *DeckProgressQuery) QueryCards() *CardQuery {
 
 // QueryUser chains the current query on the "user" edge.
 func (dpq *DeckProgressQuery) QueryUser() *UserQuery {
-	query := &UserQuery{config: dpq.config}
+	query := (&UserClient{config: dpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := dpq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -114,7 +112,7 @@ func (dpq *DeckProgressQuery) QueryUser() *UserQuery {
 
 // QueryDeck chains the current query on the "deck" edge.
 func (dpq *DeckProgressQuery) QueryDeck() *DeckQuery {
-	query := &DeckQuery{config: dpq.config}
+	query := (&DeckClient{config: dpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := dpq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -137,7 +135,7 @@ func (dpq *DeckProgressQuery) QueryDeck() *DeckQuery {
 // First returns the first DeckProgress entity from the query.
 // Returns a *NotFoundError when no DeckProgress was found.
 func (dpq *DeckProgressQuery) First(ctx context.Context) (*DeckProgress, error) {
-	nodes, err := dpq.Limit(1).All(ctx)
+	nodes, err := dpq.Limit(1).All(setContextOp(ctx, dpq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +158,7 @@ func (dpq *DeckProgressQuery) FirstX(ctx context.Context) *DeckProgress {
 // Returns a *NotFoundError when no DeckProgress ID was found.
 func (dpq *DeckProgressQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = dpq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = dpq.Limit(1).IDs(setContextOp(ctx, dpq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -183,7 +181,7 @@ func (dpq *DeckProgressQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one DeckProgress entity is found.
 // Returns a *NotFoundError when no DeckProgress entities are found.
 func (dpq *DeckProgressQuery) Only(ctx context.Context) (*DeckProgress, error) {
-	nodes, err := dpq.Limit(2).All(ctx)
+	nodes, err := dpq.Limit(2).All(setContextOp(ctx, dpq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +209,7 @@ func (dpq *DeckProgressQuery) OnlyX(ctx context.Context) *DeckProgress {
 // Returns a *NotFoundError when no entities are found.
 func (dpq *DeckProgressQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = dpq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = dpq.Limit(2).IDs(setContextOp(ctx, dpq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -236,10 +234,12 @@ func (dpq *DeckProgressQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of DeckProgresses.
 func (dpq *DeckProgressQuery) All(ctx context.Context) ([]*DeckProgress, error) {
+	ctx = setContextOp(ctx, dpq.ctx, "All")
 	if err := dpq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return dpq.sqlAll(ctx)
+	qr := querierAll[[]*DeckProgress, *DeckProgressQuery]()
+	return withInterceptors[[]*DeckProgress](ctx, dpq, qr, dpq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -252,9 +252,12 @@ func (dpq *DeckProgressQuery) AllX(ctx context.Context) []*DeckProgress {
 }
 
 // IDs executes the query and returns a list of DeckProgress IDs.
-func (dpq *DeckProgressQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := dpq.Select(deckprogress.FieldID).Scan(ctx, &ids); err != nil {
+func (dpq *DeckProgressQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if dpq.ctx.Unique == nil && dpq.path != nil {
+		dpq.Unique(true)
+	}
+	ctx = setContextOp(ctx, dpq.ctx, "IDs")
+	if err = dpq.Select(deckprogress.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -271,10 +274,11 @@ func (dpq *DeckProgressQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (dpq *DeckProgressQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, dpq.ctx, "Count")
 	if err := dpq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return dpq.sqlCount(ctx)
+	return withInterceptors[int](ctx, dpq, querierCount[*DeckProgressQuery](), dpq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -288,10 +292,15 @@ func (dpq *DeckProgressQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (dpq *DeckProgressQuery) Exist(ctx context.Context) (bool, error) {
-	if err := dpq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, dpq.ctx, "Exist")
+	switch _, err := dpq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return dpq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -311,24 +320,23 @@ func (dpq *DeckProgressQuery) Clone() *DeckProgressQuery {
 	}
 	return &DeckProgressQuery{
 		config:     dpq.config,
-		limit:      dpq.limit,
-		offset:     dpq.offset,
-		order:      append([]OrderFunc{}, dpq.order...),
+		ctx:        dpq.ctx.Clone(),
+		order:      append([]deckprogress.OrderOption{}, dpq.order...),
+		inters:     append([]Interceptor{}, dpq.inters...),
 		predicates: append([]predicate.DeckProgress{}, dpq.predicates...),
 		withCards:  dpq.withCards.Clone(),
 		withUser:   dpq.withUser.Clone(),
 		withDeck:   dpq.withDeck.Clone(),
 		// clone intermediate query.
-		sql:    dpq.sql.Clone(),
-		path:   dpq.path,
-		unique: dpq.unique,
+		sql:  dpq.sql.Clone(),
+		path: dpq.path,
 	}
 }
 
 // WithCards tells the query-builder to eager-load the nodes that are connected to
 // the "cards" edge. The optional arguments are used to configure the query builder of the edge.
 func (dpq *DeckProgressQuery) WithCards(opts ...func(*CardQuery)) *DeckProgressQuery {
-	query := &CardQuery{config: dpq.config}
+	query := (&CardClient{config: dpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -339,7 +347,7 @@ func (dpq *DeckProgressQuery) WithCards(opts ...func(*CardQuery)) *DeckProgressQ
 // WithUser tells the query-builder to eager-load the nodes that are connected to
 // the "user" edge. The optional arguments are used to configure the query builder of the edge.
 func (dpq *DeckProgressQuery) WithUser(opts ...func(*UserQuery)) *DeckProgressQuery {
-	query := &UserQuery{config: dpq.config}
+	query := (&UserClient{config: dpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -350,7 +358,7 @@ func (dpq *DeckProgressQuery) WithUser(opts ...func(*UserQuery)) *DeckProgressQu
 // WithDeck tells the query-builder to eager-load the nodes that are connected to
 // the "deck" edge. The optional arguments are used to configure the query builder of the edge.
 func (dpq *DeckProgressQuery) WithDeck(opts ...func(*DeckQuery)) *DeckProgressQuery {
-	query := &DeckQuery{config: dpq.config}
+	query := (&DeckClient{config: dpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -373,16 +381,11 @@ func (dpq *DeckProgressQuery) WithDeck(opts ...func(*DeckQuery)) *DeckProgressQu
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (dpq *DeckProgressQuery) GroupBy(field string, fields ...string) *DeckProgressGroupBy {
-	grbuild := &DeckProgressGroupBy{config: dpq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := dpq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return dpq.sqlQuery(ctx), nil
-	}
+	dpq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &DeckProgressGroupBy{build: dpq}
+	grbuild.flds = &dpq.ctx.Fields
 	grbuild.label = deckprogress.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -399,11 +402,11 @@ func (dpq *DeckProgressQuery) GroupBy(field string, fields ...string) *DeckProgr
 //		Select(deckprogress.FieldLevel).
 //		Scan(ctx, &v)
 func (dpq *DeckProgressQuery) Select(fields ...string) *DeckProgressSelect {
-	dpq.fields = append(dpq.fields, fields...)
-	selbuild := &DeckProgressSelect{DeckProgressQuery: dpq}
-	selbuild.label = deckprogress.Label
-	selbuild.flds, selbuild.scan = &dpq.fields, selbuild.Scan
-	return selbuild
+	dpq.ctx.Fields = append(dpq.ctx.Fields, fields...)
+	sbuild := &DeckProgressSelect{DeckProgressQuery: dpq}
+	sbuild.label = deckprogress.Label
+	sbuild.flds, sbuild.scan = &dpq.ctx.Fields, sbuild.Scan
+	return sbuild
 }
 
 // Aggregate returns a DeckProgressSelect configured with the given aggregations.
@@ -412,7 +415,17 @@ func (dpq *DeckProgressQuery) Aggregate(fns ...AggregateFunc) *DeckProgressSelec
 }
 
 func (dpq *DeckProgressQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range dpq.fields {
+	for _, inter := range dpq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, dpq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range dpq.ctx.Fields {
 		if !deckprogress.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -496,7 +509,7 @@ func (dpq *DeckProgressQuery) loadCards(ctx context.Context, query *CardQuery, n
 	}
 	query.withFKs = true
 	query.Where(predicate.Card(func(s *sql.Selector) {
-		s.Where(sql.InValues(deckprogress.CardsColumn, fks...))
+		s.Where(sql.InValues(s.C(deckprogress.CardsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -509,7 +522,7 @@ func (dpq *DeckProgressQuery) loadCards(ctx context.Context, query *CardQuery, n
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "deck_progress_cards" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "deck_progress_cards" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -527,6 +540,9 @@ func (dpq *DeckProgressQuery) loadUser(ctx context.Context, query *UserQuery, no
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -557,6 +573,9 @@ func (dpq *DeckProgressQuery) loadDeck(ctx context.Context, query *DeckQuery, no
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(deck.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -576,41 +595,22 @@ func (dpq *DeckProgressQuery) loadDeck(ctx context.Context, query *DeckQuery, no
 
 func (dpq *DeckProgressQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := dpq.querySpec()
-	_spec.Node.Columns = dpq.fields
-	if len(dpq.fields) > 0 {
-		_spec.Unique = dpq.unique != nil && *dpq.unique
+	_spec.Node.Columns = dpq.ctx.Fields
+	if len(dpq.ctx.Fields) > 0 {
+		_spec.Unique = dpq.ctx.Unique != nil && *dpq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, dpq.driver, _spec)
 }
 
-func (dpq *DeckProgressQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := dpq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (dpq *DeckProgressQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   deckprogress.Table,
-			Columns: deckprogress.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: deckprogress.FieldID,
-			},
-		},
-		From:   dpq.sql,
-		Unique: true,
-	}
-	if unique := dpq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(deckprogress.Table, deckprogress.Columns, sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt))
+	_spec.From = dpq.sql
+	if unique := dpq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if dpq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := dpq.fields; len(fields) > 0 {
+	if fields := dpq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, deckprogress.FieldID)
 		for i := range fields {
@@ -626,10 +626,10 @@ func (dpq *DeckProgressQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := dpq.limit; limit != nil {
+	if limit := dpq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := dpq.offset; offset != nil {
+	if offset := dpq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := dpq.order; len(ps) > 0 {
@@ -645,7 +645,7 @@ func (dpq *DeckProgressQuery) querySpec() *sqlgraph.QuerySpec {
 func (dpq *DeckProgressQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(dpq.driver.Dialect())
 	t1 := builder.Table(deckprogress.Table)
-	columns := dpq.fields
+	columns := dpq.ctx.Fields
 	if len(columns) == 0 {
 		columns = deckprogress.Columns
 	}
@@ -654,7 +654,7 @@ func (dpq *DeckProgressQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = dpq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if dpq.unique != nil && *dpq.unique {
+	if dpq.ctx.Unique != nil && *dpq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range dpq.predicates {
@@ -663,12 +663,12 @@ func (dpq *DeckProgressQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range dpq.order {
 		p(selector)
 	}
-	if offset := dpq.offset; offset != nil {
+	if offset := dpq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := dpq.limit; limit != nil {
+	if limit := dpq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -676,13 +676,8 @@ func (dpq *DeckProgressQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // DeckProgressGroupBy is the group-by builder for DeckProgress entities.
 type DeckProgressGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *DeckProgressQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -691,58 +686,46 @@ func (dpgb *DeckProgressGroupBy) Aggregate(fns ...AggregateFunc) *DeckProgressGr
 	return dpgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (dpgb *DeckProgressGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := dpgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, dpgb.build.ctx, "GroupBy")
+	if err := dpgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	dpgb.sql = query
-	return dpgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*DeckProgressQuery, *DeckProgressGroupBy](ctx, dpgb.build, dpgb, dpgb.build.inters, v)
 }
 
-func (dpgb *DeckProgressGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range dpgb.fields {
-		if !deckprogress.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (dpgb *DeckProgressGroupBy) sqlScan(ctx context.Context, root *DeckProgressQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(dpgb.fns))
+	for _, fn := range dpgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := dpgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*dpgb.flds)+len(dpgb.fns))
+		for _, f := range *dpgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*dpgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := dpgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := dpgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (dpgb *DeckProgressGroupBy) sqlQuery() *sql.Selector {
-	selector := dpgb.sql.Select()
-	aggregation := make([]string, 0, len(dpgb.fns))
-	for _, fn := range dpgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(dpgb.fields)+len(dpgb.fns))
-		for _, f := range dpgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(dpgb.fields...)...)
-}
-
 // DeckProgressSelect is the builder for selecting fields of DeckProgress entities.
 type DeckProgressSelect struct {
 	*DeckProgressQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
@@ -753,26 +736,27 @@ func (dps *DeckProgressSelect) Aggregate(fns ...AggregateFunc) *DeckProgressSele
 
 // Scan applies the selector query and scans the result into the given value.
 func (dps *DeckProgressSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, dps.ctx, "Select")
 	if err := dps.prepareQuery(ctx); err != nil {
 		return err
 	}
-	dps.sql = dps.DeckProgressQuery.sqlQuery(ctx)
-	return dps.sqlScan(ctx, v)
+	return scanWithInterceptors[*DeckProgressQuery, *DeckProgressSelect](ctx, dps.DeckProgressQuery, dps, dps.inters, v)
 }
 
-func (dps *DeckProgressSelect) sqlScan(ctx context.Context, v any) error {
+func (dps *DeckProgressSelect) sqlScan(ctx context.Context, root *DeckProgressQuery, v any) error {
+	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(dps.fns))
 	for _, fn := range dps.fns {
-		aggregation = append(aggregation, fn(dps.sql))
+		aggregation = append(aggregation, fn(selector))
 	}
 	switch n := len(*dps.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
-		dps.sql.Select(aggregation...)
+		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
-		dps.sql.AppendSelect(aggregation...)
+		selector.AppendSelect(aggregation...)
 	}
 	rows := &sql.Rows{}
-	query, args := dps.sql.Query()
+	query, args := selector.Query()
 	if err := dps.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/google/uuid"
+	ulid "github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/user"
@@ -18,7 +20,13 @@ import (
 type ApiToken struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID ulid.ULID `json:"id,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
+	// Status holds the value of the "status" field.
+	Status tokens.APITokenStatus `json:"status,omitempty"`
+	// UsedAt holds the value of the "used_at" field.
+	UsedAt *time.Time `json:"used_at,omitempty"`
 	// Token holds the value of the "token" field.
 	Token string `json:"-"`
 	// Prefix holds the value of the "prefix" field.
@@ -29,6 +37,7 @@ type ApiToken struct {
 	// The values are being populated by the ApiTokenQuery when eager-loading is set.
 	Edges           ApiTokenEdges `json:"edges"`
 	user_api_tokens *string
+	selectValues    sql.SelectValues
 }
 
 // ApiTokenEdges holds the relations/edges for other nodes in the graph.
@@ -60,14 +69,16 @@ func (*ApiToken) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case apitoken.FieldClaims:
 			values[i] = new([]byte)
-		case apitoken.FieldToken, apitoken.FieldPrefix:
+		case apitoken.FieldName, apitoken.FieldStatus, apitoken.FieldToken, apitoken.FieldPrefix:
 			values[i] = new(sql.NullString)
+		case apitoken.FieldUsedAt:
+			values[i] = new(sql.NullTime)
 		case apitoken.FieldID:
-			values[i] = new(uuid.UUID)
+			values[i] = new(ulid.ULID)
 		case apitoken.ForeignKeys[0]: // user_api_tokens
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type ApiToken", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -82,10 +93,29 @@ func (at *ApiToken) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case apitoken.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*ulid.ULID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				at.ID = *value
+			}
+		case apitoken.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				at.Name = value.String
+			}
+		case apitoken.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				at.Status = tokens.APITokenStatus(value.String)
+			}
+		case apitoken.FieldUsedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field used_at", values[i])
+			} else if value.Valid {
+				at.UsedAt = new(time.Time)
+				*at.UsedAt = value.Time
 			}
 		case apitoken.FieldToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -114,21 +144,29 @@ func (at *ApiToken) assignValues(columns []string, values []any) error {
 				at.user_api_tokens = new(string)
 				*at.user_api_tokens = value.String
 			}
+		default:
+			at.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the ApiToken.
+// This includes values selected through modifiers, order, etc.
+func (at *ApiToken) Value(name string) (ent.Value, error) {
+	return at.selectValues.Get(name)
+}
+
 // QueryUser queries the "user" edge of the ApiToken entity.
 func (at *ApiToken) QueryUser() *UserQuery {
-	return (&ApiTokenClient{config: at.config}).QueryUser(at)
+	return NewApiTokenClient(at.config).QueryUser(at)
 }
 
 // Update returns a builder for updating this ApiToken.
 // Note that you need to call ApiToken.Unwrap() before calling this method if this ApiToken
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (at *ApiToken) Update() *ApiTokenUpdateOne {
-	return (&ApiTokenClient{config: at.config}).UpdateOne(at)
+	return NewApiTokenClient(at.config).UpdateOne(at)
 }
 
 // Unwrap unwraps the ApiToken entity that was returned from a transaction after it was closed,
@@ -147,6 +185,17 @@ func (at *ApiToken) String() string {
 	var builder strings.Builder
 	builder.WriteString("ApiToken(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", at.ID))
+	builder.WriteString("name=")
+	builder.WriteString(at.Name)
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", at.Status))
+	builder.WriteString(", ")
+	if v := at.UsedAt; v != nil {
+		builder.WriteString("used_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("token=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("prefix=")
@@ -159,9 +208,3 @@ func (at *ApiToken) String() string {
 
 // ApiTokens is a parsable slice of ApiToken.
 type ApiTokens []*ApiToken
-
-func (at ApiTokens) config(cfg config) {
-	for _i := range at {
-		at[_i].config = cfg
-	}
-}

@@ -144,50 +144,8 @@ func (dc *DeckCreate) Mutation() *DeckMutation {
 
 // Save creates the Deck in the database.
 func (dc *DeckCreate) Save(ctx context.Context) (*Deck, error) {
-	var (
-		err  error
-		node *Deck
-	)
 	dc.defaults()
-	if len(dc.hooks) == 0 {
-		if err = dc.check(); err != nil {
-			return nil, err
-		}
-		node, err = dc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*DeckMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = dc.check(); err != nil {
-				return nil, err
-			}
-			dc.mutation = mutation
-			if node, err = dc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(dc.hooks) - 1; i >= 0; i-- {
-			if dc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = dc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, dc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Deck)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from DeckMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, dc.sqlSave, dc.mutation, dc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -259,6 +217,9 @@ func (dc *DeckCreate) check() error {
 }
 
 func (dc *DeckCreate) sqlSave(ctx context.Context) (*Deck, error) {
+	if err := dc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := dc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, dc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -273,19 +234,15 @@ func (dc *DeckCreate) sqlSave(ctx context.Context) (*Deck, error) {
 			return nil, err
 		}
 	}
+	dc.mutation.id = &_node.ID
+	dc.mutation.done = true
 	return _node, nil
 }
 
 func (dc *DeckCreate) createSpec() (*Deck, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Deck{config: dc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: deck.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: deck.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(deck.Table, sqlgraph.NewFieldSpec(deck.FieldID, field.TypeUUID))
 	)
 	_spec.OnConflict = dc.conflict
 	if id, ok := dc.mutation.ID(); ok {
@@ -316,10 +273,7 @@ func (dc *DeckCreate) createSpec() (*Deck, *sqlgraph.CreateSpec) {
 			Columns: deck.SubscribersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -335,10 +289,7 @@ func (dc *DeckCreate) createSpec() (*Deck, *sqlgraph.CreateSpec) {
 			Columns: []string{deck.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeString,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -355,10 +306,7 @@ func (dc *DeckCreate) createSpec() (*Deck, *sqlgraph.CreateSpec) {
 			Columns: []string{deck.SubjectsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: subject.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(subject.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -374,10 +322,7 @@ func (dc *DeckCreate) createSpec() (*Deck, *sqlgraph.CreateSpec) {
 			Columns: []string{deck.UsersProgressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: deckprogress.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(deckprogress.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -629,8 +574,8 @@ func (dcb *DeckCreateBulk) Save(ctx context.Context) ([]*Deck, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, dcb.builders[i+1].mutation)
 				} else {

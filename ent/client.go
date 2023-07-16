@@ -9,8 +9,13 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	ulid "github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/ent/migrate"
 
+	"entgo.io/ent"
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/sixels/manekani/ent/apitoken"
 	"github.com/sixels/manekani/ent/card"
 	"github.com/sixels/manekani/ent/deck"
@@ -18,10 +23,6 @@ import (
 	"github.com/sixels/manekani/ent/review"
 	"github.com/sixels/manekani/ent/subject"
 	"github.com/sixels/manekani/ent/user"
-
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -47,7 +48,7 @@ type Client struct {
 
 // NewClient creates a new client configured with the given options.
 func NewClient(opts ...Option) *Client {
-	cfg := config{log: log.Println, hooks: &hooks{}}
+	cfg := config{log: log.Println, hooks: &hooks{}, inters: &inters{}}
 	cfg.options(opts...)
 	client := &Client{config: cfg}
 	client.init()
@@ -63,6 +64,55 @@ func (c *Client) init() {
 	c.Review = NewReviewClient(c.config)
 	c.Subject = NewSubjectClient(c.config)
 	c.User = NewUserClient(c.config)
+}
+
+type (
+	// config is the configuration for the client and its builder.
+	config struct {
+		// driver used for executing database requests.
+		driver dialect.Driver
+		// debug enable a debug logging.
+		debug bool
+		// log used for logging on debug mode.
+		log func(...any)
+		// hooks to execute on mutations.
+		hooks *hooks
+		// interceptors to execute on queries.
+		inters *inters
+	}
+	// Option function to configure the client.
+	Option func(*config)
+)
+
+// options applies the options on the config object.
+func (c *config) options(opts ...Option) {
+	for _, opt := range opts {
+		opt(c)
+	}
+	if c.debug {
+		c.driver = dialect.Debug(c.driver, c.log)
+	}
+}
+
+// Debug enables debug logging on the ent.Driver.
+func Debug() Option {
+	return func(c *config) {
+		c.debug = true
+	}
+}
+
+// Log sets the logging function for debug mode.
+func Log(fn func(...any)) Option {
+	return func(c *config) {
+		c.log = fn
+	}
+}
+
+// Driver configures the client driver.
+func Driver(driver dialect.Driver) Option {
+	return func(c *config) {
+		c.driver = driver
+	}
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -157,13 +207,43 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.ApiToken.Use(hooks...)
-	c.Card.Use(hooks...)
-	c.Deck.Use(hooks...)
-	c.DeckProgress.Use(hooks...)
-	c.Review.Use(hooks...)
-	c.Subject.Use(hooks...)
-	c.User.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.ApiToken, c.Card, c.Deck, c.DeckProgress, c.Review, c.Subject, c.User,
+	} {
+		n.Use(hooks...)
+	}
+}
+
+// Intercept adds the query interceptors to all the entity clients.
+// In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
+func (c *Client) Intercept(interceptors ...Interceptor) {
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.ApiToken, c.Card, c.Deck, c.DeckProgress, c.Review, c.Subject, c.User,
+	} {
+		n.Intercept(interceptors...)
+	}
+}
+
+// Mutate implements the ent.Mutator interface.
+func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
+	switch m := m.(type) {
+	case *ApiTokenMutation:
+		return c.ApiToken.mutate(ctx, m)
+	case *CardMutation:
+		return c.Card.mutate(ctx, m)
+	case *DeckMutation:
+		return c.Deck.mutate(ctx, m)
+	case *DeckProgressMutation:
+		return c.DeckProgress.mutate(ctx, m)
+	case *ReviewMutation:
+		return c.Review.mutate(ctx, m)
+	case *SubjectMutation:
+		return c.Subject.mutate(ctx, m)
+	case *UserMutation:
+		return c.User.mutate(ctx, m)
+	default:
+		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
 }
 
 // ApiTokenClient is a client for the ApiToken schema.
@@ -180,6 +260,12 @@ func NewApiTokenClient(c config) *ApiTokenClient {
 // A call to `Use(f, g, h)` equals to `apitoken.Hooks(f(g(h())))`.
 func (c *ApiTokenClient) Use(hooks ...Hook) {
 	c.hooks.ApiToken = append(c.hooks.ApiToken, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `apitoken.Intercept(f(g(h())))`.
+func (c *ApiTokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ApiToken = append(c.inters.ApiToken, interceptors...)
 }
 
 // Create returns a builder for creating a ApiToken entity.
@@ -206,7 +292,7 @@ func (c *ApiTokenClient) UpdateOne(at *ApiToken) *ApiTokenUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ApiTokenClient) UpdateOneID(id uuid.UUID) *ApiTokenUpdateOne {
+func (c *ApiTokenClient) UpdateOneID(id ulid.ULID) *ApiTokenUpdateOne {
 	mutation := newApiTokenMutation(c.config, OpUpdateOne, withApiTokenID(id))
 	return &ApiTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -223,7 +309,7 @@ func (c *ApiTokenClient) DeleteOne(at *ApiToken) *ApiTokenDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ApiTokenClient) DeleteOneID(id uuid.UUID) *ApiTokenDeleteOne {
+func (c *ApiTokenClient) DeleteOneID(id ulid.ULID) *ApiTokenDeleteOne {
 	builder := c.Delete().Where(apitoken.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -234,16 +320,18 @@ func (c *ApiTokenClient) DeleteOneID(id uuid.UUID) *ApiTokenDeleteOne {
 func (c *ApiTokenClient) Query() *ApiTokenQuery {
 	return &ApiTokenQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeApiToken},
+		inters: c.Interceptors(),
 	}
 }
 
 // Get returns a ApiToken entity by its id.
-func (c *ApiTokenClient) Get(ctx context.Context, id uuid.UUID) (*ApiToken, error) {
+func (c *ApiTokenClient) Get(ctx context.Context, id ulid.ULID) (*ApiToken, error) {
 	return c.Query().Where(apitoken.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ApiTokenClient) GetX(ctx context.Context, id uuid.UUID) *ApiToken {
+func (c *ApiTokenClient) GetX(ctx context.Context, id ulid.ULID) *ApiToken {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -253,7 +341,7 @@ func (c *ApiTokenClient) GetX(ctx context.Context, id uuid.UUID) *ApiToken {
 
 // QueryUser queries the user edge of a ApiToken.
 func (c *ApiTokenClient) QueryUser(at *ApiToken) *UserQuery {
-	query := &UserQuery{config: c.config}
+	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := at.ID
 		step := sqlgraph.NewStep(
@@ -272,6 +360,26 @@ func (c *ApiTokenClient) Hooks() []Hook {
 	return c.hooks.ApiToken
 }
 
+// Interceptors returns the client interceptors.
+func (c *ApiTokenClient) Interceptors() []Interceptor {
+	return c.inters.ApiToken
+}
+
+func (c *ApiTokenClient) mutate(ctx context.Context, m *ApiTokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ApiTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ApiTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ApiTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ApiTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ApiToken mutation op: %q", m.Op())
+	}
+}
+
 // CardClient is a client for the Card schema.
 type CardClient struct {
 	config
@@ -286,6 +394,12 @@ func NewCardClient(c config) *CardClient {
 // A call to `Use(f, g, h)` equals to `card.Hooks(f(g(h())))`.
 func (c *CardClient) Use(hooks ...Hook) {
 	c.hooks.Card = append(c.hooks.Card, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `card.Intercept(f(g(h())))`.
+func (c *CardClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Card = append(c.inters.Card, interceptors...)
 }
 
 // Create returns a builder for creating a Card entity.
@@ -340,6 +454,8 @@ func (c *CardClient) DeleteOneID(id uuid.UUID) *CardDeleteOne {
 func (c *CardClient) Query() *CardQuery {
 	return &CardQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeCard},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -359,7 +475,7 @@ func (c *CardClient) GetX(ctx context.Context, id uuid.UUID) *Card {
 
 // QueryDeckProgress queries the deck_progress edge of a Card.
 func (c *CardClient) QueryDeckProgress(ca *Card) *DeckProgressQuery {
-	query := &DeckProgressQuery{config: c.config}
+	query := (&DeckProgressClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ca.ID
 		step := sqlgraph.NewStep(
@@ -375,7 +491,7 @@ func (c *CardClient) QueryDeckProgress(ca *Card) *DeckProgressQuery {
 
 // QuerySubject queries the subject edge of a Card.
 func (c *CardClient) QuerySubject(ca *Card) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
+	query := (&SubjectClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ca.ID
 		step := sqlgraph.NewStep(
@@ -391,7 +507,7 @@ func (c *CardClient) QuerySubject(ca *Card) *SubjectQuery {
 
 // QueryReviews queries the reviews edge of a Card.
 func (c *CardClient) QueryReviews(ca *Card) *ReviewQuery {
-	query := &ReviewQuery{config: c.config}
+	query := (&ReviewClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ca.ID
 		step := sqlgraph.NewStep(
@@ -410,6 +526,26 @@ func (c *CardClient) Hooks() []Hook {
 	return c.hooks.Card
 }
 
+// Interceptors returns the client interceptors.
+func (c *CardClient) Interceptors() []Interceptor {
+	return c.inters.Card
+}
+
+func (c *CardClient) mutate(ctx context.Context, m *CardMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CardCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CardUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CardDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Card mutation op: %q", m.Op())
+	}
+}
+
 // DeckClient is a client for the Deck schema.
 type DeckClient struct {
 	config
@@ -424,6 +560,12 @@ func NewDeckClient(c config) *DeckClient {
 // A call to `Use(f, g, h)` equals to `deck.Hooks(f(g(h())))`.
 func (c *DeckClient) Use(hooks ...Hook) {
 	c.hooks.Deck = append(c.hooks.Deck, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `deck.Intercept(f(g(h())))`.
+func (c *DeckClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Deck = append(c.inters.Deck, interceptors...)
 }
 
 // Create returns a builder for creating a Deck entity.
@@ -478,6 +620,8 @@ func (c *DeckClient) DeleteOneID(id uuid.UUID) *DeckDeleteOne {
 func (c *DeckClient) Query() *DeckQuery {
 	return &DeckQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeDeck},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -497,7 +641,7 @@ func (c *DeckClient) GetX(ctx context.Context, id uuid.UUID) *Deck {
 
 // QuerySubscribers queries the subscribers edge of a Deck.
 func (c *DeckClient) QuerySubscribers(d *Deck) *UserQuery {
-	query := &UserQuery{config: c.config}
+	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := d.ID
 		step := sqlgraph.NewStep(
@@ -513,7 +657,7 @@ func (c *DeckClient) QuerySubscribers(d *Deck) *UserQuery {
 
 // QueryOwner queries the owner edge of a Deck.
 func (c *DeckClient) QueryOwner(d *Deck) *UserQuery {
-	query := &UserQuery{config: c.config}
+	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := d.ID
 		step := sqlgraph.NewStep(
@@ -529,7 +673,7 @@ func (c *DeckClient) QueryOwner(d *Deck) *UserQuery {
 
 // QuerySubjects queries the subjects edge of a Deck.
 func (c *DeckClient) QuerySubjects(d *Deck) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
+	query := (&SubjectClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := d.ID
 		step := sqlgraph.NewStep(
@@ -545,7 +689,7 @@ func (c *DeckClient) QuerySubjects(d *Deck) *SubjectQuery {
 
 // QueryUsersProgress queries the users_progress edge of a Deck.
 func (c *DeckClient) QueryUsersProgress(d *Deck) *DeckProgressQuery {
-	query := &DeckProgressQuery{config: c.config}
+	query := (&DeckProgressClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := d.ID
 		step := sqlgraph.NewStep(
@@ -564,6 +708,26 @@ func (c *DeckClient) Hooks() []Hook {
 	return c.hooks.Deck
 }
 
+// Interceptors returns the client interceptors.
+func (c *DeckClient) Interceptors() []Interceptor {
+	return c.inters.Deck
+}
+
+func (c *DeckClient) mutate(ctx context.Context, m *DeckMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DeckCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DeckUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DeckUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DeckDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Deck mutation op: %q", m.Op())
+	}
+}
+
 // DeckProgressClient is a client for the DeckProgress schema.
 type DeckProgressClient struct {
 	config
@@ -578,6 +742,12 @@ func NewDeckProgressClient(c config) *DeckProgressClient {
 // A call to `Use(f, g, h)` equals to `deckprogress.Hooks(f(g(h())))`.
 func (c *DeckProgressClient) Use(hooks ...Hook) {
 	c.hooks.DeckProgress = append(c.hooks.DeckProgress, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `deckprogress.Intercept(f(g(h())))`.
+func (c *DeckProgressClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DeckProgress = append(c.inters.DeckProgress, interceptors...)
 }
 
 // Create returns a builder for creating a DeckProgress entity.
@@ -632,6 +802,8 @@ func (c *DeckProgressClient) DeleteOneID(id int) *DeckProgressDeleteOne {
 func (c *DeckProgressClient) Query() *DeckProgressQuery {
 	return &DeckProgressQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeDeckProgress},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -651,7 +823,7 @@ func (c *DeckProgressClient) GetX(ctx context.Context, id int) *DeckProgress {
 
 // QueryCards queries the cards edge of a DeckProgress.
 func (c *DeckProgressClient) QueryCards(dp *DeckProgress) *CardQuery {
-	query := &CardQuery{config: c.config}
+	query := (&CardClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := dp.ID
 		step := sqlgraph.NewStep(
@@ -667,7 +839,7 @@ func (c *DeckProgressClient) QueryCards(dp *DeckProgress) *CardQuery {
 
 // QueryUser queries the user edge of a DeckProgress.
 func (c *DeckProgressClient) QueryUser(dp *DeckProgress) *UserQuery {
-	query := &UserQuery{config: c.config}
+	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := dp.ID
 		step := sqlgraph.NewStep(
@@ -683,7 +855,7 @@ func (c *DeckProgressClient) QueryUser(dp *DeckProgress) *UserQuery {
 
 // QueryDeck queries the deck edge of a DeckProgress.
 func (c *DeckProgressClient) QueryDeck(dp *DeckProgress) *DeckQuery {
-	query := &DeckQuery{config: c.config}
+	query := (&DeckClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := dp.ID
 		step := sqlgraph.NewStep(
@@ -702,6 +874,26 @@ func (c *DeckProgressClient) Hooks() []Hook {
 	return c.hooks.DeckProgress
 }
 
+// Interceptors returns the client interceptors.
+func (c *DeckProgressClient) Interceptors() []Interceptor {
+	return c.inters.DeckProgress
+}
+
+func (c *DeckProgressClient) mutate(ctx context.Context, m *DeckProgressMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DeckProgressCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DeckProgressUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DeckProgressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DeckProgressDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DeckProgress mutation op: %q", m.Op())
+	}
+}
+
 // ReviewClient is a client for the Review schema.
 type ReviewClient struct {
 	config
@@ -716,6 +908,12 @@ func NewReviewClient(c config) *ReviewClient {
 // A call to `Use(f, g, h)` equals to `review.Hooks(f(g(h())))`.
 func (c *ReviewClient) Use(hooks ...Hook) {
 	c.hooks.Review = append(c.hooks.Review, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `review.Intercept(f(g(h())))`.
+func (c *ReviewClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Review = append(c.inters.Review, interceptors...)
 }
 
 // Create returns a builder for creating a Review entity.
@@ -770,6 +968,8 @@ func (c *ReviewClient) DeleteOneID(id uuid.UUID) *ReviewDeleteOne {
 func (c *ReviewClient) Query() *ReviewQuery {
 	return &ReviewQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeReview},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -789,7 +989,7 @@ func (c *ReviewClient) GetX(ctx context.Context, id uuid.UUID) *Review {
 
 // QueryCard queries the card edge of a Review.
 func (c *ReviewClient) QueryCard(r *Review) *CardQuery {
-	query := &CardQuery{config: c.config}
+	query := (&CardClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := r.ID
 		step := sqlgraph.NewStep(
@@ -808,6 +1008,26 @@ func (c *ReviewClient) Hooks() []Hook {
 	return c.hooks.Review
 }
 
+// Interceptors returns the client interceptors.
+func (c *ReviewClient) Interceptors() []Interceptor {
+	return c.inters.Review
+}
+
+func (c *ReviewClient) mutate(ctx context.Context, m *ReviewMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReviewCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReviewUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReviewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReviewDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Review mutation op: %q", m.Op())
+	}
+}
+
 // SubjectClient is a client for the Subject schema.
 type SubjectClient struct {
 	config
@@ -822,6 +1042,12 @@ func NewSubjectClient(c config) *SubjectClient {
 // A call to `Use(f, g, h)` equals to `subject.Hooks(f(g(h())))`.
 func (c *SubjectClient) Use(hooks ...Hook) {
 	c.hooks.Subject = append(c.hooks.Subject, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `subject.Intercept(f(g(h())))`.
+func (c *SubjectClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Subject = append(c.inters.Subject, interceptors...)
 }
 
 // Create returns a builder for creating a Subject entity.
@@ -876,6 +1102,8 @@ func (c *SubjectClient) DeleteOneID(id uuid.UUID) *SubjectDeleteOne {
 func (c *SubjectClient) Query() *SubjectQuery {
 	return &SubjectQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeSubject},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -895,7 +1123,7 @@ func (c *SubjectClient) GetX(ctx context.Context, id uuid.UUID) *Subject {
 
 // QueryCards queries the cards edge of a Subject.
 func (c *SubjectClient) QueryCards(s *Subject) *CardQuery {
-	query := &CardQuery{config: c.config}
+	query := (&CardClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
@@ -911,7 +1139,7 @@ func (c *SubjectClient) QueryCards(s *Subject) *CardQuery {
 
 // QuerySimilar queries the similar edge of a Subject.
 func (c *SubjectClient) QuerySimilar(s *Subject) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
+	query := (&SubjectClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
@@ -927,7 +1155,7 @@ func (c *SubjectClient) QuerySimilar(s *Subject) *SubjectQuery {
 
 // QueryDependencies queries the dependencies edge of a Subject.
 func (c *SubjectClient) QueryDependencies(s *Subject) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
+	query := (&SubjectClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
@@ -943,7 +1171,7 @@ func (c *SubjectClient) QueryDependencies(s *Subject) *SubjectQuery {
 
 // QueryDependents queries the dependents edge of a Subject.
 func (c *SubjectClient) QueryDependents(s *Subject) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
+	query := (&SubjectClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
@@ -959,7 +1187,7 @@ func (c *SubjectClient) QueryDependents(s *Subject) *SubjectQuery {
 
 // QueryDeck queries the deck edge of a Subject.
 func (c *SubjectClient) QueryDeck(s *Subject) *DeckQuery {
-	query := &DeckQuery{config: c.config}
+	query := (&DeckClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
@@ -975,7 +1203,7 @@ func (c *SubjectClient) QueryDeck(s *Subject) *DeckQuery {
 
 // QueryOwner queries the owner edge of a Subject.
 func (c *SubjectClient) QueryOwner(s *Subject) *UserQuery {
-	query := &UserQuery{config: c.config}
+	query := (&UserClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
@@ -994,6 +1222,26 @@ func (c *SubjectClient) Hooks() []Hook {
 	return c.hooks.Subject
 }
 
+// Interceptors returns the client interceptors.
+func (c *SubjectClient) Interceptors() []Interceptor {
+	return c.inters.Subject
+}
+
+func (c *SubjectClient) mutate(ctx context.Context, m *SubjectMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SubjectCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SubjectUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SubjectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SubjectDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Subject mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -1008,6 +1256,12 @@ func NewUserClient(c config) *UserClient {
 // A call to `Use(f, g, h)` equals to `user.Hooks(f(g(h())))`.
 func (c *UserClient) Use(hooks ...Hook) {
 	c.hooks.User = append(c.hooks.User, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `user.Intercept(f(g(h())))`.
+func (c *UserClient) Intercept(interceptors ...Interceptor) {
+	c.inters.User = append(c.inters.User, interceptors...)
 }
 
 // Create returns a builder for creating a User entity.
@@ -1062,6 +1316,8 @@ func (c *UserClient) DeleteOneID(id string) *UserDeleteOne {
 func (c *UserClient) Query() *UserQuery {
 	return &UserQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeUser},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -1081,7 +1337,7 @@ func (c *UserClient) GetX(ctx context.Context, id string) *User {
 
 // QueryDecks queries the decks edge of a User.
 func (c *UserClient) QueryDecks(u *User) *DeckQuery {
-	query := &DeckQuery{config: c.config}
+	query := (&DeckClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
@@ -1097,7 +1353,7 @@ func (c *UserClient) QueryDecks(u *User) *DeckQuery {
 
 // QuerySubjects queries the subjects edge of a User.
 func (c *UserClient) QuerySubjects(u *User) *SubjectQuery {
-	query := &SubjectQuery{config: c.config}
+	query := (&SubjectClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
@@ -1113,7 +1369,7 @@ func (c *UserClient) QuerySubjects(u *User) *SubjectQuery {
 
 // QuerySubscribedDecks queries the subscribed_decks edge of a User.
 func (c *UserClient) QuerySubscribedDecks(u *User) *DeckQuery {
-	query := &DeckQuery{config: c.config}
+	query := (&DeckClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
@@ -1129,7 +1385,7 @@ func (c *UserClient) QuerySubscribedDecks(u *User) *DeckQuery {
 
 // QueryAPITokens queries the api_tokens edge of a User.
 func (c *UserClient) QueryAPITokens(u *User) *ApiTokenQuery {
-	query := &ApiTokenQuery{config: c.config}
+	query := (&ApiTokenClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
@@ -1145,7 +1401,7 @@ func (c *UserClient) QueryAPITokens(u *User) *ApiTokenQuery {
 
 // QueryDecksProgress queries the decks_progress edge of a User.
 func (c *UserClient) QueryDecksProgress(u *User) *DeckProgressQuery {
-	query := &DeckProgressQuery{config: c.config}
+	query := (&DeckProgressClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
@@ -1163,3 +1419,33 @@ func (c *UserClient) QueryDecksProgress(u *User) *DeckProgressQuery {
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
 }
+
+// Interceptors returns the client interceptors.
+func (c *UserClient) Interceptors() []Interceptor {
+	return c.inters.User
+}
+
+func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown User mutation op: %q", m.Op())
+	}
+}
+
+// hooks and interceptors per client, for fast access.
+type (
+	hooks struct {
+		ApiToken, Card, Deck, DeckProgress, Review, Subject, User []ent.Hook
+	}
+	inters struct {
+		ApiToken, Card, Deck, DeckProgress, Review, Subject, User []ent.Interceptor
+	}
+)
