@@ -53,21 +53,19 @@ func (adp *TokensAdapter) GetToken(ctx context.Context, key string) (tokens.User
 }
 
 func (adp *TokensAdapter) QueryTokens(ctx context.Context, userID string) ([]tokens.UserTokenPartial, error) {
-	tokens, err := adp.repo.QueryTokens(ctx, userID)
+	queryTokens, err := adp.repo.QueryTokens(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	return tokens, nil
+	return queryTokens, nil
 }
 
-func (adp *TokensAdapter) CreateToken(ctx context.Context, userID string, req tokens.GenerateTokenRequest) (string, error) {
-	tokenClaims := tokens.APITokenClaims{
-		Permissions: req.Permissions,
-	}
+func (adp *TokensAdapter) CreateToken(ctx context.Context, userID string, req tokens.GenerateTokenRequest) (tokens.GenerateTokenResponse, error) {
+	tokenClaims := req.Permissions
 
 	prefixBytes, err := crypto.GenerateRandomBytes(PREFIX_LEN / 2)
 	if err != nil {
-		return "", err
+		return tokens.GenerateTokenResponse{}, err
 	}
 	prefix := hex.EncodeToString(prefixBytes)
 
@@ -77,18 +75,29 @@ func (adp *TokensAdapter) CreateToken(ctx context.Context, userID string, req to
 
 	// hash the token and store it safely
 	tokenHash := hash.Argon2IDHash(tokenBytes, prefixBytes)
-	if err := adp.repo.CreateToken(ctx, userID, tokens.CreateTokenRequest{
+	cToken, err := adp.repo.CreateToken(ctx, userID, tokens.CreateTokenRequest{
 		TokenHash: tokenHash,
 		Prefix:    prefix,
 		Claims:    tokenClaims,
 		Name:      req.Name,
 		Status:    tokens.TokenStatusActive,
-	}); err != nil {
+	})
+	if err != nil {
 		log.Println(err)
-		return "", ErrCreateTokenStore
+		return tokens.GenerateTokenResponse{}, ErrCreateTokenStore
 	}
 
-	return prefix + TOKEN_SEPARATOR + token, nil
+	secretToken := prefix + TOKEN_SEPARATOR + token
+
+	return tokens.GenerateTokenResponse{
+		ID:     cToken.ID,
+		Name:   cToken.Name,
+		Claims: cToken.Claims,
+		Prefix: cToken.Prefix,
+		Status: cToken.Status,
+		UsedAt: cToken.UsedAt,
+		Token:  secretToken,
+	}, nil
 }
 
 func (adp *TokensAdapter) DeleteToken(ctx context.Context, userID string, tokenID ulid.ULID) error {

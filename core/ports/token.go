@@ -13,7 +13,7 @@ type TokenRepository interface {
 	// QueryTokens returns the list of ids and prefixes from tokens owned by the given user.
 	QueryTokens(ctx context.Context, userID string) ([]tokens.UserTokenPartial, error)
 	// CreateToken creates a new token for the given user.
-	CreateToken(ctx context.Context, userID string, req tokens.CreateTokenRequest) error
+	CreateToken(ctx context.Context, userID string, req tokens.CreateTokenRequest) (tokens.UserToken, error)
 	// DeleteToken deletes the given token
 	DeleteToken(ctx context.Context, tokenID ulid.ULID) error
 	// TokenOwner returns the owner's id of the given token

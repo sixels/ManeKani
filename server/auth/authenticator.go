@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	ory "github.com/ory/client-go"
 	adapter "github.com/sixels/manekani/core/adapters/tokens"
@@ -35,13 +36,13 @@ type TokenAuthenticator interface {
 
 func NewOAPIAuthenticator(auth TokenAuthenticator) openapi3filter.AuthenticationFunc {
 	return func(ctx context.Context, ai *openapi3filter.AuthenticationInput) error {
-		log.Println("authenticating request")
 		if ai.SecuritySchemeName == "ApiKey" {
 			return AuthenticateApiKey(ctx, auth, ai)
 		}
 		if ai.SecuritySchemeName == "Login" {
 			return AuthenticateLogin(ctx, auth, ai)
 		}
+		log.Println("request authentication failed")
 		return fmt.Errorf("unknown security scheme name: %s", ai.SecuritySchemeName)
 	}
 }
@@ -59,7 +60,7 @@ func AuthenticateLogin(ctx context.Context, auth TokenAuthenticator, ai *openapi
 		return fmt.Errorf("could not get the login session: %w", err)
 	}
 
-	c := GetGinContext(ctx)
+	c := middleware.GetGinContext(ctx)
 	c.Set(string(UserSessionContext), session)
 	c.Set(string(UserIDContext), session.Identity.Id)
 
@@ -91,7 +92,7 @@ func AuthenticateApiKey(ctx context.Context, auth TokenAuthenticator, ai *openap
 		return err
 	}
 
-	c := GetGinContext(ctx)
+	c := middleware.GetGinContext(ctx)
 	c.Set(string(UserTokenContext), tk)
 	c.Set(string(UserIDContext), tk.UserID)
 
@@ -111,11 +112,11 @@ func GetAuthTokenHeader(req *http.Request) (string, error) {
 }
 
 func CheckTokenClaims(tk tokens.UserToken, expectedClaims []string) error {
-	claimsMap := adapter.MapPermissions(tk.Claims.Permissions)
+	claimsMap := adapter.MapPermissions(tk.Claims)
 	var missing []string
-	for _, cap := range expectedClaims {
-		if isSet, exists := claimsMap[tokens.APITokenPermission(cap)]; !exists || !isSet {
-			missing = append(missing, cap)
+	for _, expectedClaim := range expectedClaims {
+		if isSet, exists := claimsMap[tokens.APITokenPermission(expectedClaim)]; !exists || !isSet {
+			missing = append(missing, expectedClaim)
 		}
 	}
 	if len(missing) > 0 {

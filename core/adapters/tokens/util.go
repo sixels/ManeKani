@@ -2,7 +2,7 @@ package tokens
 
 import "github.com/sixels/manekani/core/domain/tokens"
 
-func MapPermissions(perms tokens.APITokenPermissions) map[tokens.APITokenPermission]bool {
+func MapPermissions(perms tokens.APITokenClaims) map[tokens.APITokenPermission]bool {
 	return map[tokens.APITokenPermission]bool{
 		tokens.TokenPermissionDeckCreate:          perms.DeckCreate,
 		tokens.TokenPermissionDeckDelete:          perms.DeckDelete,

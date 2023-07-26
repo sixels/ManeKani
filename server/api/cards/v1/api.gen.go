@@ -65,14 +65,14 @@ type DeckModel struct {
 
 // SubjectCreateRequest defines model for subject.CreateRequest.
 type SubjectCreateRequest struct {
-	AdditionalStudyData *map[string]interface{} `json:"additional_study_data,omitempty"`
-	Deck                openapi_types.UUID      `json:"deck"`
-	Dependencies        *[]openapi_types.UUID   `json:"dependencies,omitempty"`
-	Dependents          *[]openapi_types.UUID   `json:"dependents,omitempty"`
-	Kind                string                  `json:"kind"`
-	Level               int32                   `json:"level"`
-	Name                string                  `json:"name"`
-	Priority            uint8                   `json:"priority"`
+	AdditionalStudyData *map[string]interface{} `form:"additional_study_data" json:"additional_study_data,omitempty"`
+	Deck                openapi_types.UUID      `form:"deck" json:"deck"`
+	Dependencies        *[]openapi_types.UUID   `form:"dependencies" json:"dependencies,omitempty"`
+	Dependents          *[]openapi_types.UUID   `form:"dependents" json:"dependents,omitempty"`
+	Kind                string                  `form:"kind" json:"kind"`
+	Level               int32                   `form:"level" json:"level"`
+	Name                string                  `form:"name" json:"name"`
+	Priority            uint8                   `form:"priority" json:"priority"`
 
 	// Resource The subject resources
 	Resource *[]openapi_types.File `json:"resource[],omitempty"`

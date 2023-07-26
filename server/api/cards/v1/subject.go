@@ -1,10 +1,9 @@
 package cards
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"github.com/sixels/manekani/server/api/apicommon"
 	"log"
 	"net/http"
 
@@ -19,12 +18,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// Query all subjects
-// (GET /api/v1/subjects)
+// GetSubjects gets all subjects
 func (api *CardsApiV1) GetSubjects(c *gin.Context, params GetSubjectsParams) {
 	filters := new(domain_cards.QueryManySubjectsRequest)
 	if err := c.BindQuery(filters); err != nil {
 		c.Error(err)
+		apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
 		return
 	}
 
@@ -32,33 +31,29 @@ func (api *CardsApiV1) GetSubjects(c *gin.Context, params GetSubjectsParams) {
 	subjects, err := api.Cards.AllSubjects(ctx, *filters)
 	if err != nil {
 		c.Error(err)
-		c.JSON(err.(*errors.Error).Status, err)
-	} else {
-		c.JSON(http.StatusOK, subjects)
+		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
+		return
 	}
+
+	apicommon.Respond(c, apicommon.Response(http.StatusOK, subjects))
 }
 
-// Create a new subject
-// (POST /api/v1/subjects)
+// CreateSubject creates a subject
 func (api *CardsApiV1) CreateSubject(c *gin.Context) {
+	log.Println("creating subject")
 	ctx := c.Request.Context()
 
 	userID, err := util.CtxUserID(c)
 	if err != nil {
 		c.Error(err)
-		c.Status(http.StatusUnauthorized)
+		apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
 		return
 	}
 
-	body, _ := io.ReadAll(c.Request.Body)
-	println(string(body))
-
-	c.Request.Body = io.NopCloser(bytes.NewReader(body))
-
 	var req CreateSubjectMultipartRequestBody
-	if err := c.Bind(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.Error(fmt.Errorf("create-subject bind error: %w", err))
-		c.String(http.StatusBadRequest, err.Error())
+		apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
 		return
 	}
 
@@ -70,7 +65,7 @@ func (api *CardsApiV1) CreateSubject(c *gin.Context) {
 	})
 	if err != nil {
 		c.Error(fmt.Errorf("could not upload the subject image: %w", err))
-		c.Status(http.StatusInternalServerError)
+		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
 		return
 	}
 
@@ -87,7 +82,7 @@ func (api *CardsApiV1) CreateSubject(c *gin.Context) {
 			})
 			if err != nil {
 				c.Error(fmt.Errorf("could not upload the subject resource: %w", err))
-				c.Status(http.StatusInternalServerError)
+				apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
 				return
 			}
 
@@ -135,85 +130,82 @@ func (api *CardsApiV1) CreateSubject(c *gin.Context) {
 	created, err := api.Cards.CreateSubject(ctx, userID, subj)
 	if err != nil {
 		c.Error(fmt.Errorf("could not create the subject: %w", err))
-		c.Status(http.StatusInternalServerError)
+		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
 		return
 	}
 
 	log.Printf("subject created by user: %s\n", userID)
-	c.JSON(http.StatusCreated, created)
+	apicommon.Respond(c, apicommon.Response(http.StatusCreated, created))
 }
 
-// Delete a subject
-// (DELETE /api/v1/subjects/{id})
+// DeleteSubject deletes a subject
 func (api *CardsApiV1) DeleteSubject(c *gin.Context, id string) {
 	ctx := c.Request.Context()
 
 	userID, err := util.CtxUserID(c)
 	if err != nil {
 		c.Error(err)
-		c.Status(http.StatusUnauthorized)
+		apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
 		return
 	}
 
 	subjectID, err := uuid.Parse(id)
 	if err != nil {
-		c.JSON(
-			http.StatusNotFound,
-			errors.NotFound("subject not found"))
+		c.Error(err)
+		apicommon.Respond(c, apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found")))
 		return
 	}
 
 	if err := api.Cards.DeleteSubject(ctx, subjectID, userID); err != nil {
 		c.Error(err)
-		c.JSON(err.(*errors.Error).Status, err)
-	} else {
-		c.Status(http.StatusNoContent)
+		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
+		return
 	}
+
+	apicommon.Respond(c, apicommon.Response[any](http.StatusOK, nil))
 }
 
-// Query a subject
-// (GET /api/v1/subjects/{id})
+// GetSubject gets a subject
 func (api *CardsApiV1) GetSubject(c *gin.Context, id string) {
 	subjectID, err := uuid.Parse(id)
 	if err != nil {
-		c.JSON(
-			http.StatusNotFound,
-			errors.NotFound("subject not found"))
+		c.Error(err)
+		apicommon.Respond(c, apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found")))
 		return
 	}
 
 	queried, err := api.Cards.QuerySubject(c.Request.Context(), subjectID)
 	if err != nil {
 		c.Error(err)
-		c.JSON(err.(*errors.Error).Status, err)
-	} else {
-		c.JSON(http.StatusOK, queried)
+		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
+		return
 	}
+
+	apicommon.Respond(c, apicommon.Response(http.StatusOK, queried))
 }
 
-// Update a subject
-// (PATCH /api/v1/subjects/{id})
+// UpdateSubject updates a subject
 func (api *CardsApiV1) UpdateSubject(c *gin.Context, id string) {
 	ctx := c.Request.Context()
 
 	userID, err := util.CtxUserID(c)
 	if err != nil {
 		c.Error(err)
-		c.Status(http.StatusUnauthorized)
+		apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
 		return
 	}
 
 	subjectID, err := uuid.Parse(id)
 	if err != nil {
-		c.JSON(
-			http.StatusNotFound,
-			errors.NotFound("subject not found"))
+		c.Error(err)
+		apicommon.Respond(c, apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found")))
 		return
 	}
 
 	var subject UpdateSubjectJSONRequestBody
 	if err := c.Bind(&subject); err != nil {
 		c.Error(err)
+		apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
 		return
 	}
 
@@ -235,10 +227,10 @@ func (api *CardsApiV1) UpdateSubject(c *gin.Context, id string) {
 	updated, err := api.Cards.UpdateSubject(ctx, subjectID, userID, subj)
 	if err != nil {
 		c.Error(err)
-		c.JSON(err.(*errors.Error).Status, err)
-	} else {
-		c.JSON(http.StatusOK, updated)
+		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
+		return
 	}
+	apicommon.Respond(c, apicommon.Response(http.StatusOK, updated))
 }
 
 func domainFromStudyData(sd SubjectStudyData) domain_cards.StudyData {
@@ -269,226 +261,6 @@ func omitEmpty[T any](t *T) T {
 	}
 	return *t
 }
-
-// func (api *CardsApiV1) CreateSubject() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx := c.Request.Context()
-
-// 		userID, err := util.CtxUserID(c)
-// 		if err != nil {
-// 			c.Error(err)
-// 			c.Status(http.StatusUnauthorized)
-// 			return
-// 		}
-
-// 		body, _ := io.ReadAll(c.Request.Body)
-// 		println(string(body))
-
-// 		c.Request.Body = io.NopCloser(bytes.NewReader(body))
-
-// 		var req CreateSubjectAPIRequest
-// 		if err := c.Bind(&req); err != nil {
-// 			c.Error(fmt.Errorf("create-subject bind error: %w", err))
-// 			c.String(http.StatusBadRequest, err.Error())
-// 			return
-// 		}
-
-// 		// upload value image
-// 		subjectImage, err := uploadFile(ctx, api.Cards.FilesRepo, uploadFileReq{
-// 			File: req.ValueImage,
-// 			Kind: "value",
-// 			Name: req.Slug,
-// 		})
-// 		if err != nil {
-// 			c.Error(fmt.Errorf("could not upload the subject image: %w", err))
-// 			c.Status(http.StatusInternalServerError)
-// 			return
-// 		}
-
-// 		// upload resources
-// 		var (
-// 			subjectResources = make([]domain_cards.Resource, 0)
-// 		)
-// 		for i, metas := range req.ResourcesMeta {
-// 			resourcePath, err := uploadFile(ctx, api.Cards.FilesRepo, uploadFileReq{
-// 				File: req.Resources[i],
-// 				Kind: fmt.Sprintf("resource-%d", i),
-// 				Name: req.Slug,
-// 			})
-// 			if err != nil {
-// 				c.Error(fmt.Errorf("could not upload the subject resource: %w", err))
-// 				c.Status(http.StatusInternalServerError)
-// 				return
-// 			}
-// 			if resourcePath != nil {
-// 				subjectResources = append(subjectResources, domain_cards.Resource{
-// 					URL:      *resourcePath,
-// 					Metadata: metas,
-// 				})
-// 			}
-// 		}
-
-// 		subj := req.CreateSubjectRequest
-// 		subj.ValueImage = subjectImage
-// 		subj.Resources = &subjectResources
-
-// 		created, err := api.Cards.CreateSubject(ctx, userID, subj)
-// 		if err != nil {
-// 			c.Error(fmt.Errorf("could not create the subject: %w", err))
-// 			c.Status(http.StatusInternalServerError)
-// 			return
-// 		}
-
-// 		log.Printf("subject created by user: %s\n", userID)
-// 		c.JSON(http.StatusCreated, created)
-// 	}
-// }
-
-// func (api *CardsApiV1) QuerySubject() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		id, err := uuid.Parse(c.Param("id"))
-// 		if err != nil {
-// 			c.JSON(
-// 				http.StatusNotFound,
-// 				errors.NotFound("subject not found"))
-// 			return
-// 		}
-
-// 		queried, err := api.Cards.QuerySubject(c.Request.Context(), id)
-// 		if err != nil {
-// 			c.Error(err)
-// 			c.JSON(err.(*errors.Error).Status, err)
-// 		} else {
-// 			c.JSON(http.StatusOK, queried)
-// 		}
-// 	}
-// }
-
-// func (api *CardsApiV1) UpdateSubject() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx := c.Request.Context()
-
-// 		userID, err := util.CtxUserID(c)
-// 		if err != nil {
-// 			c.Error(err)
-// 			c.Status(http.StatusUnauthorized)
-// 			return
-// 		}
-
-// 		subjectID, err := uuid.Parse(c.Param("id"))
-// 		if err != nil {
-// 			c.JSON(
-// 				http.StatusNotFound,
-// 				errors.NotFound("subject not found"))
-// 			return
-// 		}
-
-// 		var subject domain_cards.UpdateSubjectRequest
-// 		if err := c.Bind(&subject); err != nil {
-// 			c.Error(err)
-// 			return
-// 		}
-
-// 		updated, err := api.Cards.UpdateSubject(ctx, subjectID, userID, subject)
-// 		if err != nil {
-// 			c.Error(err)
-// 			c.JSON(err.(*errors.Error).Status, err)
-// 		} else {
-// 			c.JSON(http.StatusOK, updated)
-// 		}
-// 	}
-
-// }
-
-// func (api *CardsApiV1) DeleteSubject() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx := c.Request.Context()
-
-// 		userID, err := util.CtxUserID(c)
-// 		if err != nil {
-// 			c.Error(err)
-// 			c.Status(http.StatusUnauthorized)
-// 			return
-// 		}
-
-// 		subjectID, err := uuid.Parse(c.Param("id"))
-// 		if err != nil {
-// 			c.JSON(
-// 				http.StatusNotFound,
-// 				errors.NotFound("subject not found"))
-// 			return
-// 		}
-
-// 		if err := api.Cards.DeleteSubject(ctx, subjectID, userID); err != nil {
-// 			c.Error(err)
-// 			c.JSON(err.(*errors.Error).Status, err)
-// 		} else {
-// 			c.Status(http.StatusNoContent)
-// 		}
-// 	}
-// }
-
-// func (api *CardsApiV1) AllSubjects() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		filters := new(domain_cards.QueryManySubjectsRequest)
-// 		if err := c.BindQuery(filters); err != nil {
-// 			c.Error(err)
-// 			return
-// 		}
-
-// 		ctx := c.Request.Context()
-// 		subjects, err := api.Cards.AllSubjects(ctx, *filters)
-// 		if err != nil {
-// 			c.Error(err)
-// 			c.JSON(err.(*errors.Error).Status, err)
-// 		} else {
-// 			c.JSON(http.StatusOK, subjects)
-// 		}
-// 	}
-// }
-
-// func (api *CardsApiV1) startRemoteResourceUpload(
-// 	ctx context.Context,
-// 	meta *ContentMeta,
-// 	name string,
-// 	kind string,
-// ) (remoteContent *cards.RemoteContent, uploadURL files.UploadURL, err error) {
-// 	namespace := "cards"
-// 	upname := strings.Trim(fmt.Sprintf("%s-%s", ulid.Make(), name), " \n\t\r")
-
-// 	var contentType string = "application/octet-stream"
-// 	if meta.ContentType != nil {
-// 		contentType = *meta.ContentType
-// 	}
-
-// 	log.Printf("file content-type: %q\n", contentType)
-
-// 	key, uploadURL, err := startFileUpload(ctx, api.Files, files.FileInfo{
-// 		Name:        upname,
-// 		Namespace:   namespace,
-// 		Kind:        kind,
-// 		ContentType: contentType,
-// 	})
-// 	if err != nil {
-// 		return nil, files.UploadURL{}, err
-// 	}
-
-// 	if meta.Group != nil {
-// 		uploadURL.Resource = *meta.Group
-// 	}
-
-// 	return &cards.RemoteContent{
-// 		// TODO: return the full url to the resource instead of its storage key
-// 		// e.g: https://files.manekani.com/{key}
-// 		URL:         key,
-// 		ContentType: contentType,
-// 		Metadata:    meta.Metadata,
-// 	}, uploadURL, nil
-// }
-
-// func startFileUpload(ctx context.Context, filesService *files_service.FilesRepository, info files.FileInfo) (objectKey string, uploadURL files.UploadURL, err error) {
-// 	return filesService.UploadFileURL(ctx, info)
-// }
 
 type uploadFileReq struct {
 	File *types.File

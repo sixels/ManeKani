@@ -3,7 +3,7 @@ generate_ent:
 
 _yaml_merge output +FILES:
     #!/usr/bin/env bash
-    yq eval-all '. as $item ireduce ({}; . * $item )' {{FILES}} > {{output}}
+    yq ea '. as $item ireduce ({}; . * $item )' {{FILES}} | tee {{output}} >/dev/null
 
 api_docs:
     #!/usr/bin/env bash

@@ -26,8 +26,18 @@ type UserTokenPartial struct {
 }
 
 type GenerateTokenRequest struct {
-	Name        string              `json:"name"`
-	Permissions APITokenPermissions `json:"permissions"`
+	Name        string         `json:"name"`
+	Permissions APITokenClaims `json:"permissions"`
+}
+
+type GenerateTokenResponse struct {
+	ID     ulid.ULID      `json:"id"`
+	Name   string         `json:"name"`
+	Claims APITokenClaims `json:"claims"`
+	Prefix string         `json:"prefix"`
+	Status APITokenStatus `json:"status"`
+	UsedAt *time.Time     `json:"used_at"`
+	Token  string         `json:"token"`
 }
 
 type CreateTokenRequest struct {
@@ -39,10 +49,6 @@ type CreateTokenRequest struct {
 }
 
 type APITokenClaims struct {
-	Permissions APITokenPermissions `json:"permissions"`
-}
-
-type APITokenPermissions struct {
 	DeckCreate          bool `json:"deck_create,omitempty"`
 	DeckDelete          bool `json:"deck_delete,omitempty"`
 	DeckUpdate          bool `json:"deck_update,omitempty"`

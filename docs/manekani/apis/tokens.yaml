@@ -36,7 +36,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/token.GetAllResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/token.GetAllResponse"
         401:
           description: Unauthorized
           content:
@@ -71,7 +76,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/token.CreateResponse"
+                allOf:
+                    - $ref: "#/components/schemas/common.Response"
+                    - type: object
+                      properties:
+                        data:
+                          $ref: "#/components/schemas/token.CreateResponse"
         400:
           description: Bad Request
           content:
@@ -109,12 +119,12 @@ paths:
           schema:
             type: string
       responses:
-        204:
-          description: No Content
+        200:
+          description: Ok
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/common.ErrorResponse"
+                $ref: "#/components/schemas/common.Response"
         400:
           description: Bad Request
           content:
@@ -190,6 +200,8 @@ components:
           type: string
         prefix:
           type: string
+        token:
+          type: string
         claims:
           $ref: "#/components/schemas/token.Claims"
         status:
@@ -214,17 +226,24 @@ components:
         used_at:
           type: string
     token.GetAllResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        claims:
-          $ref: "#/components/schemas/token.Claims"
-        prefix:
-          type: string
-        status:
-          $ref: "#/components/schemas/token.Status"
-        used_at:
-          type: string
+      type: array
+      items:
+        type: object
+        required:
+          - id
+          - name
+          - prefix
+          - status
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          claims:
+            $ref: "#/components/schemas/token.Claims"
+          prefix:
+            type: string
+          status:
+            $ref: "#/components/schemas/token.Status"
+          used_at:
+            type: string

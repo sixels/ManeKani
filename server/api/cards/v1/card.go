@@ -2,6 +2,7 @@ package cards
 
 import (
 	"fmt"
+	"github.com/sixels/manekani/server/api/apicommon"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,13 +15,14 @@ func (api *CardsApiV1) AllUserCards() gin.HandlerFunc {
 		userID, err := util.CtxUserID(c)
 		if err != nil {
 			c.Error(err)
-			c.Status(http.StatusUnauthorized)
+			apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
 			return
 		}
 
 		var filters cards.QueryManyCardsRequest
 		if err := c.BindQuery(&filters); err != nil {
 			c.Error(err)
+			apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
 			return
 		}
 
@@ -29,10 +31,10 @@ func (api *CardsApiV1) AllUserCards() gin.HandlerFunc {
 		)
 		if err != nil {
 			c.Error(fmt.Errorf("query user cards error: %w", err))
-			c.Status(http.StatusInternalServerError)
+			apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
 			return
 		}
 
-		c.JSON(http.StatusOK, cards)
+		apicommon.Respond(c, apicommon.Response(http.StatusOK, cards))
 	}
 }

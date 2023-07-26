@@ -45,6 +45,16 @@ tags:
 #                   type: object
 components:
   schemas:
+    common.Response:
+      type: object
+      required:
+        - code
+        - data
+      properties:
+        code:
+          type: integer
+        data:
+          type: object
     common.ErrorResponse:
       type: object
       properties:
@@ -446,6 +456,8 @@ components:
           type: string
         prefix:
           type: string
+        token:
+          type: string
         claims:
           $ref: "#/components/schemas/token.Claims"
         status:
@@ -470,20 +482,27 @@ components:
         used_at:
           type: string
     token.GetAllResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        claims:
-          $ref: "#/components/schemas/token.Claims"
-        prefix:
-          type: string
-        status:
-          $ref: "#/components/schemas/token.Status"
-        used_at:
-          type: string
+      type: array
+      items:
+        type: object
+        required:
+          - id
+          - name
+          - prefix
+          - status
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          claims:
+            $ref: "#/components/schemas/token.Claims"
+          prefix:
+            type: string
+          status:
+            $ref: "#/components/schemas/token.Status"
+          used_at:
+            type: string
   securitySchemes:
     ApiKey:
       type: apiKey
@@ -540,7 +559,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/subject.GetAllResponse"
+                  allOf:
+                    - $ref: "#/components/schemas/common.Response"
+                    - type: object
+                      properties:
+                        data:
+                          $ref: "#/components/schemas/subject.GetAllResponse"
     post:
       tags:
         - subject
@@ -559,7 +583,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/subject.CreateResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/subject.CreateResponse"
         400:
           description: Bad Request
           content:
@@ -607,7 +636,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/subject.GetResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/subject.GetResponse"
     delete:
       tags:
         - subject
@@ -654,7 +688,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/subject.UpdateResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/subject.UpdateResponse"
       security:
         - ApiKey: ["subject:update"]
         - Login: []
@@ -693,9 +732,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/deck.GetAllResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/deck.GetAllResponse"
     post:
       tags:
         - deck
@@ -714,7 +756,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/deck.CreateResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/deck.CreateResponse"
         400:
           description: Bad Request
           content:
@@ -762,7 +809,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/deck.GetResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/deck.GetResponse"
         400:
           description: Bad Request
           content:
@@ -817,7 +869,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/token.GetAllResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/token.GetAllResponse"
         401:
           description: Unauthorized
           content:
@@ -852,7 +909,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/token.CreateResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/token.CreateResponse"
         400:
           description: Bad Request
           content:
@@ -890,12 +952,12 @@ paths:
           schema:
             type: string
       responses:
-        204:
-          description: No Content
+        200:
+          description: Ok
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/common.ErrorResponse"
+                $ref: "#/components/schemas/common.Response"
         400:
           description: Bad Request
           content:

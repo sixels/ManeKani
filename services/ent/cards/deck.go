@@ -2,6 +2,7 @@ package cards
 
 import (
 	"context"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/core/domain/cards"
@@ -19,7 +20,7 @@ import (
 var _ ports.DecksManager = (*CardsRepository)(nil)
 
 func (repo *CardsRepository) CreateDeck(ctx context.Context, userID string, req cards.CreateDeckRequest) (*cards.Deck, error) {
-	deck, err := repo.client.DeckClient().Create().
+	createdDeck, err := repo.client.DeckClient().Create().
 		SetName(req.Name).
 		SetDescription(req.Description).
 		SetOwnerID(userID).
@@ -27,15 +28,15 @@ func (repo *CardsRepository) CreateDeck(ctx context.Context, userID string, req 
 	if err != nil {
 		return nil, err
 	}
-	deck.Edges.Owner = &ent.User{
+	createdDeck.Edges.Owner = &ent.User{
 		ID: userID,
 	}
 
-	return util.Ptr(DeckFromEnt(deck)), nil
+	return util.Ptr(DeckFromEnt(createdDeck)), nil
 }
 
 func (repo *CardsRepository) QueryDeck(ctx context.Context, deckID uuid.UUID) (*cards.Deck, error) {
-	deck, err := repo.client.DeckClient().Query().
+	queriedDeck, err := repo.client.DeckClient().Query().
 		WithOwner(func(uq *ent.UserQuery) {
 			uq.Select(user.FieldID)
 		}).
@@ -46,7 +47,7 @@ func (repo *CardsRepository) QueryDeck(ctx context.Context, deckID uuid.UUID) (*
 	if err != nil {
 		return nil, err
 	}
-	return util.Ptr(DeckFromEnt(deck)), nil
+	return util.Ptr(DeckFromEnt(queriedDeck)), nil
 }
 
 func (repo *CardsRepository) AllDecks(ctx context.Context, req cards.QueryManyDecksRequest) ([]cards.DeckPartial, error) {
@@ -86,6 +87,7 @@ func (repo *CardsRepository) AllDecks(ctx context.Context, req cards.QueryManyDe
 }
 
 func (repo *CardsRepository) DeckOwner(ctx context.Context, deckID uuid.UUID) (string, error) {
+	log.Printf("checking deck %s owner\n", deckID.String())
 	return repo.client.DeckClient().Query().
 		Where(deck.IDEQ(deckID)).
 		QueryOwner().

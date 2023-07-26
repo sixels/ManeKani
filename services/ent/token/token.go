@@ -30,27 +30,34 @@ func (repo *TokenRepository) GetToken(ctx context.Context, tokenHash string) (to
 
 // QueryTokens returns the list of token prefixes owned by the given user.
 func (repo *TokenRepository) QueryTokens(ctx context.Context, userID string) ([]tokens.UserTokenPartial, error) {
-	tokens, err := repo.client.ApiTokenClient().Query().
+	apiTokens, err := repo.client.ApiTokenClient().Query().
 		Where(apitoken.HasUserWith(user.IDEQ(userID))).
 		All(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return util.MapArray(tokens, UserTokenPartialFromEnt), nil
+	return util.MapArray(apiTokens, UserTokenPartialFromEnt), nil
 }
 
 // CreateToken creates a new token for the given user.
-func (repo *TokenRepository) CreateToken(ctx context.Context, userID string, req tokens.CreateTokenRequest) error {
-	err := repo.client.ApiTokenClient().Create().
+func (repo *TokenRepository) CreateToken(ctx context.Context, userID string, req tokens.CreateTokenRequest) (tokens.UserToken, error) {
+	log.Printf("----\n%s\n%##v\n----", userID, req)
+	token, err := repo.client.ApiTokenClient().Create().
 		SetName(req.Name).
 		SetToken(req.TokenHash).
 		SetPrefix(req.Prefix).
 		SetClaims(req.Claims).
 		SetStatus(req.Status).
 		SetUserID(userID).
-		Exec(ctx)
-	return err
+		Save(ctx)
+	if err != nil {
+		return tokens.UserToken{}, err
+	}
+
+	token.Edges.User = &ent.User{ID: userID}
+
+	return UserTokenFromEnt(token), nil
 }
 
 // DeleteToken deletes the given user token by prefix.

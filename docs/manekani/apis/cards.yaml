@@ -43,7 +43,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/subject.GetAllResponse"
+                  allOf:
+                    - $ref: "#/components/schemas/common.Response"
+                    - type: object
+                      properties:
+                        data:
+                          $ref: "#/components/schemas/subject.GetAllResponse"
     post:
       tags:
         - subject
@@ -62,7 +67,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/subject.CreateResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/subject.CreateResponse"
         400:
           description: Bad Request
           content:
@@ -88,8 +98,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.ErrorResponse"
       security:
-        - ApiKey: ["subject:create"]
-        - Login: []
+        - ApiKey: [ "subject:create" ]
+        - Login: [ ]
   /api/v1/subjects/{id}:
     get:
       tags:
@@ -110,7 +120,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/subject.GetResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/subject.GetResponse"
     delete:
       tags:
         - subject
@@ -127,10 +142,10 @@ paths:
       responses:
         200:
           description: OK
-          content: {}
+          content: { }
       security:
-        - ApiKey: ["subject:delete"]
-        - Login: []
+        - ApiKey: [ "subject:delete" ]
+        - Login: [ ]
     patch:
       tags:
         - subject
@@ -157,10 +172,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/subject.UpdateResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/subject.UpdateResponse"
       security:
-        - ApiKey: ["subject:update"]
-        - Login: []
+        - ApiKey: [ "subject:update" ]
+        - Login: [ ]
       x-codegen-request-body-name: subject
 
   /api/v1/decks:
@@ -197,9 +217,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/deck.GetAllResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/deck.GetAllResponse"
     post:
       tags:
         - deck
@@ -218,7 +241,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/deck.CreateResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/deck.CreateResponse"
         400:
           description: Bad Request
           content:
@@ -244,8 +272,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/common.ErrorResponse"
       security:
-        - ApiKey: ["deck:create"]
-        - Login: []
+        - ApiKey: [ "deck:create" ]
+        - Login: [ ]
   /api/v1/decks/{id}:
     get:
       tags:
@@ -266,7 +294,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/deck.GetResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/deck.GetResponse"
         400:
           description: Bad Request
           content:

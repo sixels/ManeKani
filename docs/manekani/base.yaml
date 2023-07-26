@@ -47,6 +47,17 @@ tags:
 
 components:
   schemas:
+    common.Response:
+      type: object
+      required:
+        - code
+        - data
+      properties:
+        code:
+          type: integer
+        data:
+          type: object
+
     common.ErrorResponse:
       type: object
       properties:

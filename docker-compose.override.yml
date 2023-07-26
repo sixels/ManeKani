@@ -58,8 +58,8 @@ services:
       - TOKEN_ENCRYPTION_KEY=cE0SC2E2A4qNoeCdlWo8vA218Uzqbnw4
 
       - S3_URL=minio:9000
-      - AWS_ACCESS_KEY_ID=nVQ3bEvgakztwLHc
-      - AWS_SECRET_ACCESS_KEY=BnjCq4zvkk6vwlLYeiq0uNfMTyIFdKQn
+      - AWS_ACCESS_KEY_ID=tIMp6AKWumjCiw2LoK9r
+      - AWS_SECRET_ACCESS_KEY=nvHwZgCv0ZUTT5zBUjdFiOIVbJFnG99AtbpoWyFi
 
       - DB_URI=postgres://manekani:secret@postgres-manekani/manekani
 

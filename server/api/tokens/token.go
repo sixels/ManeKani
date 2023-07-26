@@ -25,14 +25,14 @@ func (api *TokenApi) GetTokens(c *gin.Context) {
 		return
 	}
 
-	tokens, err := api.tokens.QueryTokens(c.Request.Context(), userID)
+	queryTokens, err := api.tokens.QueryTokens(c.Request.Context(), userID)
 	if err != nil {
 		c.Error(err)
 		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
 		return
 	}
 
-	apicommon.Respond(c, apicommon.Response(http.StatusOK, tokens))
+	apicommon.Respond(c, apicommon.Response(http.StatusOK, queryTokens))
 }
 
 func (api *TokenApi) CreateToken(c *gin.Context) {
@@ -83,7 +83,7 @@ func (api *TokenApi) DeleteToken(c *gin.Context, id string) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-	c.Status(http.StatusNoContent)
+	apicommon.Respond(c, apicommon.Response[any](http.StatusOK, nil))
 }
 
 func (api *TokenApi) ValidateToken(c *gin.Context, params ValidateTokenParams) {
