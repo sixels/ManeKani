@@ -1,0 +1,55 @@
+- id: 'manekani:docs'
+  upstream:
+    preserve_host: true
+    url: 'http://ory-proxy:4001'
+  match:
+    url: 'http://127.0.0.1:8080/docs/<.*>'
+    methods:
+      - GET
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  errors:
+    - handler: json
+  mutators:
+    - handler: noop
+
+- id: 'manekani:protected'
+  upstream:
+    preserve_host: true
+    url: 'http://ory-proxy:4001'
+  match:
+    # prodchange : the proxy address with api path
+    url: 'http://127.0.0.1:8080/v1/<.*>'
+    methods:
+      - GET
+      - POST
+      - DELETE
+      - PUT
+      - PATCH
+  authenticators:
+    - handler: bearer_token
+      config:
+        preserve_path: true
+        preserve_query: true
+        forward_http_headers:
+          - Authorization
+          - Cookie
+    - handler: cookie_session
+    - handler: anonymous
+  mutators:
+    - handler: header
+      config:
+        headers:
+          X-Supplicant: '{{ print .Subject }}'
+  authorizer:
+    handler: allow
+  errors:
+    - handler: redirect
+      config:
+        # prodchange : the login page path
+        to: http://127.0.0.1:4455/login
+        when:
+          - error:
+              - unauthorized

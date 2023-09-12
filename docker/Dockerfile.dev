@@ -1,0 +1,18 @@
+FROM node:18-alpine as base
+
+WORKDIR /usr/src/manekani
+
+RUN npm install -g @pnpm/exe
+
+COPY ./package.json ./pnpm-lock.yaml ./
+
+
+FROM base as development
+RUN npm install
+EXPOSE 3000
+CMD ["npm", "run", "start:dev"]
+
+FROM base as development-migrate
+RUN npm install
+ENTRYPOINT ["npm", "run", "migrate:dev"]
+
