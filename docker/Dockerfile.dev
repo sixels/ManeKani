@@ -2,17 +2,22 @@ FROM node:18-alpine as base
 
 WORKDIR /usr/src/manekani
 
-RUN npm install -g @pnpm/exe
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
 
-COPY ./package.json ./pnpm-lock.yaml ./
-
+COPY ./package.json ./pnpm-lock.yaml ./pnpm-workspace.yaml ./
 
 FROM base as development
-RUN npm install
+RUN pnpm install
 EXPOSE 3000
-CMD ["npm", "run", "start:dev"]
+CMD ["pnpm", "--filter", "manekani-api", "run", "start:dev"]
+
+FROM base as development-ui
+RUN pnpm install
+EXPOSE 11011
+CMD ["pnpm", "--filter", "manekani-ui", "run", "start:dev"]
 
 FROM base as development-migrate
-RUN npm install
-ENTRYPOINT ["npm", "run", "migrate:dev"]
+RUN pnpm install
+ENTRYPOINT ["pnpm", "--filter", "manekani-api", "run", "migrate:dev"]
 

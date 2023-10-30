@@ -1,0 +1,141 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Subject {
+  id: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  category: String!
+  level: Int!
+  name: String!
+  slug: String!
+  priority: Int!
+  value: String
+  valueImage: String
+  studyData: [StudyData!]!
+  resources: [Resource!]!
+  dependencies: [String!]!
+  dependents: [String!]!
+  similar: [String!]!
+  deckId: String!
+  ownerId: String!
+  deck: Deck!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type StudyDataItem {
+  value: String!
+  isPrimary: Boolean!
+  isValidAnswer: Boolean!
+  isHidden: Boolean!
+  category: String
+  resourceId: String
+}
+
+type StudyData {
+  type: String!
+  mnemonic: String
+  items: [StudyDataItem!]!
+}
+
+type Resource {
+  name: String!
+  metadata: JSONObject!
+}
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
+
+type Deck {
+  id: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  name: String!
+  description: String!
+  subjectIds: [String!]!
+  ownerId: String!
+  subjects: [Subject!]!
+}
+
+input StudyDataItemInput {
+  value: String!
+  isPrimary: Boolean!
+  isValidAnswer: Boolean!
+  isHidden: Boolean!
+  category: String
+  resourceId: String
+}
+
+input StudyDataInput {
+  type: String!
+  mnemonic: String
+  items: [StudyDataItemInput!]! = []
+}
+
+input ResourceInput {
+  name: String!
+  metadata: JSONObject!
+}
+
+type Query {
+  subject(id: String!): Subject!
+  subjects(page: Int, ids: [String!], categories: [String!], levels: [Int!], slugs: [String!], decks: [String!], owners: [String!]): [Subject!]!
+  deck(id: String!): Deck!
+  decks(page: Int, ids: [String!], owners: [String!], content: String): [Deck!]!
+}
+
+type Mutation {
+  createSubject(deckId: String!, data: CreateSubjectInput!): Subject!
+  updateSubject(subjectId: String!, data: UpdateSubjectInput!): Subject!
+  deleteSubject(subjectId: String!): String!
+  createDeck(data: CreateDeckInput!): Deck!
+  updateDeck(id: String!, data: UpdateDeckInput!): Deck!
+  deleteDeck(id: String!): String!
+}
+
+input CreateSubjectInput {
+  category: String!
+  level: Int!
+  name: String!
+  slug: String!
+  priority: Int!
+  value: String
+  valueImage: String
+  studyData: [StudyDataInput!]! = []
+  resources: [ResourceInput!]! = []
+  dependencies: [String!]! = []
+  dependents: [String!]! = []
+  similar: [String!]! = []
+}
+
+input UpdateSubjectInput {
+  category: String
+  level: Int
+  name: String
+  slug: String
+  priority: Int
+  value: String
+  valueImage: String
+  studyData: [StudyDataInput!] = []
+  resources: [ResourceInput!] = []
+  dependencies: [String!] = []
+  dependents: [String!] = []
+  similar: [String!] = []
+}
+
+input CreateDeckInput {
+  name: String!
+  description: String!
+}
+
+input UpdateDeckInput {
+  name: String
+  description: String
+}

@@ -1,0 +1,24 @@
+{
+  "name": "manekani-infra-db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "",
+  "main": "./dist/main.js",
+  "types": "./dist/main.d.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "5.1.1",
+    "manekani-core": "*"
+  },
+  "devDependencies": {
+    "prisma": "^5.1.1"
+  }
+}

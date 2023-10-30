@@ -1,0 +1,195 @@
+version: v0.11.0
+
+dsn: memory
+
+serve:
+  public:
+    # prodchange : the public kratos api path
+    base_url: 'http://127.0.0.1:4433/'
+    cors:
+      enabled: true
+      allowed_origins:
+        - 'http://127.0.0.1:11011'
+      allowed_methods:
+        - POST
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+      allowed_headers:
+        - Authorization
+        - Cookie
+        - Content-Type
+      exposed_headers:
+        - Content-Type
+        - Set-Cookie
+  admin:
+    base_url: http://kratos:4434/
+
+selfservice:
+  # prodchange : the default redirect after authenticating
+  default_browser_return_url: 'http://127.0.0.1:3000'
+  # prodchange(list) : the allowed redirects after authentication (you may want to allow kratos selfservice ui and the api client, for instance)
+  allowed_return_urls:
+    - http://127.0.0.1:3000
+    - http://127.0.0.1:11011
+
+  methods:
+    password:
+      enabled: true
+    totp:
+      config:
+        issuer: 'ory auth test'
+      enabled: true
+    lookup_secret:
+      enabled: true
+    link:
+      enabled: true
+    code:
+      enabled: true
+    oidc:
+      enabled: true
+      config:
+        providers:
+          - id: google
+            provider: google
+            # prodchange : the google oidc client id
+            client_id: 'SECRET'
+            # prodchange : the google oidc client secret
+            client_secret: 'TOP_SECRET'
+            mapper_url: 'file:///etc/config/kratos/oidc/google.jsonnet'
+            scope:
+              - email
+              - profile
+            requested_claims:
+              id_token:
+                email:
+                  essential: true
+                email_verified:
+                  essential: true
+                given_name:
+                  essential: true
+                family_name: null
+                hd: null
+  flows:
+    error:
+      # prodchange : the authentication error page path
+      ui_url: http://127.0.0.1:3000/error
+
+    settings:
+      # prodchange : the user settings page path
+      ui_url: http://127.0.0.1:3000/settings
+      privileged_session_max_age: 15m
+      required_aal: highest_available
+
+    recovery:
+      enabled: true
+      # prodchange : the recovery page path
+      ui_url: http://127.0.0.1:3000/recovery
+      use: code
+
+    verification:
+      enabled: true
+      # prodchange : the auth verification page path
+      ui_url: http://127.0.0.1:3000/verification
+      use: code
+      after:
+        # prodchange : the default page to redirect to after account verification
+        default_browser_return_url: http://127.0.0.1:3000/
+
+    logout:
+      after:
+        # prodchange : the default page to redirect to after logout
+        default_browser_return_url: http://127.0.0.1:4001/
+
+    login:
+      # prodchange : the login page path
+      ui_url: http://127.0.0.1:3000/login
+      lifespan: 10m
+      after:
+        password:
+          hooks:
+            - hook: require_verified_address
+            # - hook: web_hook
+            #   config:
+            #     url: http://manekani:4001/hook/user/register
+            #     method: POST
+            #     body: file:///etc/config/kratos/hook/login.default.post.jsonnet
+            #     response:
+            #       ignore: false
+      # oidc:
+      #   hooks:
+      #     - hook: session
+      #     - hook: web_hook
+      #       config:
+      #         url: http://user-hooks:10010/hook/user/register
+      #         method: POST
+      #         body: file:///etc/config/kratos/hook/login.default.post.jsonnet
+      #         response:
+      #           ignore: false
+
+    registration:
+      lifespan: 10m
+      # prodchange : the sign up page path
+      ui_url: http://127.0.0.1:3000/registration
+
+      after:
+        password:
+          hooks:
+            - hook: web_hook
+              config:
+                url: http://manekani:3000/hooks/auth/user-register
+                method: POST
+                body: file:///etc/config/kratos/hook/registration.default.post.jsonnet
+                response:
+                  ignore: false
+                  parse: true
+            - hook: session
+        oidc:
+          hooks:
+            - hook: session
+            # - hook: web_hook
+            #   config:
+            #     url: http://user-hooks:10010/hook/user/register
+            #     method: POST
+            #     body: file:///etc/config/kratos/hook/registration.default.post.jsonnet
+            #     response:
+            #       ignore: false
+
+log:
+  level: debug
+  format: text
+  leak_sensitive_values: true
+
+secrets:
+  # prodchange : the cookie key secret rotation
+  cookie:
+    - PLEASE-CHANGE-ME-I-AM-VERY-INSECURE
+  # prodchange : the cryptograph cipher secret
+  cipher:
+    - 32-LONG-SECRET-NOT-SECURE-AT-ALL
+
+ciphers:
+  # prodchange(options) : the cryptograph cipher algorithm [values: xchacha20-poly1305]
+  algorithm: xchacha20-poly1305
+
+hashers:
+  # prodchange(options) : the password hash algorithm [values: bcrypt]
+  algorithm: bcrypt
+  # TODO (PROD): configure hash options by hand
+  bcrypt:
+    cost: 8
+
+identity:
+  default_schema_id: default
+  schemas:
+    - id: default
+      url: file:///etc/config/kratos/identity.schema.json
+
+courier:
+  smtp:
+    # prodchange : the smtp connection uri
+    connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true
+
+oauth2_provider:
+  url: http://hydra:4445

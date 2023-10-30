@@ -1,0 +1,14 @@
+version: '3.7'
+
+services:
+  postgres-manekani:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    volumes:
+      - manekani-postgres:/var/lib/postgresql/data
+    networks:
+      - core
+
+
+volumes:
+  manekani-postgres:

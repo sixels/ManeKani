@@ -1,15 +1,5 @@
 version: "3.7"
 
-x-kratos-common: &kratos-common
-  image: oryd/kratos:v0.11.0
-  environment:
-    - DSN=postgres://kratos:secret@postgres-kratos:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
-    - LOG_LEVEL=trace
-  volumes:
-    - type: bind
-      source: ./auth-service/kratos
-      target: /etc/config/kratos
-
 x-manekani-common: &manekani-common
   depends_on:
       - postgres-manekani
@@ -22,65 +12,6 @@ x-manekani-common: &manekani-common
       target: /usr/src/manekani
 
 services:
-  postgres-kratos:
-    image: postgres
-    restart: unless-stopped
-    networks:
-      - ory
-    volumes:
-      - kratos-postgres:/var/lib/postgresql/data
-
-  kratos-migrate:
-    <<: *kratos-common
-    depends_on:
-      - postgres-kratos
-    restart: on-failure
-    networks:
-      - ory
-
-  kratos:
-    <<: *kratos-common
-    ports:
-      - "4433:4433"
-    depends_on:
-      - kratos-migrate
-    restart: unless-stopped
-    networks:
-      - ory
-
-  kratos-selfservice-ui-node:
-    image: oryd/kratos-selfservice-ui-node:v0.11.0
-    restart: on-failure
-    environment:
-      - KRATOS_PUBLIC_URL=http://kratos:4433/
-    networks:
-      - ory
-
-  mailslurper:
-    image: oryd/mailslurper:latest-smtps
-    networks:
-      - ory
-
-  oathkeeper:
-    image: oryd/oathkeeper:v0.40
-    depends_on:
-      - kratos
-    restart: on-failure
-    volumes:
-      - type: bind
-        source: ./auth-service/oathkeeper
-        target: /etc/config/oathkeeper
-    networks:
-      - ory
-
-  postgres-manekani:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    volumes:
-      - manekani-postgres:/var/lib/postgresql/data
-    networks:
-      - core
-
   minio:
     image: quay.io/minio/minio:latest
     restart: unless-stopped
@@ -98,7 +29,7 @@ services:
     command: proxy --no-jwt --port 4001 http://manekani:3000/
     networks:
       - core
-      - ory
+      - auth_infra
 
   manekani-migrate:
     <<: *manekani-common
@@ -107,28 +38,41 @@ services:
       - core
 
   manekani:
-    restart: unless-stopped
+    restart: on-failure
     depends_on:
       - minio
       - manekani-migrate
     build:
       context: ./
-      dockerfile: ./docker/Dockerfile.dev
     volumes:
       - type: bind
         source: ./
         target: /usr/src/manekani
     networks:
       - core
-      - ory
+      - auth_infra
+      - other
+
+  manekani-ui:
+    restart: on-failure
+    depends_on:
+      - minio
+      - manekani-migrate
+    build:
+      context: ./
+    volumes:
+      - type: bind
+        source: ./
+        target: /usr/src/manekani
+    networks:
+      - core
+      - auth_infra
       - other
 
 networks:
   core:
-  ory:
+  auth_infra:
   other:
 
 volumes:
-  kratos-postgres:
-  manekani-postgres:
   minio-data:

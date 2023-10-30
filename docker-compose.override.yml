@@ -11,17 +11,36 @@ services:
       - POSTGRES_USER=kratos
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=kratos
+  postgres-hydra:
+    ports:
+      - "5431:5432"
+    environment:
+      - POSTGRES_USER=hydra
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=hydra
+  hydra-migrate:
+    command: migrate -c /etc/config/hydra/hydra.dev.yml sql -e --yes
+  hydra:
+    command: serve all -c /etc/config/hydra/hydra.dev.yml --dev
+    environment:
+      - LOG_LEAK_SENSITIVE_VALUES=true
+      - URLS_SELF_ISSUER=http://127.0.0.1:4444
+      - URLS_SELF_PUBLIC=http://127.0.0.1:4444
+      - URLS_CONSENT=http://127.0.0.1:3000/consent
+      - URLS_LOGIN=http://127.0.0.1:3000/login
+      - URLS_LOGOUT=http://127.0.0.1:3000/logout
+      - SECRETS_SYSTEM=youReallyNeedToChangeThis
+      - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=public,pairwise
+      - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=youReallyNeedToChangeThis
   kratos-migrate:
-    command: -c /etc/config/kratos/kratos.dev.yml migrate sql -e --yes
+    command: migrate -c /etc/config/kratos/kratos.dev.yml sql -e --yes
   kratos:
     command: serve -c /etc/config/kratos/kratos.dev.yml --dev --watch-courier
-    ports:
-      - "4433:4433"
-      - "4434:4434"
+
 
   kratos-selfservice-ui-node:
     ports:
-      - "4455:3000"
+      - "3000:3000"
     environment:
       - KRATOS_BROWSER_URL=http://127.0.0.1:4433/
 
@@ -62,20 +81,29 @@ services:
   manekani-migrate:
     user: 1000:1000
     env_file:
-      - .env.development
+      - ./api/.env.development
     build:
       dockerfile: ./docker/Dockerfile.dev
       target: development-migrate
     command: "-- --name auto --create-only"
+
   manekani:
     user: 1000:1000
     ports:
       - "10011:3000"
     env_file:
-      - .env.development
+      - ./api/.env.development
     build:
       dockerfile: ./docker/Dockerfile.dev
       target: development
+
+  manekani-ui:
+    user: 1000:1000
+    ports:
+      - "11011:11011"
+    build:
+      dockerfile: ./docker/Dockerfile.dev
+      target: development-ui
 
     # environment:
       # - TOKEN_ENCRYPTION_KEY=cE0SC2E2A4qNoeCdlWo8vA218Uzqbnw4
