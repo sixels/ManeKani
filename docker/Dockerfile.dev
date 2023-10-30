@@ -1,0 +1,23 @@
+FROM node:18-alpine as base
+
+WORKDIR /usr/src/manekani
+
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
+
+COPY ./package.json ./pnpm-lock.yaml ./pnpm-workspace.yaml ./
+
+FROM base as development
+RUN pnpm install
+EXPOSE 3000
+CMD ["pnpm", "--filter", "manekani-api", "run", "start:dev"]
+
+FROM base as development-ui
+RUN pnpm install
+EXPOSE 11011
+CMD ["pnpm", "--filter", "manekani-ui", "run", "start:dev"]
+
+FROM base as development-migrate
+RUN pnpm install
+ENTRYPOINT ["pnpm", "--filter", "manekani-api", "run", "migrate:dev"]
+
