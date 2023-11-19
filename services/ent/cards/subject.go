@@ -62,7 +62,7 @@ func (repo *CardsRepository) CreateSubject(ctx context.Context, ownerID string, 
 		SetLevel(req.Level).
 		SetName(req.Name).
 		SetNillableValue(req.Value).
-		SetValueImage(*req.ValueImage).
+		SetNillableValueImage(req.ValueImage).
 		SetSlug(req.Slug).
 		SetPriority(req.Priority).
 		SetStudyData(req.StudyData).

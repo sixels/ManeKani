@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 	"github.com/sixels/manekani/ent/schema/common"
 )
@@ -43,5 +44,14 @@ func (Deck) Edges() []ent.Edge {
 		edge.To("subjects", Subject.Type),
 
 		edge.To("users_progress", DeckProgress.Type),
+	}
+}
+
+func (Deck) Indexes() []ent.Index {
+	return []ent.Index{
+		// user cannot have more than one deck with the same name
+		index.Fields("name").
+			Edges("owner").
+			Unique(),
 	}
 }

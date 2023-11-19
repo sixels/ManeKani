@@ -143,15 +143,3 @@ type (
 		Resource      *string `json:"resource,omitempty"`
 	}
 )
-
-type (
-	VocabularySentence struct {
-		Sentence string `json:"sentence"`
-		Meaning  string `json:"meaning"`
-	}
-
-	VocabularyPattern struct {
-		Name      string               `json:"name"`
-		Sentences []VocabularySentence `json:"sentences"`
-	}
-)

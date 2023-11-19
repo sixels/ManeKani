@@ -18,10 +18,12 @@ api_interfaces: api_docs
     shopt -s extglob
     for f in docs/manekani/apis/*.!(yaml); do
         PKGNAME=`basename -s .openapi.yaml $f`
-        oapi-codegen -package "$PKGNAME" \
-            -generate gin,types,spec \
+        oapi-codegen -package ${PKGNAME} \
+            -generate server,types,spec \
             "$f" > ./server/api/"$PKGNAME"/api.gen.go
     done
+    oapi-codegen -package api \
+        -generate spec ./docs/manekani/openapi.yaml > ./server/api/api.gen.go
 
 
 start:

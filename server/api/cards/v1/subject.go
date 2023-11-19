@@ -3,96 +3,115 @@ package cards
 import (
 	"context"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"github.com/sixels/manekani/server/api/apicommon"
-	"log"
 	"net/http"
 
 	"github.com/deepmap/oapi-codegen/pkg/types"
-	domain_cards "github.com/sixels/manekani/core/domain/cards"
+	"github.com/google/uuid"
+	"github.com/labstack/gommon/log"
+	domain "github.com/sixels/manekani/core/domain/cards"
 	"github.com/sixels/manekani/core/domain/errors"
 	"github.com/sixels/manekani/core/domain/files"
 	"github.com/sixels/manekani/core/ports"
 	"github.com/sixels/manekani/server/api/cards/util"
-
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 // GetSubjects gets all subjects
-func (api *CardsApiV1) GetSubjects(c *gin.Context, params GetSubjectsParams) {
-	filters := new(domain_cards.QueryManySubjectsRequest)
-	if err := c.BindQuery(filters); err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
-		return
+func (a *CardsApiV1) GetSubjects(c echo.Context, params GetSubjectsParams) error {
+	filters := new(domain.QueryManySubjectsRequest)
+	if err := c.Bind(filters); err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusBadRequest, err)
 	}
 
-	ctx := c.Request.Context()
-	subjects, err := api.Cards.AllSubjects(ctx, *filters)
+	ctx := c.Request().Context()
+	subjects, err := a.Cards.AllSubjects(ctx, *filters)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
 
-	apicommon.Respond(c, apicommon.Response(http.StatusOK, subjects))
+	return apicommon.Respond(c, apicommon.Response(http.StatusOK, subjects))
 }
 
 // CreateSubject creates a subject
-func (api *CardsApiV1) CreateSubject(c *gin.Context) {
-	log.Println("creating subject")
-	ctx := c.Request.Context()
+func (a *CardsApiV1) CreateSubject(c echo.Context) error {
+	log.Info("creating subject")
+	ctx := c.Request().Context()
 
 	userID, err := util.CtxUserID(c)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusUnauthorized, err)
 	}
+
+	//form, _ := c.FormParams()
+	//dec := formam.NewDecoder(&formam.DecoderOptions{TagName: "form"})
+	//var req CreateSubjectMultipartRequestBody
+	//if err := dec.Decode(form, &req); err != nil {
+	//	log.Error("create-subject bind error: %w", err)
+	//	return apicommon.Error(http.StatusBadRequest, err)
+	//}
+	//log.Debugf("%#v", req)
+
+	//var req CreateSubjectMultipartRequestBody
+	//if err := render.DecodeForm(c.Request().Body, &req); err != nil {
+	//	log.Error("create-subject bind error: %w", err)
+	//	return apicommon.Error(http.StatusBadRequest, err)
+	//}
+	//log.Debugf("%#v", req)
+
+	//dec := form.NewDecoder(c.Request().Body)
+	//params, err := c.FormParams()
+	//var req CreateSubjectMultipartRequestBody
+	//if err := dec.DecodeValues(&req, params); err != nil {
+	//	log.Error("create-subject bind error: %w", err)
+	//	return apicommon.Error(http.StatusBadRequest, err)
+	//}
+	//log.Debugf("%#v", req)
 
 	var req CreateSubjectMultipartRequestBody
-	if err := c.ShouldBind(&req); err != nil {
-		c.Error(fmt.Errorf("create-subject bind error: %w", err))
-		apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
-		return
+	if err := c.Bind(&req); err != nil {
+		log.Error("create-subject bind error: %w", err)
+		return apicommon.Error(http.StatusBadRequest, err)
 	}
+	log.Debugf("%#v", req)
 
 	// upload value image
-	subjectImage, err := uploadFile(ctx, api.Cards.FilesRepo, uploadFileReq{
+	subjectImage, err := uploadFile(ctx, a.Cards.FilesRepo, uploadFileReq{
 		File: req.ValueImage,
 		Kind: "value",
 		Name: req.Slug,
 	})
 	if err != nil {
-		c.Error(fmt.Errorf("could not upload the subject image: %w", err))
-		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-		return
+		log.Error("could not upload the subject image: %w", err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
 
 	// upload resources
 	var (
-		subjectResources = make([]domain_cards.Resource, 0)
+		subjectResources = make([]domain.Resource, 0)
 	)
-	if req.Resource != nil {
-		for i, resource := range *req.Resource {
-			resourcePath, err := uploadFile(ctx, api.Cards.FilesRepo, uploadFileReq{
+	if req.Resources != nil {
+		for i, resource := range *req.Resources {
+			resourcePath, err := uploadFile(ctx, a.Cards.FilesRepo, uploadFileReq{
 				File: &resource,
 				Kind: fmt.Sprintf("resource-%d", i),
 				Name: req.Slug,
 			})
 			if err != nil {
-				c.Error(fmt.Errorf("could not upload the subject resource: %w", err))
-				apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-				return
+				log.Error("could not upload the subject resource: %w", err)
+				return apicommon.Error(http.StatusInternalServerError, err)
 			}
 
 			var metas map[string]string
-			if req.ResourcesMeta != nil && i < len(*req.ResourcesMeta) {
-				metas = (*req.ResourcesMeta)[i]
+			if req.ResourcesMeta != nil && i < len(req.ResourcesMeta.List) {
+				metas = req.ResourcesMeta.List[i]
 			}
 
 			if resourcePath != nil {
-				subjectResources = append(subjectResources, domain_cards.Resource{
+				subjectResources = append(subjectResources, domain.Resource{
 					URL:      *resourcePath,
 					Metadata: metas,
 				})
@@ -100,15 +119,32 @@ func (api *CardsApiV1) CreateSubject(c *gin.Context) {
 		}
 	}
 
-	var studyData []domain_cards.StudyData
+	var studyData []domain.StudyData
 	if req.StudyData != nil {
-		studyData = make([]domain_cards.StudyData, 0)
-		for i, sd := range *req.StudyData {
+		studyData = make([]domain.StudyData, 0)
+		for i, sd := range req.StudyData.List {
 			studyData[i] = domainFromStudyData(sd)
 		}
 	}
 
-	subj := domain_cards.CreateSubjectRequest{
+	var (
+		Dependencies []uuid.UUID
+		Dependents   []uuid.UUID
+		Similars     []uuid.UUID
+	)
+	if req.Dependencies != nil {
+		Dependencies = req.Dependencies.List
+	}
+	if req.Dependents != nil {
+		for _, dep := range *req.Dependents {
+			Dependents = append(Dependents, uuid.MustParse(dep))
+		}
+	}
+	if req.Similar != nil {
+		Similars = req.Similar.List
+	}
+
+	subj := domain.CreateSubjectRequest{
 		Kind:                req.Kind,
 		Level:               req.Level,
 		Name:                req.Name,
@@ -119,97 +155,88 @@ func (api *CardsApiV1) CreateSubject(c *gin.Context) {
 		StudyData:           studyData,
 		Resources:           &subjectResources,
 		AdditionalStudyData: req.AdditionalStudyData,
-		Dependencies:        omitEmpty(req.Dependencies),
-		Dependents:          omitEmpty(req.Dependents),
-		Similars:            omitEmpty(req.Similars),
+		Dependencies:        Dependencies,
+		Dependents:          Dependents,
+		Similars:            Similars,
 		Deck:                req.Deck,
 	}
 	subj.ValueImage = subjectImage
 	subj.Resources = &subjectResources
 
-	created, err := api.Cards.CreateSubject(ctx, userID, subj)
+	created, err := a.Cards.CreateSubject(ctx, userID, subj)
 	if err != nil {
-		c.Error(fmt.Errorf("could not create the subject: %w", err))
-		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-		return
+		log.Errorf("could not create the subject: %w", err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
 
-	log.Printf("subject created by user: %s\n", userID)
-	apicommon.Respond(c, apicommon.Response(http.StatusCreated, created))
+	log.Infof("subject created by user: %s\n", userID)
+	return apicommon.Respond(c, apicommon.Response(http.StatusCreated, created))
 }
 
 // DeleteSubject deletes a subject
-func (api *CardsApiV1) DeleteSubject(c *gin.Context, id string) {
-	ctx := c.Request.Context()
+func (a *CardsApiV1) DeleteSubject(c echo.Context, id string) error {
+	ctx := c.Request().Context()
 
 	userID, err := util.CtxUserID(c)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusUnauthorized, err)
 	}
 
 	subjectID, err := uuid.Parse(id)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found")))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found"))
 	}
 
-	if err := api.Cards.DeleteSubject(ctx, subjectID, userID); err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-		return
+	if err := a.Cards.DeleteSubject(ctx, subjectID, userID); err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
 
-	apicommon.Respond(c, apicommon.Response[any](http.StatusOK, nil))
+	return apicommon.Respond(c, apicommon.Response[any](http.StatusOK, nil))
 }
 
 // GetSubject gets a subject
-func (api *CardsApiV1) GetSubject(c *gin.Context, id string) {
+func (a *CardsApiV1) GetSubject(c echo.Context, id string) error {
 	subjectID, err := uuid.Parse(id)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found")))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found"))
 	}
 
-	queried, err := api.Cards.QuerySubject(c.Request.Context(), subjectID)
+	queried, err := a.Cards.QuerySubject(c.Request().Context(), subjectID)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
 
-	apicommon.Respond(c, apicommon.Response(http.StatusOK, queried))
+	return apicommon.Respond(c, apicommon.Response(http.StatusOK, queried))
 }
 
 // UpdateSubject updates a subject
-func (api *CardsApiV1) UpdateSubject(c *gin.Context, id string) {
-	ctx := c.Request.Context()
+func (a *CardsApiV1) UpdateSubject(c echo.Context, id string) error {
+	ctx := c.Request().Context()
 
 	userID, err := util.CtxUserID(c)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusUnauthorized, err)
 	}
 
 	subjectID, err := uuid.Parse(id)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found")))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusNotFound, errors.NotFound("subject not found"))
 	}
 
 	var subject UpdateSubjectJSONRequestBody
 	if err := c.Bind(&subject); err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusBadRequest, err)
 	}
 
-	subj := domain_cards.UpdateSubjectRequest{
+	subj := domain.UpdateSubjectRequest{
 		Kind:       subject.Kind,
 		Level:      subject.Level,
 		Name:       subject.Name,
@@ -224,28 +251,27 @@ func (api *CardsApiV1) UpdateSubject(c *gin.Context, id string) {
 		Dependents:          subject.Dependents,
 		Similars:            subject.Similars,
 	}
-	updated, err := api.Cards.UpdateSubject(ctx, subjectID, userID, subj)
+	updated, err := a.Cards.UpdateSubject(ctx, subjectID, userID, subj)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
-	apicommon.Respond(c, apicommon.Response(http.StatusOK, updated))
+	return apicommon.Respond(c, apicommon.Response(http.StatusOK, updated))
 }
 
-func domainFromStudyData(sd SubjectStudyData) domain_cards.StudyData {
-	items := make([]domain_cards.StudyItem, len(sd.Items))
+func domainFromStudyData(sd SubjectStudyData) domain.StudyData {
+	items := make([]domain.StudyItem, len(sd.Items))
 	for i, si := range sd.Items {
 		items[i] = domainFromStudyItem(si)
 	}
-	return domain_cards.StudyData{
+	return domain.StudyData{
 		Kind:     sd.Kind,
 		Items:    items,
 		Mnemonic: sd.Mnemonic,
 	}
 }
-func domainFromStudyItem(si SubjectStudyItem) domain_cards.StudyItem {
-	return domain_cards.StudyItem{
+func domainFromStudyItem(si SubjectStudyItem) domain.StudyItem {
+	return domain.StudyItem{
 		Value:         si.Value,
 		IsPrimary:     si.IsPrimary,
 		IsValidAnswer: si.IsValidAnswer,

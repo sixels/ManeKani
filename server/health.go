@@ -1,9 +1,8 @@
 package server
 
 import (
+	"github.com/labstack/echo/v4"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 type HealthService struct {
@@ -13,12 +12,12 @@ func (s *HealthService) ServiceName() string {
 	return "health"
 }
 
-func (s *HealthService) SetupRoutes(router *gin.Engine) {
-	router.GET("/health", healthCheck)
+func (s *HealthService) SetupRoutes(router *echo.Echo) {
+	router.GET("/health", s.healthCheck)
 }
 
-func healthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, map[string]interface{}{
+func (s *HealthService) healthCheck(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data": "server is online",
 	})
 }

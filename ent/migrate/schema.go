@@ -97,6 +97,13 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "deck_name_user_decks",
+				Unique:  true,
+				Columns: []*schema.Column{DecksColumns[3], DecksColumns[5]},
+			},
+		},
 	}
 	// DeckProgressesColumns holds the columns for the "deck_progresses" table.
 	DeckProgressesColumns = []*schema.Column{

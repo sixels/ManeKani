@@ -1,7 +1,7 @@
 package users
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/sixels/manekani/core/ports"
 	"github.com/sixels/manekani/server/api/users/hooks"
 )
@@ -18,9 +18,9 @@ func New(repo ports.UserRepository) *UserApi {
 	return &UserApi{users: repo}
 }
 
-func (api *UserApi) SetupRoutes(router *gin.Engine) {
+func (api *UserApi) SetupRoutes(router *echo.Echo) {
 	hookHandler := router.Group("/hook/user")
 	hookHandler.POST("/register", hooks.RegisterUser(api.users))
 
-	router.GET("/user", api.RequiresUser(), api.GetBasicUserInfo())
+	//router.GET("/user", api.GetBasicUserInfo, api.RequiresUser)
 }

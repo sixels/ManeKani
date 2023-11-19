@@ -1,34 +1,20 @@
 package files
 
 import (
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"net/http"
 	"strings"
-
-	"github.com/gin-gonic/gin"
-	"github.com/sixels/manekani/services/ent/util"
 )
 
-// TODO: swagger comment
-func (api *FilesApi) QueryFile() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		params := util.MapArray(c.Params, func(params gin.Param) string {
-			return params.Value
-		})
-
-		key := strings.Join(params, "/")
-		object, err := api.files.QueryFile(c.Request.Context(), key[1:])
-		if err != nil {
-			c.Error(err)
-			c.Status(http.StatusNotFound)
-			return
-		}
-		defer object.Close()
-
-		// c.Header("Content-Type", object.ContentType)
-		// c.Header("Content-Length", fmt.Sprintf("%d", object.Size))
-		// c.Status(http.StatusOK)
-		// io.Copy(c.Writer, object)
-		c.DataFromReader(
-			http.StatusOK, object.Size, object.ContentType, object, map[string]string{})
+func (api *FilesApi) QueryFile(c echo.Context) error {
+	key := strings.Join(c.ParamValues(), "/")
+	object, err := api.files.QueryFile(c.Request().Context(), key[1:])
+	if err != nil {
+		log.Error(err)
+		return c.NoContent(http.StatusNotFound)
 	}
+
+	defer object.Close()
+	return c.Stream(http.StatusOK, object.ContentType, object)
 }

@@ -1,7 +1,8 @@
 package docs
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type DocsHandler struct {
@@ -14,7 +15,12 @@ func New() *DocsHandler {
 func (api *DocsHandler) ServiceName() string {
 	return "docs"
 }
-func (docs *DocsHandler) SetupRoutes(router *gin.Engine) {
+func (docs *DocsHandler) SetupRoutes(router *echo.Echo) {
 	handler := router.Group("/docs")
-	handler.StaticFS("/", gin.Dir("docs/manekani", true))
+	//dir, err := fs.FS("docs/manekani")
+	//if
+	handler.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:   "docs/manekani",
+		Browse: false,
+	}))
 }

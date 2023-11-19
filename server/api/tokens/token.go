@@ -3,102 +3,86 @@ package tokens
 import (
 	"context"
 	"errors"
-	"log"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	"github.com/sixels/manekani/core/domain/tokens"
 	"github.com/sixels/manekani/server/api/apicommon"
 )
 
-func (api *TokenApi) GetTokens(c *gin.Context) {
-	userID := c.GetString("userID")
-	if userID == "" {
-		apicommon.Respond(
-			c,
-			apicommon.Error(
-				http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)),
-			),
+func (api *TokenApi) GetTokens(c echo.Context) error {
+	userID, ok := c.Get("userID").(string)
+	if !ok || userID == "" {
+		return apicommon.Error(
+			http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)),
 		)
-		return
 	}
 
-	queryTokens, err := api.tokens.QueryTokens(c.Request.Context(), userID)
+	queryTokens, err := api.tokens.QueryTokens(c.Request().Context(), userID)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
 
-	apicommon.Respond(c, apicommon.Response(http.StatusOK, queryTokens))
+	return apicommon.Respond(c, apicommon.Response(http.StatusOK, queryTokens))
 }
 
-func (api *TokenApi) CreateToken(c *gin.Context) {
-	userID := c.GetString("userID")
-	if userID == "" {
-		apicommon.Respond(
-			c,
-			apicommon.Error(
-				http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)),
-			),
+func (api *TokenApi) CreateToken(c echo.Context) error {
+	userID, ok := c.Get("userID").(string)
+	if !ok || userID == "" {
+		return apicommon.Error(
+			http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)),
 		)
-		return
 	}
 
 	var req tokens.GenerateTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
-		return
+	if err := c.Bind(&req); err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusUnauthorized, err)
 	}
 
-	token, err := api.tokens.CreateToken(c.Request.Context(), userID, req)
+	token, err := api.tokens.CreateToken(c.Request().Context(), userID, req)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
 
-	apicommon.Respond(c, apicommon.Response(http.StatusCreated, token))
+	return apicommon.Respond(c, apicommon.Response(http.StatusCreated, token))
 }
 
-func (api *TokenApi) DeleteToken(c *gin.Context, id string) {
-	userID := c.GetString("userID")
-	if userID == "" {
-		c.Status(http.StatusForbidden)
-		return
+func (api *TokenApi) DeleteToken(c echo.Context, id string) error {
+	userID, ok := c.Get("userID").(string)
+	if !ok || userID == "" {
+		return apicommon.Error(http.StatusForbidden, errors.New(http.StatusText(http.StatusUnauthorized)))
 	}
 
 	tokenID, err := ulid.Parse(id)
 	if err != nil {
-		c.Error(err)
-		c.Status(http.StatusBadRequest)
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusBadRequest, errors.New("invalid token id"))
 	}
 
-	if err := api.tokens.DeleteToken(c.Request.Context(), userID, tokenID); err != nil {
-		c.Error(err)
-		c.Status(http.StatusInternalServerError)
-		return
+	if err := api.tokens.DeleteToken(c.Request().Context(), userID, tokenID); err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusInternalServerError, err)
 	}
-	apicommon.Respond(c, apicommon.Response[any](http.StatusOK, nil))
+	return apicommon.Respond(c, apicommon.Response[any](http.StatusOK, nil))
 }
 
-func (api *TokenApi) ValidateToken(c *gin.Context, params ValidateTokenParams) {
-	log.Println(params.Authorization, "<-")
+func (api *TokenApi) ValidateToken(c echo.Context, params ValidateTokenParams) error {
 	token := strings.TrimPrefix(params.Authorization, "Bearer ")
 
-	tk, err := ValidateToken(c.Request.Context(), api, token)
+	tk, err := ValidateToken(c.Request().Context(), api, token)
 	if err != nil {
-		c.Error(err)
-		apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
-		return
+		log.Error(err)
+		return apicommon.Error(http.StatusUnauthorized, err)
 	}
 
 	print("user token validated")
-	c.JSON(http.StatusOK, ValidateTokenResponse{
+	return c.JSON(http.StatusOK, ValidateTokenResponse{
 		Subject: tk.UserID,
 	})
 }
@@ -117,8 +101,8 @@ func (api *TokenApi) ValidateToken(c *gin.Context, params ValidateTokenParams) {
 // 		}
 // 		tokens, err := api.tokens.QueryTokens(c.Request.Context(), userID)
 // 		if err != nil {
-// 			c.Error(err)
-// 			apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
+// 			log.Error(err)
+// 			return apicommon.Error(http.StatusInternalServerError, err)
 // 			return
 // 		}
 // 		apicommon.Respond(c, apicommon.Response(http.StatusOK, tokens))
@@ -139,14 +123,14 @@ func (api *TokenApi) ValidateToken(c *gin.Context, params ValidateTokenParams) {
 // 		}
 // 		var req tokens.GenerateTokenRequest
 // 		if err := c.ShouldBindJSON(&req); err != nil {
-// 			c.Error(err)
-// 			apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
+// 			log.Error(err)
+// 			return apicommon.Error(http.StatusUnauthorized, err)
 // 			return
 // 		}
 // 		token, err := api.tokens.CreateToken(c.Request.Context(), userID, req)
 // 		if err != nil {
-// 			c.Error(err)
-// 			apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
+// 			log.Error(err)
+// 			return apicommon.Error(http.StatusInternalServerError, err)
 // 			return
 // 		}
 // 		apicommon.Respond(c, apicommon.Response(http.StatusCreated, token))
@@ -162,12 +146,12 @@ func (api *TokenApi) ValidateToken(c *gin.Context, params ValidateTokenParams) {
 // 		}
 // 		tokenID, err := ulid.Parse(c.Param("id"))
 // 		if err != nil {
-// 			c.Error(err)
+// 			log.Error(err)
 // 			c.Status(http.StatusBadRequest)
 // 			return
 // 		}
 // 		if err := api.tokens.DeleteToken(c.Request.Context(), userID, tokenID); err != nil {
-// 			c.Error(err)
+// 			log.Error(err)
 // 			c.Status(http.StatusInternalServerError)
 // 			return
 // 		}
@@ -184,15 +168,15 @@ type ValidateTokenResponse struct {
 // 	return func(c *gin.Context) {
 // 		token, err := auth.GetAuthTokenHeader(c.Request)
 // 		if err != nil {
-// 			c.Error(err)
-// 			apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
+// 			log.Error(err)
+// 			return apicommon.Error(http.StatusBadRequest, err)
 // 			return
 // 		}
 
 // 		tk, err := ValidateToken(c.Request.Context(), api, token)
 // 		if err != nil {
-// 			c.Error(err)
-// 			apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
+// 			log.Error(err)
+// 			return apicommon.Error(http.StatusUnauthorized, err)
 // 			return
 // 		}
 

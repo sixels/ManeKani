@@ -1,40 +1,35 @@
 package cards
 
 import (
-	"fmt"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"github.com/sixels/manekani/server/api/apicommon"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/sixels/manekani/core/domain/cards"
 	"github.com/sixels/manekani/server/api/cards/util"
 )
 
-func (api *CardsApiV1) AllUserCards() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID, err := util.CtxUserID(c)
-		if err != nil {
-			c.Error(err)
-			apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
-			return
-		}
-
-		var filters cards.QueryManyCardsRequest
-		if err := c.BindQuery(&filters); err != nil {
-			c.Error(err)
-			apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
-			return
-		}
-
-		cards, err := api.Cards.AllCards(
-			c.Request.Context(), userID, filters,
-		)
-		if err != nil {
-			c.Error(fmt.Errorf("query user cards error: %w", err))
-			apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-			return
-		}
-
-		apicommon.Respond(c, apicommon.Response(http.StatusOK, cards))
+func (a *CardsApiV1) AllUserCards(c echo.Context) error {
+	userID, err := util.CtxUserID(c)
+	if err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusUnauthorized, err)
 	}
+
+	var filters cards.QueryManyCardsRequest
+	if err := c.Bind(&filters); err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusBadRequest, err)
+	}
+
+	allCards, err := a.Cards.AllCards(
+		c.Request().Context(), userID, filters,
+	)
+	if err != nil {
+		log.Errorf("query user allCards error: %w", err)
+		return apicommon.Error(http.StatusInternalServerError, err)
+	}
+
+	return apicommon.Respond(c, apicommon.Response(http.StatusOK, allCards))
 }

@@ -50,16 +50,23 @@ type SeparateByComma[T any] interface {
 	Only() *T
 }
 
-type commaSeparated[T any] string
-type CommaSeparatedUUID commaSeparated[uuid.UUID]
-type CommaSeparatedString commaSeparated[string]
-type CommaSeparatedInt32 commaSeparated[int32]
+type CommaSeparated[T any] string
+type CommaSeparatedUUID CommaSeparated[uuid.UUID]
+type CommaSeparatedString CommaSeparated[string]
+type CommaSeparatedInt32 CommaSeparated[int32]
 
-func (c commaSeparated[T]) string() string {
+func Separated[T any](s *string) *CommaSeparated[T] {
+	if s == nil {
+		return nil
+	}
+	return (*CommaSeparated[T])(s)
+}
+
+func (c CommaSeparated[T]) string() string {
 	return (string)(c)
 }
 
-func (c *commaSeparated[T]) Strings() []string {
+func (c *CommaSeparated[T]) Strings() []string {
 	if c == nil {
 		return nil
 	}
@@ -67,7 +74,7 @@ func (c *commaSeparated[T]) Strings() []string {
 }
 
 func (c *CommaSeparatedInt32) Separate() (nums []int32) {
-	values := (*commaSeparated[any])(c).Strings()
+	values := (*CommaSeparated[any])(c).Strings()
 	for _, v := range values {
 		if number, err := strconv.Atoi(v); err == nil {
 			nums = append(nums, int32(number))
@@ -79,7 +86,7 @@ func (c *CommaSeparatedInt32) Separate() (nums []int32) {
 }
 
 func (c *CommaSeparatedInt32) Only() *int32 {
-	values := (*commaSeparated[any])(c).Strings()
+	values := (*CommaSeparated[any])(c).Strings()
 	if len(values) == 0 {
 		return nil
 	}
@@ -92,7 +99,7 @@ func (c *CommaSeparatedInt32) Only() *int32 {
 }
 
 func (c *CommaSeparatedUUID) Separate() (uuids []uuid.UUID) {
-	values := (*commaSeparated[any])(c).Strings()
+	values := (*CommaSeparated[any])(c).Strings()
 	for _, v := range values {
 		if id, err := uuid.Parse(v); err == nil {
 			uuids = append(uuids, id)
@@ -104,7 +111,7 @@ func (c *CommaSeparatedUUID) Separate() (uuids []uuid.UUID) {
 }
 
 func (c *CommaSeparatedUUID) Only() *uuid.UUID {
-	values := (*commaSeparated[any])(c).Strings()
+	values := (*CommaSeparated[any])(c).Strings()
 	if len(values) == 0 {
 		return nil
 	}
@@ -117,11 +124,11 @@ func (c *CommaSeparatedUUID) Only() *uuid.UUID {
 }
 
 func (c *CommaSeparatedString) Separate() []string {
-	return (*commaSeparated[any])(c).Strings()
+	return (*CommaSeparated[any])(c).Strings()
 }
 
 func (c *CommaSeparatedString) Only() *string {
-	values := (*commaSeparated[any])(c).Strings()
+	values := (*CommaSeparated[any])(c).Strings()
 	if len(values) == 0 {
 		return nil
 	}

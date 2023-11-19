@@ -1,69 +1,59 @@
 package cards
 
 import (
-	"fmt"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"github.com/sixels/manekani/server/api/apicommon"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/sixels/manekani/core/domain/cards"
 	"github.com/sixels/manekani/server/api/cards/util"
 )
 
 // AllUserReviews gets all reviews for a user
-func (api *CardsApiV1) AllUserReviews() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID, err := util.CtxUserID(c)
-		if err != nil {
-			c.Error(err)
-			apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
-			return
-		}
-
-		var filters cards.QueryManyReviewsRequest
-		if err := c.BindQuery(&filters); err != nil {
-			c.Error(err)
-			apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
-			return
-		}
-
-		cards, err := api.Cards.AllReviews(
-			c.Request.Context(), userID, filters,
-		)
-		if err != nil {
-			c.Error(fmt.Errorf("query user reviews error: %w", err))
-			apicommon.Respond(c, apicommon.Error(http.StatusInternalServerError, err))
-			return
-		}
-
-		apicommon.Respond(c, apicommon.Response(http.StatusOK, cards))
+func (a *CardsApiV1) AllUserReviews(c echo.Context) error {
+	userID, err := util.CtxUserID(c)
+	if err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusUnauthorized, err)
 	}
+
+	var filters cards.QueryManyReviewsRequest
+	if err := c.Bind(&filters); err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusBadRequest, err)
+	}
+
+	reviews, err := a.Cards.AllReviews(
+		c.Request().Context(), userID, filters,
+	)
+	if err != nil {
+		log.Errorf("query user reviews error: %w", err)
+		return apicommon.Error(http.StatusInternalServerError, err)
+	}
+
+	return apicommon.Respond(c, apicommon.Response(http.StatusOK, reviews))
 }
 
 // CreateReview creates a new review
-func (api *CardsApiV1) CreateReview() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID, err := util.CtxUserID(c)
-		if err != nil {
-			c.Error(err)
-			apicommon.Respond(c, apicommon.Error(http.StatusUnauthorized, err))
-			return
-		}
-
-		var req cards.CreateReviewAPIRequest
-		if err := c.Bind(&req); err != nil {
-			c.Error(fmt.Errorf("create review bind error: %w", err))
-			apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
-			return
-		}
-
-		review, err := api.Cards.CreateReview(c.Request.Context(), userID, req)
-		if err != nil {
-			c.Error(err)
-			apicommon.Respond(c, apicommon.Error(http.StatusBadRequest, err))
-			return
-		}
-
-		apicommon.Respond(c, apicommon.Response(http.StatusCreated, review))
+func (a *CardsApiV1) CreateReview(c echo.Context) error {
+	userID, err := util.CtxUserID(c)
+	if err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusUnauthorized, err)
 	}
+
+	var req cards.CreateReviewAPIRequest
+	if err := c.Bind(&req); err != nil {
+		log.Errorf("create review bind error: %w", err)
+		return apicommon.Error(http.StatusBadRequest, err)
+	}
+
+	review, err := a.Cards.CreateReview(c.Request().Context(), userID, req)
+	if err != nil {
+		log.Error(err)
+		return apicommon.Error(http.StatusBadRequest, err)
+	}
+
+	return apicommon.Respond(c, apicommon.Response(http.StatusCreated, review))
 }

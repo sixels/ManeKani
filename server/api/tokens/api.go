@@ -1,7 +1,7 @@
 package tokens
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/sixels/manekani/core/adapters/tokens"
 )
 
@@ -17,7 +17,7 @@ func New(repo tokens.TokensAdapter) *TokenApi {
 	return &TokenApi{tokens: repo}
 }
 
-func (api *TokenApi) SetupRoutes(router *gin.Engine) {
+func (api *TokenApi) SetupRoutes(router *echo.Echo) {
 	RegisterHandlers(router, api)
 
 	// handler := router.Group("/api/tokens")

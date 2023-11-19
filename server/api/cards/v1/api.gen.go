@@ -16,7 +16,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -28,6 +28,12 @@ const (
 type CommonErrorResponse struct {
 	Code    *int    `json:"code,omitempty"`
 	Message *string `json:"message,omitempty"`
+}
+
+// CommonResponse defines model for common.Response.
+type CommonResponse struct {
+	Code int                    `json:"code"`
+	Data map[string]interface{} `json:"data"`
 }
 
 // DeckCreateRequest defines model for deck.CreateRequest.
@@ -66,26 +72,30 @@ type DeckModel struct {
 // SubjectCreateRequest defines model for subject.CreateRequest.
 type SubjectCreateRequest struct {
 	AdditionalStudyData *map[string]interface{} `form:"additional_study_data" json:"additional_study_data,omitempty"`
-	Deck                openapi_types.UUID      `form:"deck" json:"deck"`
-	Dependencies        *[]openapi_types.UUID   `form:"dependencies" json:"dependencies,omitempty"`
-	Dependents          *[]openapi_types.UUID   `form:"dependents" json:"dependents,omitempty"`
-	Kind                string                  `form:"kind" json:"kind"`
+	Deck                openapi_types.UUID `form:"deck" json:"deck"`
+	Dependencies        *SubjectIdList     `form:"dependencies" json:"dependencies,omitempty"`
+	Dependents          *[]string     `form:"dependents" json:"dependents,omitempty"`
+	Kind                string             `form:"kind" json:"kind"`
 	Level               int32                   `form:"level" json:"level"`
 	Name                string                  `form:"name" json:"name"`
 	Priority            uint8                   `form:"priority" json:"priority"`
 
-	// Resource The subject resources
-	Resource *[]openapi_types.File `json:"resource[],omitempty"`
+	// Resources The subject resources
+	Resources *[]openapi_types.File `form:"resource" json:"resources,omitempty"`
 
 	// ResourcesMeta Resources metadatas
-	ResourcesMeta *[]map[string]string  `json:"resources_meta,omitempty"`
-	Similars      *[]openapi_types.UUID `json:"similars,omitempty"`
-	Slug          string                `json:"slug"`
-	StudyData     *[]SubjectStudyData   `json:"study_data,omitempty"`
-	Value         *string               `json:"value,omitempty"`
+	ResourcesMeta *struct {
+		List []map[string]string `json:"list"`
+	} `form:"resources_meta" json:"resources_meta,omitempty"`
+	Similar   *SubjectIdList `form:"similar" json:"similar,omitempty"`
+	Slug      string         `form:"slug" json:"slug"`
+	StudyData *struct {
+		List []SubjectStudyData `json:"list"`
+	} `form:"study_data" json:"study_data,omitempty"`
+	Value *string `form:"value" json:"value,omitempty"`
 
 	// ValueImage The subject value image
-	ValueImage *openapi_types.File `json:"value_image,omitempty"`
+	ValueImage *openapi_types.File `form:"value_image" json:"value_image,omitempty"`
 }
 
 // SubjectCreateResponse defines model for subject.CreateResponse.
@@ -103,14 +113,19 @@ type SubjectGetAllResponse = []struct {
 	Owner        string               `json:"owner"`
 	Priority     uint8                `json:"priority"`
 	Similars     []openapi_types.UUID `json:"similars"`
-	Slug         string               `json:"slug"`
-	StudyData    []SubjectStudyData   `json:"study_data"`
-	Value        *string              `json:"value,omitempty"`
+	Slug         string             `json:"slug"`
+	StudyData    []SubjectStudyData `json:"study_data"`
+	Value        *string            `json:"value,omitempty"`
 	ValueImage   *string              `json:"value_image,omitempty"`
 }
 
 // SubjectGetResponse defines model for subject.GetResponse.
 type SubjectGetResponse = SubjectModel
+
+// SubjectIdList defines model for subject.IdList.
+type SubjectIdList struct {
+	List []openapi_types.UUID `json:"list"`
+}
 
 // SubjectModel defines model for subject.Model.
 type SubjectModel struct {
@@ -124,12 +139,12 @@ type SubjectModel struct {
 	Level               int32                   `json:"level"`
 	Name                string                  `json:"name"`
 	Owner               string                  `json:"owner"`
-	Priority            uint8                   `json:"priority"`
-	Resources           []SubjectResource       `json:"resources"`
-	Similars            []openapi_types.UUID    `json:"similars"`
-	Slug                string                  `json:"slug"`
-	StudyData           []SubjectStudyData      `json:"study_data"`
-	UpdatedAt           string                  `json:"updated_at"`
+	Priority            uint8                `json:"priority"`
+	Resources           []SubjectResource    `json:"resources"`
+	Similars            []openapi_types.UUID `json:"similars"`
+	Slug                string               `json:"slug"`
+	StudyData           []SubjectStudyData   `json:"study_data"`
+	UpdatedAt           string               `json:"updated_at"`
 	Value               *string                 `json:"value,omitempty"`
 	ValueImage          *string                 `json:"value_image,omitempty"`
 }
@@ -165,12 +180,12 @@ type SubjectUpdateRequest struct {
 	Kind                *string                 `json:"kind,omitempty"`
 	Level               *int32                  `json:"level,omitempty"`
 	Name                *string                 `json:"name,omitempty"`
-	Priority            *uint8                  `json:"priority,omitempty"`
-	Resources           *[]SubjectResource      `json:"resources,omitempty"`
-	Similars            *[]openapi_types.UUID   `json:"similars,omitempty"`
-	Slug                *string                 `json:"slug,omitempty"`
-	StudyData           *[]SubjectStudyData     `json:"study_data,omitempty"`
-	Value               *string                 `json:"value,omitempty"`
+	Priority            *uint8                `json:"priority,omitempty"`
+	Resources           *[]SubjectResource    `json:"resources,omitempty"`
+	Similars            *[]openapi_types.UUID `json:"similars,omitempty"`
+	Slug                *string               `json:"slug,omitempty"`
+	StudyData           *[]SubjectStudyData   `json:"study_data,omitempty"`
+	Value               *string               `json:"value,omitempty"`
 	ValueImage          *string                 `json:"value_image,omitempty"`
 }
 
@@ -182,7 +197,7 @@ type GetDecksParams struct {
 	Ids      *string `form:"ids,omitempty" json:"ids,omitempty"`
 	Subjects *string `form:"subjects,omitempty" json:"subjects,omitempty"`
 	Owners   *string `form:"owners,omitempty" json:"owners,omitempty"`
-	Page     *int    `form:"page,omitempty" json:"page,omitempty"`
+	Page     *uint   `form:"page,omitempty" json:"page,omitempty"`
 	Names    *string `form:"names,omitempty" json:"names,omitempty"`
 }
 
@@ -210,378 +225,314 @@ type UpdateSubjectJSONRequestBody = SubjectUpdateRequest
 type ServerInterface interface {
 	// Query all decks
 	// (GET /api/v1/decks)
-	GetDecks(c *gin.Context, params GetDecksParams)
+	GetDecks(ctx echo.Context, params GetDecksParams) error
 	// Create a new deck
 	// (POST /api/v1/decks)
-	CreateDeck(c *gin.Context)
+	CreateDeck(ctx echo.Context) error
 	// Query a deck
 	// (GET /api/v1/decks/{id})
-	GetDeck(c *gin.Context, id string)
+	GetDeck(ctx echo.Context, id string) error
 	// Query all subjects
 	// (GET /api/v1/subjects)
-	GetSubjects(c *gin.Context, params GetSubjectsParams)
+	GetSubjects(ctx echo.Context, params GetSubjectsParams) error
 	// Create a new subject
 	// (POST /api/v1/subjects)
-	CreateSubject(c *gin.Context)
+	CreateSubject(ctx echo.Context) error
 	// Delete a subject
 	// (DELETE /api/v1/subjects/{id})
-	DeleteSubject(c *gin.Context, id string)
+	DeleteSubject(ctx echo.Context, id string) error
 	// Query a subject
 	// (GET /api/v1/subjects/{id})
-	GetSubject(c *gin.Context, id string)
+	GetSubject(ctx echo.Context, id string) error
 	// Update a subject
 	// (PATCH /api/v1/subjects/{id})
-	UpdateSubject(c *gin.Context, id string)
+	UpdateSubject(ctx echo.Context, id string) error
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
+// ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandler       func(*gin.Context, error, int)
+	Handler ServerInterface
 }
 
-type MiddlewareFunc func(c *gin.Context)
-
-// GetDecks operation middleware
-func (siw *ServerInterfaceWrapper) GetDecks(c *gin.Context) {
-
+// GetDecks converts echo context to params.
+func (w *ServerInterfaceWrapper) GetDecks(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetDecksParams
-
 	// ------------- Optional query parameter "ids" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "ids", c.Request.URL.Query(), &params.Ids)
+	err = runtime.BindQueryParameter("form", true, false, "ids", ctx.QueryParams(), &params.Ids)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter ids: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ids: %s", err))
 	}
 
 	// ------------- Optional query parameter "subjects" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "subjects", c.Request.URL.Query(), &params.Subjects)
+	err = runtime.BindQueryParameter("form", true, false, "subjects", ctx.QueryParams(), &params.Subjects)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter subjects: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter subjects: %s", err))
 	}
 
 	// ------------- Optional query parameter "owners" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "owners", c.Request.URL.Query(), &params.Owners)
+	err = runtime.BindQueryParameter("form", true, false, "owners", ctx.QueryParams(), &params.Owners)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter owners: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter owners: %s", err))
 	}
 
 	// ------------- Optional query parameter "page" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "page", c.Request.URL.Query(), &params.Page)
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter page: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
 	}
 
 	// ------------- Optional query parameter "names" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "names", c.Request.URL.Query(), &params.Names)
+	err = runtime.BindQueryParameter("form", true, false, "names", ctx.QueryParams(), &params.Names)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter names: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter names: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetDecks(c, params)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetDecks(ctx, params)
+	return err
 }
 
-// CreateDeck operation middleware
-func (siw *ServerInterfaceWrapper) CreateDeck(c *gin.Context) {
-
-	c.Set(ApiKeyScopes, []string{"deck:create"})
-
-	c.Set(LoginScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.CreateDeck(c)
-}
-
-// GetDeck operation middleware
-func (siw *ServerInterfaceWrapper) GetDeck(c *gin.Context) {
-
+// CreateDeck converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateDeck(ctx echo.Context) error {
 	var err error
 
+	ctx.Set(ApiKeyScopes, []string{"deck:create"})
+
+	ctx.Set(LoginScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.CreateDeck(ctx)
+	return err
+}
+
+// GetDeck converts echo context to params.
+func (w *ServerInterfaceWrapper) GetDeck(ctx echo.Context) error {
+	var err error
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetDeck(c, id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetDeck(ctx, id)
+	return err
 }
 
-// GetSubjects operation middleware
-func (siw *ServerInterfaceWrapper) GetSubjects(c *gin.Context) {
-
+// GetSubjects converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSubjects(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetSubjectsParams
-
 	// ------------- Optional query parameter "decks" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "decks", c.Request.URL.Query(), &params.Decks)
+	err = runtime.BindQueryParameter("form", true, false, "decks", ctx.QueryParams(), &params.Decks)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter decks: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter decks: %s", err))
 	}
 
 	// ------------- Optional query parameter "ids" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "ids", c.Request.URL.Query(), &params.Ids)
+	err = runtime.BindQueryParameter("form", true, false, "ids", ctx.QueryParams(), &params.Ids)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter ids: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ids: %s", err))
 	}
 
 	// ------------- Optional query parameter "kinds" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "kinds", c.Request.URL.Query(), &params.Kinds)
+	err = runtime.BindQueryParameter("form", true, false, "kinds", ctx.QueryParams(), &params.Kinds)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter kinds: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter kinds: %s", err))
 	}
 
 	// ------------- Optional query parameter "levels" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "levels", c.Request.URL.Query(), &params.Levels)
+	err = runtime.BindQueryParameter("form", true, false, "levels", ctx.QueryParams(), &params.Levels)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter levels: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter levels: %s", err))
 	}
 
 	// ------------- Optional query parameter "owners" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "owners", c.Request.URL.Query(), &params.Owners)
+	err = runtime.BindQueryParameter("form", true, false, "owners", ctx.QueryParams(), &params.Owners)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter owners: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter owners: %s", err))
 	}
 
 	// ------------- Optional query parameter "page" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "page", c.Request.URL.Query(), &params.Page)
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter page: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
 	}
 
 	// ------------- Optional query parameter "slugs" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "slugs", c.Request.URL.Query(), &params.Slugs)
+	err = runtime.BindQueryParameter("form", true, false, "slugs", ctx.QueryParams(), &params.Slugs)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter slugs: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slugs: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetSubjects(c, params)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetSubjects(ctx, params)
+	return err
 }
 
-// CreateSubject operation middleware
-func (siw *ServerInterfaceWrapper) CreateSubject(c *gin.Context) {
-
-	c.Set(ApiKeyScopes, []string{"subject:create"})
-
-	c.Set(LoginScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.CreateSubject(c)
-}
-
-// DeleteSubject operation middleware
-func (siw *ServerInterfaceWrapper) DeleteSubject(c *gin.Context) {
-
+// CreateSubject converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateSubject(ctx echo.Context) error {
 	var err error
 
+	ctx.Set(ApiKeyScopes, []string{"subject:create"})
+
+	ctx.Set(LoginScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.CreateSubject(ctx)
+	return err
+}
+
+// DeleteSubject converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteSubject(ctx echo.Context) error {
+	var err error
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
-	c.Set(ApiKeyScopes, []string{"subject:delete"})
+	ctx.Set(ApiKeyScopes, []string{"subject:delete"})
 
-	c.Set(LoginScopes, []string{})
+	ctx.Set(LoginScopes, []string{})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.DeleteSubject(c, id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteSubject(ctx, id)
+	return err
 }
 
-// GetSubject operation middleware
-func (siw *ServerInterfaceWrapper) GetSubject(c *gin.Context) {
-
+// GetSubject converts echo context to params.
+func (w *ServerInterfaceWrapper) GetSubject(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetSubject(c, id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetSubject(ctx, id)
+	return err
 }
 
-// UpdateSubject operation middleware
-func (siw *ServerInterfaceWrapper) UpdateSubject(c *gin.Context) {
-
+// UpdateSubject converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateSubject(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
-	c.Set(ApiKeyScopes, []string{"subject:update"})
+	ctx.Set(ApiKeyScopes, []string{"subject:update"})
 
-	c.Set(LoginScopes, []string{})
+	ctx.Set(LoginScopes, []string{})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.UpdateSubject(c, id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateSubject(ctx, id)
+	return err
 }
 
-// GinServerOptions provides options for the Gin server.
-type GinServerOptions struct {
-	BaseURL      string
-	Middlewares  []MiddlewareFunc
-	ErrorHandler func(*gin.Context, error, int)
+// This is a simple interface which specifies echo.Route addition functions which
+// are present on both echo.Echo and echo.Group, since we want to allow using
+// either of them for path registration
+type EchoRouter interface {
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 }
 
-// RegisterHandlers creates http.Handler with routing matching OpenAPI spec.
-func RegisterHandlers(router gin.IRouter, si ServerInterface) {
-	RegisterHandlersWithOptions(router, si, GinServerOptions{})
+// RegisterHandlers adds each server route to the EchoRouter.
+func RegisterHandlers(router EchoRouter, si ServerInterface) {
+	RegisterHandlersWithBaseURL(router, si, "")
 }
 
-// RegisterHandlersWithOptions creates http.Handler with additional options
-func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options GinServerOptions) {
-	errorHandler := options.ErrorHandler
-	if errorHandler == nil {
-		errorHandler = func(c *gin.Context, err error, statusCode int) {
-			c.JSON(statusCode, gin.H{"msg": err.Error()})
-		}
-	}
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandler:       errorHandler,
+		Handler: si,
 	}
 
-	router.GET(options.BaseURL+"/api/v1/decks", wrapper.GetDecks)
-	router.POST(options.BaseURL+"/api/v1/decks", wrapper.CreateDeck)
-	router.GET(options.BaseURL+"/api/v1/decks/:id", wrapper.GetDeck)
-	router.GET(options.BaseURL+"/api/v1/subjects", wrapper.GetSubjects)
-	router.POST(options.BaseURL+"/api/v1/subjects", wrapper.CreateSubject)
-	router.DELETE(options.BaseURL+"/api/v1/subjects/:id", wrapper.DeleteSubject)
-	router.GET(options.BaseURL+"/api/v1/subjects/:id", wrapper.GetSubject)
-	router.PATCH(options.BaseURL+"/api/v1/subjects/:id", wrapper.UpdateSubject)
+	router.GET(baseURL+"/api/v1/decks", wrapper.GetDecks)
+	router.POST(baseURL+"/api/v1/decks", wrapper.CreateDeck)
+	router.GET(baseURL+"/api/v1/decks/:id", wrapper.GetDeck)
+	router.GET(baseURL+"/api/v1/subjects", wrapper.GetSubjects)
+	router.POST(baseURL+"/api/v1/subjects", wrapper.CreateSubject)
+	router.DELETE(baseURL+"/api/v1/subjects/:id", wrapper.DeleteSubject)
+	router.GET(baseURL+"/api/v1/subjects/:id", wrapper.GetSubject)
+	router.PATCH(baseURL+"/api/v1/subjects/:id", wrapper.UpdateSubject)
+
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"AAD//wiXTEsMQgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

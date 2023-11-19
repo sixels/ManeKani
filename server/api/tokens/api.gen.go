@@ -15,7 +15,7 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -97,156 +97,127 @@ type CreateTokenJSONRequestBody = TokenCreateRequest
 type ServerInterface interface {
 	// Get all user's API tokens
 	// (GET /api/tokens)
-	GetTokens(c *gin.Context)
+	GetTokens(ctx echo.Context) error
 	// Create a new API token
 	// (POST /api/tokens)
-	CreateToken(c *gin.Context)
+	CreateToken(ctx echo.Context) error
 	// Delete an API token
 	// (DELETE /api/tokens/{id})
-	DeleteToken(c *gin.Context, id string)
+	DeleteToken(ctx echo.Context, id string) error
 	// Validate a token
 	// (GET /auth/validate-token)
-	ValidateToken(c *gin.Context, params ValidateTokenParams)
+	ValidateToken(ctx echo.Context, params ValidateTokenParams) error
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
+// ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandler       func(*gin.Context, error, int)
+	Handler ServerInterface
 }
 
-type MiddlewareFunc func(c *gin.Context)
-
-// GetTokens operation middleware
-func (siw *ServerInterfaceWrapper) GetTokens(c *gin.Context) {
-
-	c.Set(LoginScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetTokens(c)
-}
-
-// CreateToken operation middleware
-func (siw *ServerInterfaceWrapper) CreateToken(c *gin.Context) {
-
-	c.Set(LoginScopes, []string{})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.CreateToken(c)
-}
-
-// DeleteToken operation middleware
-func (siw *ServerInterfaceWrapper) DeleteToken(c *gin.Context) {
-
+// GetTokens converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTokens(ctx echo.Context) error {
 	var err error
 
+	ctx.Set(LoginScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetTokens(ctx)
+	return err
+}
+
+// CreateToken converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateToken(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(LoginScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.CreateToken(ctx)
+	return err
+}
+
+// DeleteToken converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteToken(ctx echo.Context) error {
+	var err error
 	// ------------- Path parameter "id" -------------
 	var id string
 
-	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
-	c.Set(LoginScopes, []string{})
+	ctx.Set(LoginScopes, []string{})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.DeleteToken(c, id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteToken(ctx, id)
+	return err
 }
 
-// ValidateToken operation middleware
-func (siw *ServerInterfaceWrapper) ValidateToken(c *gin.Context) {
-
+// ValidateToken converts echo context to params.
+func (w *ServerInterfaceWrapper) ValidateToken(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ValidateTokenParams
 
-	headers := c.Request.Header
-
+	headers := ctx.Request().Header
 	// ------------- Required header parameter "Authorization" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("Authorization")]; found {
 		var Authorization string
 		n := len(valueList)
 		if n != 1 {
-			siw.ErrorHandler(c, fmt.Errorf("Expected one value for Authorization, got %d", n), http.StatusBadRequest)
-			return
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for Authorization, got %d", n))
 		}
 
 		err = runtime.BindStyledParameterWithLocation("simple", false, "Authorization", runtime.ParamLocationHeader, valueList[0], &Authorization)
 		if err != nil {
-			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter Authorization: %s", err), http.StatusBadRequest)
-			return
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter Authorization: %s", err))
 		}
 
 		params.Authorization = Authorization
-
 	} else {
-		siw.ErrorHandler(c, fmt.Errorf("Header parameter Authorization is required, but not found"), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter Authorization is required, but not found"))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.ValidateToken(c, params)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ValidateToken(ctx, params)
+	return err
 }
 
-// GinServerOptions provides options for the Gin server.
-type GinServerOptions struct {
-	BaseURL      string
-	Middlewares  []MiddlewareFunc
-	ErrorHandler func(*gin.Context, error, int)
+// This is a simple interface which specifies echo.Route addition functions which
+// are present on both echo.Echo and echo.Group, since we want to allow using
+// either of them for path registration
+type EchoRouter interface {
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 }
 
-// RegisterHandlers creates http.Handler with routing matching OpenAPI spec.
-func RegisterHandlers(router gin.IRouter, si ServerInterface) {
-	RegisterHandlersWithOptions(router, si, GinServerOptions{})
+// RegisterHandlers adds each server route to the EchoRouter.
+func RegisterHandlers(router EchoRouter, si ServerInterface) {
+	RegisterHandlersWithBaseURL(router, si, "")
 }
 
-// RegisterHandlersWithOptions creates http.Handler with additional options
-func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options GinServerOptions) {
-	errorHandler := options.ErrorHandler
-	if errorHandler == nil {
-		errorHandler = func(c *gin.Context, err error, statusCode int) {
-			c.JSON(statusCode, gin.H{"msg": err.Error()})
-		}
-	}
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandler:       errorHandler,
+		Handler: si,
 	}
 
-	router.GET(options.BaseURL+"/api/tokens", wrapper.GetTokens)
-	router.POST(options.BaseURL+"/api/tokens", wrapper.CreateToken)
-	router.DELETE(options.BaseURL+"/api/tokens/:id", wrapper.DeleteToken)
-	router.GET(options.BaseURL+"/auth/validate-token", wrapper.ValidateToken)
+	router.GET(baseURL+"/api/tokens", wrapper.GetTokens)
+	router.POST(baseURL+"/api/tokens", wrapper.CreateToken)
+	router.DELETE(baseURL+"/api/tokens/:id", wrapper.DeleteToken)
+	router.GET(baseURL+"/auth/validate-token", wrapper.ValidateToken)
+
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

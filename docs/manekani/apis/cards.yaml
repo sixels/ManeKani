@@ -41,14 +41,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: "#/components/schemas/common.Response"
-                    - type: object
-                      properties:
-                        data:
-                          $ref: "#/components/schemas/subject.GetAllResponse"
+                allOf:
+                  - $ref: "#/components/schemas/common.Response"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/subject.GetAllResponse"
     post:
       tags:
         - subject
@@ -207,6 +205,7 @@ paths:
           in: query
           schema:
             type: integer
+            format: uint
         - name: names
           in: query
           schema:
@@ -452,58 +451,92 @@ components:
         deck:
           type: string
           format: uuid
+          x-oapi-codegen-extra-tags:
+            form: "deck"
         dependencies:
-          type: array
-          items:
-            type: string
-            format: uuid
+          allOf:
+            - $ref: "#/components/schemas/subject.IdList"
+          x-oapi-codegen-extra-tags:
+            form: "dependencies"
         dependents:
-          type: array
-          items:
-            type: string
-            format: uuid
+          allOf:
+            - $ref: "#/components/schemas/subject.IdList"
+          x-oapi-codegen-extra-tags:
+            form: "dependents"
         kind:
           type: string
+          x-oapi-codegen-extra-tags:
+            form: "kind"
         level:
           type: integer
           format: int32
+          x-oapi-codegen-extra-tags:
+            form: "level"
         name:
           type: string
+          x-oapi-codegen-extra-tags:
+            form: "name"
         priority:
           type: integer
           format: uint8
-        similars:
-          type: array
-          items:
-            type: string
-            format: uuid
+          x-oapi-codegen-extra-tags:
+            form: "priority"
+        similar:
+          allOf:
+            - $ref: "#/components/schemas/subject.IdList"
+          x-oapi-codegen-extra-tags:
+            form: "similar"
         slug:
           type: string
+          x-oapi-codegen-extra-tags:
+            form: "slug"
         value:
           type: string
+          x-oapi-codegen-extra-tags:
+            form: "value"
         value_image:
           type: string
           description: The subject value image
           format: binary
-        resource[]:
-          type: array
+          x-oapi-codegen-extra-tags:
+            form: "value_image"
+        resources:
           description: The subject resources
+          type: array
           items:
             type: string
             format: binary
+          x-oapi-codegen-extra-tags:
+            form: "resource"
         resources_meta:
-          type: array
           description: Resources metadatas
-          items:
-            type: object
-            additionalProperties:
-              type: string
+          type: object
+          required:
+            - list
+          properties:
+            list:
+              type: array
+              items:
+                type: object
+                additionalProperties:
+                  type: string
+          x-oapi-codegen-extra-tags:
+            form: "resources_meta"
         study_data:
-          type: array
-          items:
-            $ref: "#/components/schemas/subject.StudyData"
+          type: object
+          required:
+            - list
+          properties:
+            list:
+              type: array
+              items:
+                $ref: "#/components/schemas/subject.StudyData"
+          x-oapi-codegen-extra-tags:
+            form: "study_data"
         additional_study_data:
           type: object
+          x-oapi-codegen-extra-tags:
+            form: "additional_study_data"
     subject.CreateResponse:
       $ref: "#/components/schemas/subject.Model"
     subject.GetResponse:
@@ -615,6 +648,17 @@ components:
           type: string
     subject.UpdateResponse:
       $ref: "#/components/schemas/subject.Model"
+
+    subject.IdList:
+      type: object
+      required:
+        - list
+      properties:
+        list:
+          type: array
+          items:
+            type: string
+            format: uuid
 
     deck.Model:
       type: object

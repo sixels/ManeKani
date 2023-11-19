@@ -1,9 +1,9 @@
 package cards
 
 import (
+	"github.com/labstack/echo/v4"
 	"github.com/sixels/manekani/core/adapters/cards"
 
-	"github.com/gin-gonic/gin"
 	cards1 "github.com/sixels/manekani/server/api/cards/v1"
 )
 
@@ -25,7 +25,7 @@ func New(
 	}
 }
 
-func (api *CardsApi) SetupRoutes(router *gin.Engine) {
+func (api *CardsApi) SetupRoutes(router *echo.Echo) {
 	cards1.RegisterHandlers(router, &api.V1)
 
 	// apiRouter := router.Group("/api")

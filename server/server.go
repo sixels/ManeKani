@@ -2,29 +2,40 @@ package server
 
 import (
 	"encoding/gob"
-	"log"
+	"errors"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
+	"github.com/sixels/manekani/server/api/apicommon"
+	"net/http"
 	"os/user"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Service interface {
 	ServiceName() string
-	SetupRoutes(router *gin.Engine)
+	SetupRoutes(router *echo.Echo)
 }
 
 type Server struct {
 	addr   string
-	router *gin.Engine
+	router *echo.Echo
 }
 
 func New(addr string) *Server {
 	gob.Register(user.User{})
 
-	router := gin.New()
+	log.EnableColor()
+	log.SetLevel(log.DEBUG)
+
+	router := echo.New()
 	router.Use(DefaultMiddlewares()...)
-	router.RedirectTrailingSlash = false
+
+	//router.RedirectTrailingSlash = false
 	// router.RemoveExtraSlash = true
+
+	router.RouteNotFound("/api/*", func(c echo.Context) error {
+		return apicommon.Error(http.StatusNotFound, errors.New("API route not found"))
+	})
 
 	return &Server{
 		router: router,
@@ -33,25 +44,25 @@ func New(addr string) *Server {
 }
 
 func (s *Server) WithService(service Service) *Server {
-	log.Printf("Registering service: %s\n", service.ServiceName())
+	log.Infof("Registering service: %s\n", service.ServiceName())
 	service.SetupRoutes(s.router)
 	return s
 }
 
-func (s *Server) WithMiddleware(mw ...gin.HandlerFunc) *Server {
+func (s *Server) WithMiddleware(mw ...echo.MiddlewareFunc) *Server {
 	s.router.Use(mw...)
 	return s
 }
 
 func (s *Server) Start() {
 	s.WithService(&HealthService{})
-	log.Fatal(s.router.Run(s.addr))
+	log.Fatal(s.router.Start(s.addr))
 }
 
-func (s *Server) Router() *gin.Engine {
+func (s *Server) Router() *echo.Echo {
 	return s.router
 }
 
-func DefaultMiddlewares() []gin.HandlerFunc {
-	return []gin.HandlerFunc{gin.Logger(), gin.Recovery()}
+func DefaultMiddlewares() []echo.MiddlewareFunc {
+	return []echo.MiddlewareFunc{middleware.Logger(), middleware.Recover(), middleware.RemoveTrailingSlash()}
 }

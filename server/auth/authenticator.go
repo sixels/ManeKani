@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
+	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	ory "github.com/ory/client-go"
 	adapter "github.com/sixels/manekani/core/adapters/tokens"
@@ -60,7 +60,7 @@ func AuthenticateLogin(ctx context.Context, auth TokenAuthenticator, ai *openapi
 		return fmt.Errorf("could not get the login session: %w", err)
 	}
 
-	c := middleware.GetGinContext(ctx)
+	c := middleware.GetEchoContext(ctx)
 	c.Set(string(UserSessionContext), session)
 	c.Set(string(UserIDContext), session.Identity.Id)
 
@@ -92,7 +92,7 @@ func AuthenticateApiKey(ctx context.Context, auth TokenAuthenticator, ai *openap
 		return err
 	}
 
-	c := middleware.GetGinContext(ctx)
+	c := middleware.GetEchoContext(ctx)
 	c.Set(string(UserTokenContext), tk)
 	c.Set(string(UserIDContext), tk.UserID)
 

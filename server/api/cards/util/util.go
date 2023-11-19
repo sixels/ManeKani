@@ -2,17 +2,17 @@ package util
 
 import (
 	"fmt"
+	"github.com/labstack/echo/v4"
 
-	"github.com/gin-gonic/gin"
 	"github.com/sixels/manekani/server/auth"
 )
 
-func CtxUserID(c *gin.Context) (string, error) {
-	ctxUser, ok := c.Get(string(auth.UserIDContext))
+func CtxUserID(c echo.Context) (string, error) {
+	id, ok := c.Get(string(auth.UserIDContext)).(string)
 	if !ok {
 		return "", fmt.Errorf("user is not set in the context")
 	}
-	return ctxUser.(string), nil
+	return id, nil
 }
 
 func Ptr[T any](c T) *T {
