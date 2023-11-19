@@ -1,36 +1,37 @@
+import { UserSession } from 'manekani-core';
 import { ory } from './auth.server';
 import { Session as OrySession } from '@ory/client';
 
 export interface Session {
-  session: OrySession;
+  ctx: OrySession;
   readonly logout_url: string;
 
-  username: string;
+  userSession: UserSession;
 }
 
-// async function preloadSession(cookies: string) {
-//   void (await getSession(cookies));
-// }
-
-async function getSession(cookies: string): Promise<Session> {
+export async function getSession(cookies: string): Promise<Session | null> {
   try {
     const params = { cookie: cookies };
     const session = await ory.toSession(params).then(({ data }) => data);
+
+    if (!session || !session.active) {
+      return null;
+    }
 
     const logout_url = await ory
       .createBrowserLogoutFlow(params)
       .then(({ data }) => data.logout_url);
 
     return {
-      session,
+      ctx: session,
       logout_url,
-      username:
-        session.identity.traits.username || session.identity.traits.email,
+      userSession: {
+        userId: session.identity!.id,
+        email: session.identity!.traits['email'],
+      },
     };
   } catch (e) {
-    console.error('could not fetch the user:', e);
-    return Promise.reject(e);
+    console.error('could not fetch the user');
+    return null;
   }
 }
-
-export { getSession };

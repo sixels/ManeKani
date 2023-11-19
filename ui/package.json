@@ -5,30 +5,44 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "remix build",
-    "start:dev": "PORT=11011 remix dev",
+    "build": "vite build && vite build --ssr",
+    "start:dev": "env PORT=11011 REMIX_DEV_SERVER_WS_PORT=11012 dotenv -e .env.development vite dev",
     "start": "remix-serve ./build/index.js",
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.17",
     "@ory/client": "^1.1.41",
-    "@remix-run/css-bundle": "^2.1.0",
-    "@remix-run/node": "^2.1.0",
-    "@remix-run/react": "^2.1.0",
-    "@remix-run/serve": "^2.1.0",
+    "@reach/menu-button": "^0.18.0",
+    "@remix-run/css-bundle": "^2.2.0",
+    "@remix-run/node": "^2.2.0",
+    "@remix-run/react": "^2.2.0",
+    "@remix-run/serve": "^2.2.0",
+    "@types/node": "^20.3.1",
+    "aws-sdk": "*",
+    "classnames": "^2.3.2",
+    "date-fns": "^2.30.0",
     "isbot": "^3.6.8",
-    "manekani-core": "*",
-    "manekani-infra-db": "*",
-    "typescript": "^5.1.6",
+    "manekani-core": "workspace:*",
+    "manekani-infra-auth": "workspace:*",
+    "manekani-infra-db": "workspace:*",
+    "mock-aws-s3": "*",
+    "nock": "*",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "typescript": "^5.1.6"
   },
   "devDependencies": {
-    "@remix-run/dev": "^2.1.0",
-    "@remix-run/eslint-config": "^2.1.0",
+    "@remix-run/dev": "^2.2.0",
+    "@remix-run/eslint-config": "^2.2.0",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
-    "eslint": "^8.38.0"
+    "@vanilla-extract/vite-plugin": "^3.9.0",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.38.0",
+    "tailwindcss": "^3.3.5",
+    "vite": "^4.5.0",
+    "vite-tsconfig-paths": "^4.2.1"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -107,16 +107,18 @@ export module CastModel {
     return {
       id: model.id,
       email: model.email,
-      username: model.username,
+      displayName: model.displayName ?? undefined,
+      username: model.username ?? undefined,
+      isComplete: model.isComplete,
       isVerified: model.isVerified,
-      createdAt: model.createdAt,
+      createdAt: model.createdAt.toString(),
       updatedAt: model.updatedAt,
     };
   };
 
   export const intoPublicUser = (model: UserModel): PublicUser => {
     return {
-      username: model.username,
+      username: model.username ?? undefined,
       isVerified: model.isVerified,
     };
   };

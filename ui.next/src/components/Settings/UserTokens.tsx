@@ -61,7 +61,7 @@ export const UserTokens = ({ tokens }: { tokens: Token[] }) => {
                 {tk.isActive ? 'active' : 'paused'}
               </td>
               <td className="px-6 py-4">Never</td>
-              <td className="px-6 py-4 text-right">
+              <td className="px-6 py-4">
                 <TokenDetails token={tk} />
               </td>
             </tr>

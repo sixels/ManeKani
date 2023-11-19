@@ -1,6 +1,7 @@
-import { TokensDatabase } from 'manekani-infra-db/dist/tokens';
+import { TokensDatabase } from 'manekani-infra-db';
 import { database } from './db.server';
+import { TokensAdapter } from 'manekani-core';
 
-const tokensDb = database;
+const tokensDb = new TokensAdapter(new TokensDatabase(database));
 
 export { tokensDb };

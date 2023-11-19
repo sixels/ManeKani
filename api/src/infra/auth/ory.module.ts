@@ -1,14 +1,12 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 
 import { OryService } from './ory.service';
-import sdk from '@ory/client';
-
-type ModuleConfiguration = sdk.ConfigurationParameters;
+import { ConfigurationParameters } from 'manekani-infra-auth';
 
 @Global()
 @Module({})
 export class OryModule {
-  static forRoot(options: ModuleConfiguration): DynamicModule {
+  static forRoot(options: ConfigurationParameters): DynamicModule {
     return {
       module: OryModule,
       providers: [

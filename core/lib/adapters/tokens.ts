@@ -54,6 +54,7 @@ export class TokensAdapter<R extends ITokenRespository> {
 
     console.debug('creating token:', { ownerId: userId, data });
     const generated = await generateRandomToken();
+    console.debug('generated random token');
 
     const createdToken = await this.tokensRepository.createToken(userId, {
       name: data.name,
@@ -92,7 +93,7 @@ export class TokensAdapter<R extends ITokenRespository> {
 
 const TokenHashOptions = {
   timeCost: 2,
-  memoryCost: 64 * 1024,
+  memoryCost: 4 * 1024,
   parallelism: 4,
   hashLength: 32,
   type: argon2.argon2id,
@@ -103,18 +104,27 @@ async function generateRandomToken(): Promise<{
   prefix: string;
   tokenHash: string;
 }> {
+  console.debug('calling randomBytes');
   const prefixBytes = randomBytes(PREFIX_LEN / 2);
+  console.debug('calling Buffer.from randomUUID');
   const tokenBytes = Buffer.from(randomUUID({ disableEntropyCache: true }));
 
+  console.debug('calling encodeToken');
   const [prefix, token] = encodeToken([prefixBytes, tokenBytes]);
+  console.debug('calling hashToken');
   const tokenHash = await hashToken(tokenBytes, prefixBytes);
+
+  console.debug('generated token');
 
   return { token, prefix, tokenHash };
 }
 
 export function hashToken(prefix: Buffer, token: Buffer): Promise<string> {
+  console.debug('concatenating prefix and token');
   const prefixExt = Buffer.concat([prefix, Buffer.from('0'.repeat(16), 'hex')]);
+  console.debug('salt length:', prefixExt.length);
   try {
+    console.debug('calling argon2.hash');
     return argon2.hash(token, {
       ...TokenHashOptions,
       salt: prefixExt,

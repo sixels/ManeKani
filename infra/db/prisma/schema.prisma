@@ -60,8 +60,11 @@ model Deck {
 model User {
   id String @id
 
-  username   String  @unique
+  username    String? @unique
+  displayName String?
+
   isVerified Boolean @default(false)
+  isComplete Boolean @default(false)
 
   decks  Deck[]
   tokens ApiToken[]

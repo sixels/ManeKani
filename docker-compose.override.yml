@@ -101,6 +101,7 @@ services:
     user: 1000:1000
     ports:
       - "11011:11011"
+      - "11012:11012"
     build:
       dockerfile: ./docker/Dockerfile.dev
       target: development-ui

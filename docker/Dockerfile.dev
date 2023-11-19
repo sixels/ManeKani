@@ -1,4 +1,4 @@
-FROM node:18-alpine as base
+FROM node:20 as base
 
 WORKDIR /usr/src/manekani
 
@@ -15,6 +15,7 @@ CMD ["pnpm", "--filter", "manekani-api", "run", "start:dev"]
 FROM base as development-ui
 RUN pnpm install
 EXPOSE 11011
+EXPOSE 11012
 CMD ["pnpm", "--filter", "manekani-ui", "run", "start:dev"]
 
 FROM base as development-migrate

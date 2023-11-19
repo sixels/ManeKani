@@ -1,8 +1,26 @@
 /** @type {import('@remix-run/dev').AppConfig} */
 export default {
-  ignoredRouteFiles: ["**/.*"],
-  // appDirectory: "app",
-  // assetsBuildDirectory: "public/build",
-  // publicPath: "/build/",
-  // serverBuildPath: "build/index.js",
+  ignoredRouteFiles: ['**/.*'],
+  browserNodeBuiltinsPolyfill: {
+    modules: {
+      assert: true,
+      crypto: true,
+      path: true,
+      util: true,
+      fs: true,
+      constants: true,
+      buffer: true,
+      punycode: true,
+      querystring: true,
+      timers: true,
+      https: true,
+      url: true,
+      stream: true,
+      events: true,
+      http: true,
+      child_process: true,
+      zlib: true,
+      os: true,
+    },
+  },
 };

@@ -134,17 +134,16 @@ selfservice:
       ui_url: http://127.0.0.1:3000/registration
 
       after:
+        default_browser_return_url: http://127.0.0.1:11011/complete-profile
         password:
           hooks:
+            - hook: session
             - hook: web_hook
               config:
                 url: http://manekani:3000/hooks/auth/user-register
                 method: POST
-                body: file:///etc/config/kratos/hook/registration.default.post.jsonnet
-                response:
-                  ignore: false
-                  parse: true
-            - hook: session
+                body: file:///etc/config/kratos/hook/user.register.jsonnet
+
         oidc:
           hooks:
             - hook: session
@@ -160,6 +159,10 @@ log:
   level: debug
   format: text
   leak_sensitive_values: true
+
+session:
+  cookie:
+    name: manekani_session
 
 secrets:
   # prodchange : the cookie key secret rotation

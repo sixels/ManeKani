@@ -2,8 +2,8 @@
   "name": "manekani-infra-auth",
   "version": "0.0.0",
   "description": "",
-  "main": "dist/main.ts",
-  "types": "dist/main.d.ts",
+  "main": "dist/main.js",
+  "types": "dist/main.d.js",
   "scripts": {
     "build": "tsc"
   },
@@ -12,5 +12,9 @@
   "license": "ISC",
   "devDependencies": {
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "manekani-core": "workspace:*",
+    "@ory/client": "^1.1.41"
   }
 }

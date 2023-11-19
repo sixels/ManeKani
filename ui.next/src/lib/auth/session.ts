@@ -1,8 +1,8 @@
-import { cache } from "react";
-import { ory } from ".";
-import { Session as OrySession } from "@ory/client";
-import "server-only";
-import { cookies } from "next/headers";
+import { cache } from 'react';
+import { ory } from '.';
+import { Session as OrySession } from '@ory/client';
+import 'server-only';
+import { cookies } from 'next/headers';
 
 export interface Session {
   session: OrySession;
@@ -31,7 +31,7 @@ export const getSession = cache(async (cookies: string): Promise<Session> => {
         session.identity.traits.username || session.identity.traits.email,
     };
   } catch (e) {
-    console.error("could not fetch the user:", e);
+    console.error('could not fetch the user:', e);
     return Promise.reject(e);
   }
 });

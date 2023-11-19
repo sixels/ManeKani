@@ -1,5 +1,5 @@
 import { CastModel, PrismaErrors, inlineAsyncTry } from './common';
-import { CreateUserDto, PublicUser, User } from 'manekani-core';
+import { CreateUserDto, PublicUser, UpdateUserDto, User } from 'manekani-core';
 
 import { IUsersRepository } from 'manekani-core';
 import { PrismaClient } from '@prisma/client';
@@ -84,5 +84,49 @@ export class UsersDatabase implements IUsersRepository {
         decks: [],
       }),
     );
+  }
+
+  async isUsernameAvailable(username: string): Promise<boolean> {
+    const foundUser = await inlineAsyncTry(
+      () =>
+        this.users.findUnique({
+          where: { username },
+          select: { id: true },
+        }),
+      (error) => {
+        throw PrismaErrors.match(error, {
+          fallback: {
+            context: { username },
+            description: 'An unknown error occurred while retrieving the user.',
+          },
+        });
+      },
+    );
+
+    return !foundUser;
+  }
+
+  async updateUser(userId: string, changes: UpdateUserDto): Promise<User> {
+    const updatedUser = await inlineAsyncTry(
+      () =>
+        this.users.update({
+          where: { id: userId },
+          data: {
+            username: changes.username,
+            displayName: changes.displayName,
+            isComplete: changes.isComplete,
+          },
+        }),
+      (error) => {
+        throw PrismaErrors.match(error, {
+          fallback: {
+            context: { userId },
+            description: 'An unknown error occurred while updating the user.',
+          },
+        });
+      },
+    );
+
+    return CastModel.intoUser(Object.assign(updatedUser, { email: '' }));
   }
 }

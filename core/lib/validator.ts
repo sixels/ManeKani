@@ -2,8 +2,8 @@ import Ajv, { ValidateFunction } from 'ajv';
 import { Static, TSchema, Type } from '@sinclair/typebox';
 
 import { InvalidRequestError } from './domain/error';
-import ajvExtErrors from 'ajv-errors';
-import ajvExtFormats from 'ajv-formats';
+import addErrors from 'ajv-errors';
+import addFormats from 'ajv-formats';
 
 const FAIL_MESSAGE = 'Schema validation failed';
 
@@ -11,8 +11,14 @@ export class Validator<S extends TSchema, T = Static<S>> {
   private readonly check: ValidateFunction<S>;
 
   constructor(schema: S) {
-    const ajv = ajvExtFormats(
-      ajvExtErrors(new Ajv({ useDefaults: true, allErrors: true })),
+    const ajv = addFormats(
+      addErrors(
+        new Ajv({
+          useDefaults: true,
+          allErrors: true,
+        }),
+      ),
+      ['date', 'date-time', 'regex', 'uuid', 'time', 'email'],
     );
     this.check = ajv.compile(schema);
   }

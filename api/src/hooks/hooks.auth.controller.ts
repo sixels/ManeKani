@@ -4,12 +4,9 @@ import { IUsersRepository } from 'manekani-core';
 import { UsersProviderLabel } from '@/infra/database/usersDatabase.service';
 import { Body, Controller, Inject, Post } from '@nestjs/common';
 
-type RegistrationHookBody = {
+type UserRegisterHookBody = {
   user_id: string;
-  traits: {
-    email: string;
-    username: string;
-  };
+  email: string;
   created_at: string;
 };
 
@@ -21,14 +18,12 @@ export class AuthController {
   }
 
   @Post('user-register')
-  async userRegister(@Body() body: RegistrationHookBody): Promise<User> {
+  async userRegister(@Body() body: UserRegisterHookBody): Promise<User> {
     console.debug('user register request', body);
-
     return await this.usersAdapter.createUser({
       id: body.user_id,
-      email: body.traits.email,
-      username: body.traits.username,
-      createdAt: new Date(body.created_at),
+      email: body.email,
+      createdAt: body.created_at,
     });
   }
 }

@@ -22,6 +22,13 @@ export class SsoAuthAdapter<R extends ISsoAuthenticator> {
     const session = await this.ssoProvider.getCookieSession(cookies);
     return session;
   }
+
+  async registerUsername(userId: string, username: string): Promise<void> {
+    await this.ssoProvider.registerUsername(userId, username);
+  }
+  async updateUsername(userId: string, username: string): Promise<void> {
+    await this.ssoProvider.updateUsername(userId, username);
+  }
 }
 
 export class TokenAuthAdapter<R extends ITokenRespository> {

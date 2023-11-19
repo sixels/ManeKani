@@ -3,7 +3,7 @@
     "target": "ES2021",
     "useDefineForClassFields": true,
     "module": "CommonJS",
-    "lib": ["ES2021"],
+    "lib": ["DOM", "DOM.Iterable", "ES2021"],
     "skipLibCheck": true,
     "esModuleInterop": true,
 
@@ -22,6 +22,6 @@
 
     "outDir": "dist"
   },
-  "include": ["lib"],
+  "include": ["lib", "scripts"],
   "exclude": ["node_modules", "dist"]
 }

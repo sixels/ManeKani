@@ -5,12 +5,18 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
-
   "workspaces": [
-    "api", "ui", "core", "infra/*"
+    "api",
+    "ui",
+    "core",
+    "infra/*"
   ],
-  
-  "scripts": {},
+  "scripts": {
+    "core": "pnpm --filter manekani-core",
+    "db": "pnpm --filter manekani-infra-db",
+    "auth": "pnpm --filter manekani-infra-auth",
+    "ui": "pnpm --filter manekani-ui"
+  },
   "devDependencies": {
     "depcheck": "^1.4.7",
     "typescript": "^5.1.6"
