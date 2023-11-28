@@ -1,0 +1,33 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"files": {
+		"ignore": ["build/*.js", "./*/dist", "./ui/vite.config.js.*", "./ui.next"]
+	},
+	"organizeImports": {
+		"enabled": true
+	},
+	"formatter": {
+		"indentWidth": 2
+	},
+	"linter": {
+		"rules": {
+			"recommended": true,
+			"nursery": {
+				"noUnusedImports": "warn"
+			},
+			"suspicious": {
+				"noDoubleEquals": "off",
+				"noExplicitAny": "warn"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"quoteProperties": "preserve"
+		},
+		"parser": {
+			"unsafeParameterDecoratorsEnabled": true
+		}
+	}
+}

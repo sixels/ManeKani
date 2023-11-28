@@ -14,7 +14,6 @@
     "@prisma/client": "5.1.1",
     "@tabler/icons-react": "^2.39.0",
     "classnames": "^2.3.2",
-    "manekani-core": "*",
     "manekani-infra-db": "*",
     "next": "13.5.6",
     "react": "^18",

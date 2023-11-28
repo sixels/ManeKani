@@ -3,22 +3,21 @@ FROM node:20 as base
 WORKDIR /usr/src/manekani
 
 RUN corepack enable
-RUN corepack prepare pnpm@latest --activate
 
-COPY ./package.json ./pnpm-lock.yaml ./pnpm-workspace.yaml ./
+COPY ./package.json ./yarn.lock ./
 
 FROM base as development
-RUN pnpm install
+RUN yarn install
 EXPOSE 3000
-CMD ["pnpm", "--filter", "manekani-api", "run", "start:dev"]
+CMD ["yarn", "workspace", "@manekani/api", "run", "start:dev"]
 
 FROM base as development-ui
-RUN pnpm install
+RUN yarn install
 EXPOSE 11011
 EXPOSE 11012
-CMD ["pnpm", "--filter", "manekani-ui", "run", "start:dev"]
+CMD ["yarn", "workspace", "@manekani/ui", "run", "start:dev"]
 
 FROM base as development-migrate
-RUN pnpm install
-ENTRYPOINT ["pnpm", "--filter", "manekani-api", "run", "migrate:dev"]
+RUN yarn install
+ENTRYPOINT ["yarn", "workspace", "@manekani/api", "run", "migrate:dev"]
 

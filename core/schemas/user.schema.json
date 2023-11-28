@@ -1,36 +1,36 @@
 {
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "string"
-    },
-    "email": {
-      "format": "email",
-      "type": "string"
-    },
-    "username": {
-      "maxLength": 25,
-      "pattern": "^(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$",
-      "type": "string"
-    },
-    "isVerified": {
-      "type": "boolean"
-    },
-    "createdAt": {
-      "type": "string",
-      "format": "date"
-    },
-    "updatedAt": {
-      "type": "string",
-      "format": "date"
-    }
-  },
-  "required": [
-    "id",
-    "email",
-    "username",
-    "isVerified",
-    "createdAt",
-    "updatedAt"
-  ]
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string"
+		},
+		"email": {
+			"format": "email",
+			"type": "string"
+		},
+		"username": {
+			"maxLength": 25,
+			"pattern": "^(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$",
+			"type": "string"
+		},
+		"isVerified": {
+			"type": "boolean"
+		},
+		"createdAt": {
+			"type": "string",
+			"format": "date"
+		},
+		"updatedAt": {
+			"type": "string",
+			"format": "date"
+		}
+	},
+	"required": [
+		"id",
+		"email",
+		"username",
+		"isVerified",
+		"createdAt",
+		"updatedAt"
+	]
 }

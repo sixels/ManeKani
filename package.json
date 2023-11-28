@@ -1,24 +1,27 @@
 {
-  "name": "manekani-next",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
-  "private": true,
-  "license": "UNLICENSED",
+  "packageManager": "yarn@4.0.2",
   "workspaces": [
     "api",
-    "ui",
     "core",
+    "ui",
     "infra/*"
   ],
   "scripts": {
-    "core": "pnpm --filter manekani-core",
-    "db": "pnpm --filter manekani-infra-db",
-    "auth": "pnpm --filter manekani-infra-auth",
-    "ui": "pnpm --filter manekani-ui"
+    "api": "yarn workspace @manekani/api",
+    "core": "yarn workspace @manekani/core",
+    "ui": "yarn workspace @manekani/ui",
+    "db": "yarn workspace @manekani/infra-db",
+    "auth": "yarn workspace @manekani/infra-auth"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.4.0",
+    "@types/eslint": "^8.44.7",
+    "@types/prettier": "^3.0.0",
     "depcheck": "^1.4.7",
-    "typescript": "^5.1.6"
+    "eslint": "^8.54.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.2"
   }
 }

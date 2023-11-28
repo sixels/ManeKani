@@ -12,13 +12,13 @@
 //   ResourceCollidesError,
 //   ResourceNotFoundError,
 //   UnknownError,
-// } from 'manekani-core';
+// } from '@manekani/core';
 // import {
 //   CreateSubjectDto,
 //   Subject,
 //   UpdateSubjectDto,
-// } from 'manekani-core';
-// import { ISubjectRepositoryV1 } from 'manekani-core';
+// } from '@manekani/core';
+// import { ISubjectRepositoryV1 } from '@manekani/core';
 // import { PrismaService } from '@/services/database/prisma.service';
 // import { SubjectsDatabaseService } from '@/services/database/subjectsDatabase.service';
 // import { TokensDatabaseService } from '@/services/database/tokensDatabase.service';
