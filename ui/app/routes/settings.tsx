@@ -2,6 +2,7 @@ import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import Footer from "~/lib/components/template/Footer";
 import Navbar from "~/lib/components/template/Navbar";
+import Sidebar from "~/lib/components/template/Sidebar";
 import { requireCompletedUserSession } from "~/lib/util/session";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -23,7 +24,7 @@ export default function Settings() {
 	return (
 		<div className="min-h-screen bg-neutral-100 flex flex-col">
 			<div className="flex h-full w-full">
-				<div className="hidden md:block min-w-[300px] w-1/4 bg-white" />
+				<Sidebar />
 				<div className="page w-full relative">
 					<Navbar user={userInfo} />
 					{/* <div className="navbar w-full h-16 bg-neutral-400"></div> */}

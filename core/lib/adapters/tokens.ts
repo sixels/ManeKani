@@ -95,7 +95,7 @@ const TokenHashOptions = {
 	timeCost: 2,
 	memoryCost: 4 * 1024,
 	parallelism: 4,
-	hashLength: 32,
+	hashLength: 16,
 	type: argon2.argon2id,
 } satisfies Parameters<typeof argon2.hash>[1];
 
@@ -125,10 +125,10 @@ export function hashToken(prefix: Buffer, token: Buffer): Promise<string> {
 	console.debug("salt length:", prefixExt.length);
 	try {
 		console.debug("calling argon2.hash");
-		return argon2.hash(token, {
-			...TokenHashOptions,
-			salt: prefixExt,
-		});
+		return argon2.hash(
+			token,
+			Object.assign(TokenHashOptions, { salt: prefixExt }),
+		);
 	} catch (error) {
 		throw new UnknownError({
 			cause: error,

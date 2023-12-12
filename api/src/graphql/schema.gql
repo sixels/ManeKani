@@ -2,6 +2,22 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Deck {
+  id: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  name: String!
+  description: String!
+  subjectIds: [String!]!
+  ownerId: String!
+  subjects: [Subject!]!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Subject {
   id: String!
   createdAt: DateTime!
@@ -22,11 +38,6 @@ type Subject {
   ownerId: String!
   deck: Deck!
 }
-
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
 
 type StudyDataItem {
   value: String!
@@ -52,17 +63,6 @@ type Resource {
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSONObject
-
-type Deck {
-  id: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  name: String!
-  description: String!
-  subjectIds: [String!]!
-  ownerId: String!
-  subjects: [Subject!]!
-}
 
 input StudyDataItemInput {
   value: String!

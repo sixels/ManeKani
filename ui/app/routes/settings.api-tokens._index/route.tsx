@@ -1,7 +1,7 @@
 import { BaseError, Token } from "@manekani/core";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useActionData, useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import classNames from "classnames";
 import {
 	compareDesc,
@@ -136,22 +136,29 @@ function CreateTokenButton() {
 	// TODO: token creation logic
 	const { isOpen, onClose, onOpen } = useDisclosure();
 
-	const actionData = useActionData<typeof action>();
+	const fetcher = useFetcher<typeof action>();
 
+	const generatedToken = fetcher.data?.token;
+	// Todo: display errors
+	const errors = fetcher.data?.errors;
+
+	const onOpenWrapper = () => {
+		fetcher.data = undefined;
+		onOpen();
+	};
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: we only need to do this when action data changes
 	useEffect(() => {
-		if (actionData) {
+		if (fetcher.data) {
 			onOpen();
 		}
-	}, [actionData, onOpen]);
-
-	const generatedToken = actionData?.token;
-	const errors = actionData?.errors;
+	}, [fetcher.data]);
 
 	// TODO: show errors
 
 	return (
 		<>
-			<Button isPrimary onClick={onOpen}>
+			<Button isPrimary onClick={onOpenWrapper}>
 				Generate new API token
 			</Button>
 			<Modal
@@ -163,7 +170,7 @@ function CreateTokenButton() {
 				{generatedToken ? (
 					<TokenCreatedModal token={generatedToken} onClose={onClose} />
 				) : (
-					<CreateTokenModal onClose={onClose} />
+					<CreateTokenModal onClose={onClose} fetcher={fetcher} />
 				)}
 			</Modal>
 		</>
@@ -251,7 +258,13 @@ function TokenCreatedModal({
 	);
 }
 
-function CreateTokenModal({ onClose }: { onClose: () => void }) {
+function CreateTokenModal({
+	fetcher,
+	onClose,
+}: {
+	fetcher: ReturnType<typeof useFetcher<typeof action>>;
+	onClose: () => void;
+}) {
 	// TODO: Add a tooltip for each permission resource
 
 	return (
@@ -262,7 +275,7 @@ function CreateTokenModal({ onClose }: { onClose: () => void }) {
 				They are used to grant access to your data, so be careful with what
 				permissions you give to each token.
 			</p>
-			<form action="/settings/api-tokens" method="post" className="w-full">
+			<fetcher.Form method="post" className="w-full">
 				<ModalBody>
 					<div className="flex w-full flex-col gap-4">
 						<TextInput id="name" name="name" required label="Token name" />
@@ -294,7 +307,7 @@ function CreateTokenModal({ onClose }: { onClose: () => void }) {
 						Create
 					</Button>
 				</ModalFooter>
-			</form>
+			</fetcher.Form>
 		</>
 	);
 }

@@ -14,7 +14,7 @@
     "auth": "yarn workspace @manekani/infra-auth"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.4.0",
+    "@biomejs/biome": "^1.4.1",
     "@types/eslint": "^8.44.7",
     "@types/prettier": "^3.0.0",
     "depcheck": "^1.4.7",

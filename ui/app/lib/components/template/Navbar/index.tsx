@@ -12,31 +12,16 @@ export default function Navbar({
 }) {
 	return (
 		<div className="flex items-center justify-between px-4 md:px-6 py-1 top-0 left-0 w-full h-[66px] z-[20]">
-			<a href="/">
-				<div className="hidden md:block">
-					<img
-						src="/assets/logop.png"
-						alt="ManeKani Logo"
-						className="h-[35px]"
-					/>
-				</div>
-				<div className="block md:hidden">
-					<img
-						src="/assets/logop.png"
-						alt="ManeKani Logo"
-						className="h-[35px]"
-					/>
-				</div>
-			</a>
+			<div>
+				
+			</div>
 
 			<div className="flex items-center justify-center gap-4 h-10">
 				<Button
-					className="!h-8 !w-8 hover:!bg-neutral-200 !border-0 px-0 py-0 flex justify-center items-center"
+					className="!h-10 !w-10 !bg-transparent hover:!bg-neutral-200 !border-0 px-0 py-0 flex justify-center items-center"
 					isSecondary
 				>
-					<span className="text-lg material-symbols-outlined">
-						notifications
-					</span>
+					<span className="material-symbols-outlined">notifications</span>
 				</Button>
 				<UserAvatar user={user} />
 				{/* <div className="hidden md:block"> */}
@@ -69,23 +54,30 @@ export default function Navbar({
 function UserAvatar({ user }: Parameters<typeof Navbar>[0]) {
 	return (
 		<div className="flex items-center gap-3">
-			<div className="text-right hidden md:block">
-				{user.displayName && (
-					<span className="block text-neutral-700 text-xs font-medium">
-						{user.displayName}
-					</span>
-				)}
-				<span className="block text-neutral-900 text-xs font-medium">
-					{user.username}
-				</span>
-			</div>
 			{/* TODO: change this */}
-			<button type="button" className="flex items-center space-x-2 bg-red-400">
+			<Button
+				isSecondary
+				type="button"
+				className="!px-1 !border-0 !bg-transparent flex items-center space-x-2"
+			>
 				<img
+					// temporary profile picture image
 					src="https://avatars.githubusercontent.com/u/68879242?v=4"
 					alt="user avatar"
 					className="w-10 h-10 rounded-full shadow"
 				/>
+
+				<div className="text-left hidden md:block pr-3">
+					{user.displayName && (
+						<span className="block text-neutral-700 text-xs font-medium">
+							{user.displayName}
+						</span>
+					)}
+					<span className="block text-neutral-900 text-xs font-medium">
+						{user.username}
+					</span>
+				</div>
+
 				<div>
 					{/* chevron down svg */}
 					<svg
@@ -103,7 +95,7 @@ function UserAvatar({ user }: Parameters<typeof Navbar>[0]) {
 						/>
 					</svg>
 				</div>
-			</button>
+			</Button>
 		</div>
 	);
 }
