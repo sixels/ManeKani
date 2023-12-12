@@ -36,4 +36,4 @@ lerna-debug.log*
 
 .yarn
 
-.ui.next
+ui.next
