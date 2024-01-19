@@ -256,7 +256,6 @@ export class SubjectsDatabase implements ISubjectRepositoryV1 {
 			() =>
 				this.subjects.delete({
 					where: { id: subjectId, deck: { ownerId: userId } },
-					select: {},
 				}),
 			(error) => {
 				throw PrismaErrors.match(error, {

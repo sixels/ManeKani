@@ -2,7 +2,7 @@ import { Static, Type } from "@sinclair/typebox";
 import { TypeSlug, UuidSchema } from "./common";
 
 const PrimitiveSchema = Type.Union([
-	Type.String({ maxLength: 80 }),
+	Type.String({ maxLength: 200 }),
 	Type.Number(),
 	Type.Boolean(),
 ]);
@@ -13,7 +13,7 @@ export const StudyDataItemSchema = Type.Object({
 	 * The value of this study data item.
 	 * @example "one"
 	 */
-	value: Type.String({ maxLength: 50 }),
+	value: Type.String({ maxLength: 100 }),
 	/**
 	 * Whether this item is the primary answer or not.
 	 */
@@ -33,12 +33,12 @@ export const StudyDataItemSchema = Type.Object({
 	 * @example "kunyomi"
 	 * @example "nanori"
 	 */
-	category: Type.Optional(Type.String({ maxLength: 30 })),
+	category: Type.Optional(Type.String({ maxLength: 100 })),
 	/**
 	 * The id of the resource related to this answer.
 	 * @example "resource/KyzjB4BoUr"
 	 */
-	resourceId: Type.Optional(Type.String({ maxLength: 30 })),
+	resourceId: Type.Optional(Type.String({ maxLength: 200 })),
 });
 
 export type StudyData = Static<typeof StudyDataSchema>;
@@ -48,7 +48,7 @@ export const StudyDataSchema = Type.Object({
 	 * @example "meaning"
 	 * @example "reading"
 	 */
-	type: Type.String({ maxLength: 30 }),
+	type: Type.String({ maxLength: 80 }),
 	/**
 	 * A mnemonic to help the user remember the subject's value.
 	 * @example "Lying on the <radical>ground</radical> is something that looks \
@@ -56,7 +56,7 @@ export const StudyDataSchema = Type.Object({
 	 * been shot by the number two. It's lying there, bleeding out and dying. The \
 	 * number <kanji>One</kanji> doesn't have long to live."
 	 */
-	mnemonic: Type.Optional(Type.String({ maxLength: 300 })),
+	mnemonic: Type.Optional(Type.String({ maxLength: 2000 })),
 	/**
 	 * The study data items which will be used to validate the user's answer.
 	 * @example [{
@@ -88,7 +88,7 @@ export const ResourceSchema = Type.Object({
 	 * The resource name
 	 * @example "pronunciation audio"
 	 */
-	name: Type.String({ maxLength: 30 }),
+	name: Type.String({ maxLength: 80 }),
 	/**
 	 * The resource data
 	 * @example "/<random-hash>.ogg"
@@ -139,27 +139,27 @@ export const SubjectSchema = Type.Object({
 	 * The card category.
 	 * @example "kanji"
 	 */
-	category: Type.String({ maxLength: 30, minLength: 1 }),
+	category: Type.String({ maxLength: 80, minLength: 1 }),
 	/**
 	 * The level of difficult of the subject. should be greater or equal than 1.
 	 */
-	level: Type.Integer({ minimum: 1, maximum: 1000 }),
+	level: Type.Integer({ minimum: 1, maximum: 500 }),
 	/**
 	 * The subject's name.
 	 */
-	name: Type.String({ maxLength: 50, minLength: 1 }),
+	name: Type.String({ maxLength: 100, minLength: 1 }),
 	/**
 	 * The subject's value which will be displayed at the front of the card.
 	 * @example "一" (which would be the value of the kanji subject "one")
 	 */
-	value: Type.Optional(Type.String({ maxLength: 150, minLength: 1 })),
+	value: Type.Optional(Type.String({ maxLength: 200 })),
 	/**
 	 * In addition to the text value, the subject can also have an image to be
 	 * displayed at the front of the card. This value shoul be a valid image id
 	 * generated when a user uploads an image through the files api.
 	 * @example "subject/KyzjB4BoUr"
 	 */
-	valueImage: Type.Optional(Type.String({ maxLength: 40 })),
+	valueImage: Type.Optional(Type.String({ maxLength: 200 })),
 	/**
 	 * The subject's slug which will be used to generate the subject's url
 	 * @example "one"

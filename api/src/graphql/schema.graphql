@@ -86,9 +86,10 @@ input ResourceInput {
 
 type Query {
   subject(id: String!): Subject!
-  subjects(page: Int, ids: [String!], categories: [String!], levels: [Int!], slugs: [String!], decks: [String!], owners: [String!]): [Subject!]!
+  subjects(decks: [String!]!, page: Int, ids: [String!], categories: [String!], levels: [Int!], slugs: [String!], owners: [String!]): [Subject!]!
   deck(id: String!): Deck!
-  decks(page: Int, ids: [String!], owners: [String!], content: String): [Deck!]!
+  decks(page: Int, ids: [String!], owners: [String!], names: [String!], content: String): [Deck!]!
+  deckByName(name: String!): Deck!
 }
 
 type Mutation {

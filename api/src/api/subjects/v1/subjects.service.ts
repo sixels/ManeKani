@@ -1,3 +1,4 @@
+import { SubjectsProviderLabel } from "@/infra/database/subjectsDatabase.service";
 import { ISubjectRepositoryV1, SubjectsAdapter } from "@manekani/core";
 import { Inject, Injectable } from "@nestjs/common";
 
@@ -5,7 +6,7 @@ import { Inject, Injectable } from "@nestjs/common";
 export class SubjectsService<
 	R extends ISubjectRepositoryV1,
 > extends SubjectsAdapter<R> {
-	constructor(@Inject("SUBJECTS_REPOSITORY") subjectsRepository: R) {
+	constructor(@Inject(SubjectsProviderLabel) subjectsRepository: R) {
 		super(subjectsRepository);
 	}
 }

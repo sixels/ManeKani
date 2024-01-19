@@ -15,7 +15,7 @@ import { OryModule } from "./infra/auth/ory.module";
 	imports: [
 		GraphQLModule.forRoot({
 			driver: ApolloDriver,
-			autoSchemaFile: join(process.cwd(), "src/graphql/schema.gql"),
+			autoSchemaFile: join(process.cwd(), "src/graphql/schema.graphql"),
 			resolvers: {
 				JSONObject: GraphQLJSONObject,
 			},

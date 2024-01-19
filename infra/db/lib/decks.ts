@@ -23,7 +23,8 @@ export class DecksDatabase implements IDeckRepositoryV1 {
 						AND: [
 							{ id: filters.ids && { in: filters.ids } },
 							{ ownerId: filters.owners && { in: filters.owners } },
-							{ name: filters.content && { contains: filters.content } },
+							{ name: filters.names && { in: filters.names } },
+							// { name: filters.content && { contains: filters.content } },
 							{ description: filters.content && { contains: filters.content } },
 						],
 					},
@@ -167,8 +168,33 @@ export class DecksDatabase implements IDeckRepositoryV1 {
 
 		return CastModel.intoDeck(updatedDeck);
 	}
-	v1DeleteDeck(_userId: string, _deckId: string): Promise<void> {
-		throw new Error("Method not implemented.");
+	async v1DeleteDeck(userId: string, deckId: string): Promise<void> {
+		// method implementation
+		await inlineAsyncTry(
+			() =>
+				this.decks.delete({
+					where: { id: deckId, ownerId: userId },
+				}),
+			(err) => {
+				throw PrismaErrors.match(err, {
+					fallback: {
+						description: "An unknown error occurred while deleting the deck.",
+						context: { deckId, userId },
+					},
+					byError: {
+						[PrismaErrors.ForeignKeyConstraint]: [
+							ResourceNotFoundError,
+							{
+								description: "The deck owner does not exist.",
+								context: { deckId, userId },
+							},
+						],
+					},
+				});
+			},
+		);
+
+		return;
 	}
 
 	v1IsDeckOwner(_userID: string, _deckId: string): Promise<boolean> {

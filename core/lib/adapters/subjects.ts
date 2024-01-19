@@ -7,17 +7,27 @@ import {
 	UpdateSubjectSchema,
 } from "../domain/subject";
 
-import { ResourceNotFoundError } from "../domain/error";
+import { FileType } from "../domain";
+import { InvalidRequestError, ResourceNotFoundError } from "../domain/error";
+import { IFilesRepositoryV1 } from "../ports";
 import { ISubjectRepositoryV1 } from "../ports/subjects";
 import { Validator } from "../validator";
 import { validateId } from "./common";
+import { FilesAdapter } from "./files";
 
 export const CreateSubjectValidator = new Validator(CreateSubjectSchema);
 export const UpdateSubjectValidador = new Validator(UpdateSubjectSchema);
 export const SubjectsFiltersValidator = new Validator(GetSubjectsFiltersSchema);
 
-export class SubjectsAdapter<R extends ISubjectRepositoryV1> {
-	constructor(private subjectsRepository: R) {}
+export class SubjectsAdapter<S extends ISubjectRepositoryV1> {
+	private filesAdapter?: FilesAdapter<IFilesRepositoryV1>;
+
+	constructor(private subjectsRepository: S) {}
+
+	withFilesAdapter(filesRepository: IFilesRepositoryV1): this {
+		this.filesAdapter = new FilesAdapter(filesRepository);
+		return this;
+	}
 
 	v1GetSubjects(filters: GetSubjectsFilters): Promise<Subject[]> {
 		SubjectsFiltersValidator.validate(filters);
@@ -39,7 +49,7 @@ export class SubjectsAdapter<R extends ISubjectRepositoryV1> {
 		return foundSubject;
 	}
 
-	v1CreateSubject(
+	async v1CreateSubject(
 		userId: string,
 		deckId: string,
 		subject: CreateSubjectDto,
@@ -47,10 +57,42 @@ export class SubjectsAdapter<R extends ISubjectRepositoryV1> {
 		validateId(deckId);
 		CreateSubjectValidator.validate(subject);
 
+		if (!subject.value && !subject.valueImage) {
+			throw new InvalidRequestError({
+				cause: new Error("Subjects must have a value or a value image."),
+				context: { subject },
+				description: "A subject must have a value or a value image.",
+			});
+		}
+
+		// validate subject image
+		if (subject.valueImage) {
+			const subjectImageUrl = await this.filesAdapter?.v1GetFileUrl({
+				type: FileType.attachments,
+				filePath: subject.valueImage,
+			});
+
+			if (!subjectImageUrl) {
+				throw new InvalidRequestError({
+					cause: new Error("Subject image not found"),
+					context: { subject },
+					description: "The provided subject image does not exists.",
+				});
+			}
+
+			subject.valueImage = subjectImageUrl;
+		}
+
 		// TODO: check if user can modify the deck
 
 		console.debug("creating subject:", { userId, subject });
-		return this.subjectsRepository.v1CreateSubject(userId, deckId, subject);
+		const createdSubject = await this.subjectsRepository.v1CreateSubject(
+			userId,
+			deckId,
+			subject,
+		);
+
+		return createdSubject;
 	}
 
 	v1UpdateSubject(

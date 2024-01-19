@@ -38,7 +38,8 @@ export class TokenAuthAdapter<R extends ITokenRespository> {
 		token: string,
 		requiredScopes: string[],
 	): Promise<UserSession> {
-		const tokenHash = await hashToken(...decodeToken(unmarshalToken(token)));
+		const [prefix, tokenDecoded] = decodeToken(unmarshalToken(token));
+		const tokenHash = await hashToken(prefix, tokenDecoded);
 
 		const userToken = await this.tokenProvider.useToken(tokenHash);
 

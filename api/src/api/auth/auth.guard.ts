@@ -46,6 +46,7 @@ export class AuthGuard implements CanActivate {
 
 		if (authMethod === "any" && this.tokenProvider) {
 			try {
+				console.log("authenticating with token");
 				request.user = await authorizeApiToken(
 					this.tokenProvider,
 					request,

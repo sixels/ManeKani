@@ -60,17 +60,15 @@ services:
   postgres-manekani:
     ports:
       - "5433:5432"
-    environment:
-      - POSTGRES_USER=manekani
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=manekani
+    env_file:
+      - ./env/.env.postgres-manekani.config.local
 
   minio:
     ports:
       - "9001:9001"
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - "9000:9000"
+    env_file:
+      - ./env/.env.minio.config.local
 
   ory-proxy:
     ports:
@@ -81,7 +79,7 @@ services:
   manekani-migrate:
     user: 1000:1000
     env_file:
-      - ./api/.env.development
+      - ./env/.env.postgres-manekani.local
     build:
       dockerfile: ./docker/Dockerfile.dev
       target: development-migrate
@@ -92,7 +90,8 @@ services:
     ports:
       - "10011:3000"
     env_file:
-      - ./api/.env.development
+      - ./env/.env.postgres-manekani.local
+      - ./env/.env.minio.local
     build:
       dockerfile: ./docker/Dockerfile.dev
       target: development

@@ -1,44 +1,42 @@
 {
-	"type": "object",
-	"properties": {
-		"id": {
-			"format": "uuid",
-			"type": "string"
-		},
-		"createdAt": {
-			"type": "string",
-			"format": "date"
-		},
-		"updatedAt": {
-			"type": "string",
-			"format": "date"
-		},
-		"name": {
-			"maxLength": 50,
-			"type": "string"
-		},
-		"description": {
-			"maxLength": 350,
-			"type": "string"
-		},
-		"subjectIds": {
-			"type": "array",
-			"items": {
-				"format": "uuid",
-				"type": "string"
-			}
-		},
-		"ownerId": {
-			"type": "string"
-		}
-	},
-	"required": [
-		"id",
-		"createdAt",
-		"updatedAt",
-		"name",
-		"description",
-		"subjectIds",
-		"ownerId"
-	]
+  "type": "object",
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "Date"
+    },
+    "updatedAt": {
+      "type": "Date"
+    },
+    "name": {
+      "maxLength": 50,
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 350,
+      "type": "string"
+    },
+    "subjectIds": {
+      "type": "array",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "ownerId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "createdAt",
+    "updatedAt",
+    "name",
+    "description",
+    "subjectIds",
+    "ownerId"
+  ]
 }

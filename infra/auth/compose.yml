@@ -22,7 +22,7 @@ x-hydra-common: &hydra-common
 services:
   postgres-hydra:
     image: postgres
-    restart: unless-stopped
+    restart: on-failure
     networks:
       - auth_infra
     volumes:
@@ -52,7 +52,7 @@ services:
 
   postgres-kratos:
     image: postgres
-    restart: unless-stopped
+    restart: on-failure
     networks:
       - auth_infra
     volumes:

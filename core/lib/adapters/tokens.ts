@@ -36,11 +36,9 @@ export class TokensAdapter<R extends ITokenRespository> {
 		const foundToken = await this.tokensRepository.getToken(userId, tokenId);
 		if (!foundToken) {
 			throw new ResourceNotFoundError({
-				cause: new ResourceNotFoundError({
-					cause: new Error("Token not found"),
-					context: { tokenId },
-					description: "The provided token does not exists.",
-				}),
+				cause: new Error("Token not found"),
+				context: { tokenId },
+				description: "The provided token does not exists.",
 			});
 		}
 		return foundToken;
@@ -52,9 +50,7 @@ export class TokensAdapter<R extends ITokenRespository> {
 	): Promise<Token & { generatedToken: string }> {
 		GenerateTokenValidator.validate(data);
 
-		console.debug("creating token:", { ownerId: userId, data });
 		const generated = await generateRandomToken();
-		console.debug("generated random token");
 
 		const createdToken = await this.tokensRepository.createToken(userId, {
 			name: data.name,
@@ -95,7 +91,7 @@ const TokenHashOptions = {
 	timeCost: 2,
 	memoryCost: 4 * 1024,
 	parallelism: 4,
-	hashLength: 16,
+	hashLength: 32,
 	type: argon2.argon2id,
 } satisfies Parameters<typeof argon2.hash>[1];
 
@@ -107,28 +103,39 @@ async function generateRandomToken(): Promise<{
 	console.debug("calling randomBytes");
 	const prefixBytes = randomBytes(PREFIX_LEN / 2);
 	console.debug("calling Buffer.from randomUUID");
-	const tokenBytes = Buffer.from(randomUUID({ disableEntropyCache: true }));
 
+	const tokenBytes = Buffer.from(
+		randomUUID({ disableEntropyCache: true }).replaceAll("-", ""),
+		"hex",
+	);
 	console.debug("calling encodeToken");
 	const [prefix, token] = encodeToken([prefixBytes, tokenBytes]);
+	console.debug(prefix, token, tokenBytes);
 	console.debug("calling hashToken");
-	const tokenHash = await hashToken(tokenBytes, prefixBytes);
+	const tokenHash = await hashToken(prefixBytes, tokenBytes);
 
 	console.debug("generated token");
 
 	return { token, prefix, tokenHash };
 }
 
-export function hashToken(prefix: Buffer, token: Buffer): Promise<string> {
+export async function hashToken(
+	prefix: Buffer,
+	token: Buffer,
+): Promise<string> {
 	console.debug("concatenating prefix and token");
 	const prefixExt = Buffer.concat([prefix, Buffer.from("0".repeat(16), "hex")]);
 	console.debug("salt length:", prefixExt.length);
+
 	try {
 		console.debug("calling argon2.hash");
-		return argon2.hash(
+		const hash = await argon2.hash(
 			token,
 			Object.assign(TokenHashOptions, { salt: prefixExt }),
 		);
+		console.debug(hash);
+
+		return hash;
 	} catch (error) {
 		throw new UnknownError({
 			cause: error,

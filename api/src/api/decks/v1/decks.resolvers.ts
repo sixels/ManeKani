@@ -43,6 +43,7 @@ export class DecksResolver {
 		@Args("page", { type: () => Int, nullable: true }) page?: number,
 		@Args("ids", { type: () => [String], nullable: true }) ids?: string[],
 		@Args("owners", { type: () => [String], nullable: true }) owners?: string[],
+		@Args("names", { type: () => [String], nullable: true }) names?: string[],
 		@Args("content", { type: () => String, nullable: true })
 		content?: string,
 	): Promise<Deck[]> {
@@ -50,8 +51,20 @@ export class DecksResolver {
 			page,
 			ids,
 			owners,
+			names,
 			content,
 		});
+	}
+
+	@Query(() => Deck)
+	@Authorize()
+	async deckByName(@Args("name") deckName: string): Promise<Deck> {
+		// TODO: we should have a way to get a single deck by name implemented at the core
+		const decks = await this.decksAdapter.v1GetDecks({ names: [deckName] });
+		if (decks.length === 0) {
+			throw new Error(`Deck ${deckName} not found`);
+		}
+		return decks[0];
 	}
 
 	@Mutation(() => Deck)

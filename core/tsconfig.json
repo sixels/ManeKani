@@ -6,6 +6,7 @@
     "lib": ["DOM", "DOM.Iterable", "ES2021"],
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "sourceMap": true,
 
     /* Bundler mode */
     "moduleResolution": "Node",

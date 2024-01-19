@@ -68,6 +68,8 @@ export function ErrorBoundary() {
 	const error = useRouteError();
 	console.error(error);
 
+	console.log("A");
+
 	// if (isRouteErrorResponse(error)) {
 	//   console.log('hmm');
 	//   if (error.status === 401) {

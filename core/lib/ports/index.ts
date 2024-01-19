@@ -3,3 +3,4 @@ export * from "./decks";
 export * from "./subjects";
 export * from "./tokens";
 export * from "./users";
+export * from "./files";

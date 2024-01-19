@@ -52,5 +52,6 @@ export const GetDecksFiltersSchema = Type.Object({
 	page: Type.Optional(Type.Integer({ minimum: 1 })),
 	ids: Type.Optional(Type.Array(UuidSchema)),
 	owners: Type.Optional(Type.Array(UuidSchema)),
+	names: Type.Optional(Type.Array(Type.String())),
 	content: Type.Optional(Type.String()),
 });

@@ -11,7 +11,8 @@
     "core": "yarn workspace @manekani/core",
     "ui": "yarn workspace @manekani/ui",
     "db": "yarn workspace @manekani/infra-db",
-    "auth": "yarn workspace @manekani/infra-auth"
+    "auth": "yarn workspace @manekani/infra-auth",
+    "files": "yarn workspace @manekani/infra-files"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.4.1",

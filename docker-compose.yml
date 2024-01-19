@@ -14,7 +14,7 @@ x-manekani-common: &manekani-common
 services:
   minio:
     image: quay.io/minio/minio:latest
-    restart: unless-stopped
+    restart: on-failure
     command: server --console-address :${MINIO_PORT:-9001} /data
     volumes:
       - minio-data:/data
@@ -23,7 +23,7 @@ services:
 
   ory-proxy:
     image: oryd/ory
-    restart: unless-stopped
+    restart: on-failure
     depends_on:
       - manekani
     command: proxy --no-jwt --port 4001 http://manekani:3000/

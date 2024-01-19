@@ -1,26 +1,27 @@
 {
-  "name": "@manekani/core",
-  "private": true,
-  "version": "0.0.1",
-  "main": "./dist/lib/main.js",
-  "types": "./dist/lib/main.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "generate-schemas": "ts-node ./scripts/schemaGenerator.ts"
-  },
-  "dependencies": {
-    "@sinclair/typebox": "^0.31.3",
-    "ajv": "^8.12.0",
-    "ajv-errors": "^3.0.0",
-    "ajv-formats": "^2.1.1",
-    "argon2": "^0.31.2",
-    "bs58": "^5.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.3.1",
-    "typescript": "^5.0.2"
-  }
+	"name": "@manekani/core",
+	"private": true,
+	"version": "0.0.1",
+	"main": "./dist/lib/index.js",
+	"types": "./dist/lib/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"generate-schemas": "ts-node ./scripts/schemaGenerator.ts"
+	},
+	"dependencies": {
+		"@sinclair/typebox": "^0.31.3",
+		"ajv": "^8.12.0",
+		"ajv-errors": "^3.0.0",
+		"ajv-formats": "^2.1.1",
+		"argon2": "^0.31.2",
+		"bs58": "^5.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^20.3.1",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.0.2"
+	}
 }

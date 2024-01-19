@@ -1,36 +1,42 @@
 {
-	"type": "object",
-	"properties": {
-		"id": {
-			"type": "string"
-		},
-		"email": {
-			"format": "email",
-			"type": "string"
-		},
-		"username": {
-			"maxLength": 25,
-			"pattern": "^(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$",
-			"type": "string"
-		},
-		"isVerified": {
-			"type": "boolean"
-		},
-		"createdAt": {
-			"type": "string",
-			"format": "date"
-		},
-		"updatedAt": {
-			"type": "string",
-			"format": "date"
-		}
-	},
-	"required": [
-		"id",
-		"email",
-		"username",
-		"isVerified",
-		"createdAt",
-		"updatedAt"
-	]
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "email": {
+      "format": "email",
+      "type": "string"
+    },
+    "username": {
+      "maxLength": 25,
+      "pattern": "^(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$",
+      "type": "string"
+    },
+    "displayName": {
+      "maxLength": 50,
+      "type": "string"
+    },
+    "isVerified": {
+      "type": "boolean"
+    },
+    "isComplete": {
+      "type": "boolean"
+    },
+    "createdAt": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "Date"
+    }
+  },
+  "required": [
+    "id",
+    "email",
+    "isVerified",
+    "isComplete",
+    "createdAt",
+    "updatedAt"
+  ]
 }

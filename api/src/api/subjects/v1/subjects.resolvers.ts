@@ -15,13 +15,18 @@ import {
 	Subject,
 	UpdateSubjectInput,
 } from "@/graphql/subject";
+import { DecksProviderLabel } from "@/infra/database/decksDatabase.service";
+import { SubjectsProviderLabel } from "@/infra/database/subjectsDatabase.service";
 import {
 	DecksAdapter,
+	FilesAdapter,
 	IDeckRepositoryV1,
+	IFilesRepositoryV1,
 	ISubjectRepositoryV1,
 	SubjectsAdapter,
 } from "@manekani/core";
 import { Inject } from "@nestjs/common";
+import { FileStorageProviderLabel } from "@/infra/files/files.service";
 
 @Resolver(Subject)
 export class SubjectsResolver {
@@ -29,13 +34,19 @@ export class SubjectsResolver {
 	private subjectsAdapter: SubjectsAdapter<any>;
 	// biome-ignore lint/suspicious/noExplicitAny: any is just a placeholder type
 	private decksAdapter: DecksAdapter<any>;
+	// biome-ignore lint/suspicious/noExplicitAny: any is just a placeholder type
+	private filesAdapter: FilesAdapter<any>;
 
 	constructor(
-		@Inject("SUBJECTS_REPOSITORY") subjectsRepository: ISubjectRepositoryV1,
-		@Inject("DECKS_REPOSITORY") decksRepository: IDeckRepositoryV1,
+		@Inject(SubjectsProviderLabel) subjectsRepository: ISubjectRepositoryV1,
+		@Inject(DecksProviderLabel) decksRepository: IDeckRepositoryV1,
+		@Inject(FileStorageProviderLabel) filesRepository: IFilesRepositoryV1,
 	) {
-		this.subjectsAdapter = new SubjectsAdapter(subjectsRepository);
 		this.decksAdapter = new DecksAdapter(decksRepository);
+		this.filesAdapter = new FilesAdapter(filesRepository);
+		this.subjectsAdapter = new SubjectsAdapter(
+			subjectsRepository,
+		).withFilesAdapter(filesRepository);
 	}
 
 	@Query(() => Subject)
@@ -45,6 +56,8 @@ export class SubjectsResolver {
 
 	@Query(() => [Subject])
 	async subjects(
+		@Args("decks", { type: () => [String], nullable: false })
+		decks: string[],
 		@Args("page", { type: () => Int, nullable: true })
 		page?: number,
 		@Args("ids", { type: () => [String], nullable: true })
@@ -55,11 +68,13 @@ export class SubjectsResolver {
 		levels?: number[],
 		@Args("slugs", { type: () => [String], nullable: true })
 		search?: string[],
-		@Args("decks", { type: () => [String], nullable: true })
-		decks?: string[],
 		@Args("owners", { type: () => [String], nullable: true })
 		owners?: string[],
 	): Promise<Subject[]> {
+		if (!decks.length) {
+			return [];
+		}
+
 		return await this.subjectsAdapter.v1GetSubjects({
 			page,
 			ids,
