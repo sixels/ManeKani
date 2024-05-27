@@ -7,11 +7,11 @@ import { TextInput } from "~/lib/components/form/Input";
 import { Button } from "~/lib/components/general/Button";
 import { NavigateBack } from "~/lib/components/general/NavigateBack";
 import { tokens } from "~/lib/infra/db/db.server";
-import { requireCompletedUserSession } from "~/lib/util/session";
+import { requireCompleteUserSession } from "~/lib/util/session";
 import { PermissionsTable } from "../settings.api-tokens._index/route";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-	const { user } = await requireCompletedUserSession(request);
+	const { user } = await requireCompleteUserSession(request);
 
 	try {
 		const userToken = await tokens.getToken(user.id, params.id || "");
@@ -30,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: LoaderFunctionArgs) {
-	const { user } = await requireCompletedUserSession(request);
+	const { user } = await requireCompleteUserSession(request);
 
 	const formData = await request.formData();
 

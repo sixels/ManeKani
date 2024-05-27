@@ -15,7 +15,7 @@ export class DecksDatabase implements IDeckRepositoryV1 {
 	}
 
 	async v1GetDecks(filters: GetDecksFilters): Promise<Deck[]> {
-		const resultLimit = 100;
+		const resultLimit = filters.limit || 100;
 		const foundDecks = await inlineAsyncTry(
 			() =>
 				this.decks.findMany({

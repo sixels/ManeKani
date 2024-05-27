@@ -27,8 +27,8 @@ export class FilesAdapter<R extends IFilesRepositoryV1> {
 		});
 	}
 
-	v1GetFileUrl(data: GetFileUrlDto): Promise<string | null> {
-		return this.filesRepository.v1GetFileUrl(data);
+	v1GetResolvedFilePath(data: GetFileUrlDto): Promise<string | null> {
+		return this.filesRepository.v1GetResolvedFilePath(data);
 	}
 }
 

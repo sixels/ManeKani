@@ -1,5 +1,3 @@
-version: '3.7'
-
 x-kratos-common: &kratos-common
   image: oryd/kratos:v1.0.0
   environment:

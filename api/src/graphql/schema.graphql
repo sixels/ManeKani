@@ -10,6 +10,7 @@ type Deck {
   description: String!
   subjectIds: [String!]!
   ownerId: String!
+  subscribedUserIds: [String!]!
   subjects: [Subject!]!
 }
 
@@ -88,7 +89,7 @@ type Query {
   subject(id: String!): Subject!
   subjects(decks: [String!]!, page: Int, ids: [String!], categories: [String!], levels: [Int!], slugs: [String!], owners: [String!]): [Subject!]!
   deck(id: String!): Deck!
-  decks(page: Int, ids: [String!], owners: [String!], names: [String!], content: String): [Deck!]!
+  decks(page: Int, ids: [String!], owners: [String!], names: [String!], content: String, limit: Int): [Deck!]!
   deckByName(name: String!): Deck!
 }
 

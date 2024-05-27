@@ -16,7 +16,9 @@
   "license": "ISC",
   "dependencies": {
     "@manekani/core": "workspace:*",
-    "minio": "^7.1.3"
+    "http-proxy-agent": "^7.0.2",
+    "minio": "^7.1.3",
+    "proxy-agent": "^6.4.0"
   },
   "devDependencies": {
     "@types/minio": "^7.1.1"

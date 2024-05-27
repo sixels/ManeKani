@@ -36,12 +36,17 @@ export const DeckSchema = Type.Object({
 	 * The deck's owner.
 	 */
 	ownerId: Type.String(),
+	/**
+	 * The users that have subscribed to this deck.
+	 */
+	subscribedUserIds: Type.Array(UuidSchema),
 });
 
 export type CreateDeckDto = Static<typeof CreateDeckSchema>;
 export const CreateDeckSchema = Type.Pick(DeckSchema, ["name", "description"]);
 
 export type UpdateDeckDto = Static<typeof UpdateDeckSchema>;
+// @ts-ignore
 export const UpdateDeckSchema = Type.Pick(Type.Partial(DeckSchema), [
 	"name",
 	"description",
@@ -54,4 +59,5 @@ export const GetDecksFiltersSchema = Type.Object({
 	owners: Type.Optional(Type.Array(UuidSchema)),
 	names: Type.Optional(Type.Array(Type.String())),
 	content: Type.Optional(Type.String()),
+	limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
 });

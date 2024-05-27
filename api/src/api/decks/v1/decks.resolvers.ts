@@ -45,6 +45,7 @@ export class DecksResolver {
 		@Args("owners", { type: () => [String], nullable: true }) owners?: string[],
 		@Args("names", { type: () => [String], nullable: true }) names?: string[],
 		@Args("content", { type: () => String, nullable: true })
+		@Args("limit", { type: () => Int, nullable: true }) limit?: number,
 		content?: string,
 	): Promise<Deck[]> {
 		return await this.decksAdapter.v1GetDecks({
@@ -53,6 +54,7 @@ export class DecksResolver {
 			owners,
 			names,
 			content,
+			limit,
 		});
 	}
 

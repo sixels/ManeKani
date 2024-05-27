@@ -1,5 +1,3 @@
-version: "3.7"
-
 x-manekani-common: &manekani-common
   depends_on:
       - postgres-manekani

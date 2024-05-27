@@ -1,5 +1,3 @@
-version: "3.7"
-
 # THIS COMPOSE FILE IS MEANT FOR DEVELOPMENT.
 # DON'T PUT ANY SENSITIVE DATA HERE!
 
@@ -101,6 +99,8 @@ services:
     ports:
       - "11011:11011"
       - "11012:11012"
+    env_file:
+      - ./env/.env.postgres-manekani.local
     build:
       dockerfile: ./docker/Dockerfile.dev
       target: development-ui

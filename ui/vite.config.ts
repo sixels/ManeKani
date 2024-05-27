@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { unstable_vitePlugin as remix } from "@remix-run/dev";
+import {  vitePlugin } from "@remix-run/dev";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import { defineConfig } from "vite";
 
@@ -28,30 +28,30 @@ export default defineConfig({
 		},
 	},
 	plugins: [
-		remix({
+		vitePlugin({
 			ignoredRouteFiles: ["**/.*"],
-			browserNodeBuiltinsPolyfill: {
-				modules: {
-					assert: true,
-					crypto: true,
-					path: true,
-					util: true,
-					fs: true,
-					constants: true,
-					buffer: true,
-					punycode: true,
-					querystring: true,
-					timers: true,
-					https: true,
-					url: true,
-					stream: true,
-					events: true,
-					http: true,
-					child_process: true,
-					zlib: true,
-					os: true,
-				},
-			},
+			// browserNodeBuiltinsPolyfill: {
+			// 	modules: {
+			// 		assert: true,
+			// 		crypto: true,
+			// 		path: true,
+			// 		util: true,
+			// 		fs: true,
+			// 		constants: true,
+			// 		buffer: true,
+			// 		punycode: true,
+			// 		querystring: true,
+			// 		timers: true,
+			// 		https: true,
+			// 		url: true,
+			// 		stream: true,
+			// 		events: true,
+			// 		http: true,
+			// 		child_process: true,
+			// 		zlib: true,
+			// 		os: true,
+			// 	},
+			// },
 		}),
 		tsconfigPaths(),
 		vanillaExtractPlugin(),

@@ -4,6 +4,7 @@ import {
 	FileType,
 	GetFileUrlDto,
 } from "@manekani/core";
+import {HttpProxyAgent} from "http-proxy-agent"
 import { IFilesRepositoryV1 } from "@manekani/core";
 import { Client } from "minio";
 
@@ -13,26 +14,26 @@ const FileTypeBucket: Record<FileType, string> = {
 };
 
 type RepoConfig = {
-	cdnUrl: string;
+	proxyUrl: string;
 
 	s3Endpoint: string;
-	s3Port: 9000;
+	s3Port: number;
 	s3AccessKey: string;
 	s3SecretKey: string;
 };
 
 export class FileStorage implements IFilesRepositoryV1 {
 	private minio: Client;
-	private cdnUrl: string;
+	// private config: RepoConfig;
 
 	constructor(config: RepoConfig) {
-		this.cdnUrl = config.cdnUrl;
 		this.minio = new Client({
 			endPoint: config.s3Endpoint || "",
 			port: config.s3Port,
 			accessKey: config.s3AccessKey || "",
 			secretKey: config.s3SecretKey || "",
 			useSSL: process.env.NODE_ENV === "production",
+			transportAgent: new HttpProxyAgent(config.proxyUrl),
 		});
 	}
 
@@ -50,7 +51,7 @@ export class FileStorage implements IFilesRepositoryV1 {
 
 	async v1CreateFile(data: CreateFileDto): Promise<CreatedFile> {
 		const uploadFilename = data.objectName;
-		const uploadUrl = await this.minio.presignedUrl(
+		let uploadUrl = await this.minio.presignedUrl(
 			"PUT",
 			FileTypeBucket[data.type],
 			uploadFilename,
@@ -63,7 +64,7 @@ export class FileStorage implements IFilesRepositoryV1 {
 		};
 	}
 
-	async v1GetFileUrl(data: GetFileUrlDto): Promise<string | null> {
+	async v1GetResolvedFilePath(data: GetFileUrlDto): Promise<string | null> {
 		try {
 			const object = await this.minio.statObject(
 				FileTypeBucket[data.type],
@@ -73,12 +74,7 @@ export class FileStorage implements IFilesRepositoryV1 {
 				return null;
 			}
 
-			const url = new URL(
-				`${FileTypeBucket[data.type]}/${data.filePath}`,
-				this.cdnUrl,
-			);
-
-			return url.href;
+			return `${FileTypeBucket[data.type]}/${data.filePath}`
 		} catch (e) {
 			console.error(e);
 			return null;

@@ -67,7 +67,7 @@ export class SubjectsAdapter<S extends ISubjectRepositoryV1> {
 
 		// validate subject image
 		if (subject.valueImage) {
-			const subjectImageUrl = await this.filesAdapter?.v1GetFileUrl({
+			const subjectImageUrl = await this.filesAdapter?.v1GetResolvedFilePath({
 				type: FileType.attachments,
 				filePath: subject.valueImage,
 			});

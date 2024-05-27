@@ -36,12 +36,13 @@ export async function requireUserSession(request: Request) {
 	return { session, user };
 }
 
-export async function requireCompletedUserSession(request: Request): Promise<{
+export async function requireCompleteUserSession(request: Request): Promise<{
 	session: Session;
 	user: { username: NonNullable<User["username"]> } & Omit<User, "username">;
 }> {
 	const { session, user } = await requireUserSession(request);
 	if (!user.isComplete || !user.username) {
+		console.error("user is not complete")
 		throw redirect("/complete-profile");
 	}
 	return { session, user: Object.assign(user, { username: user.username }) };

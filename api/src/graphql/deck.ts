@@ -18,9 +18,12 @@ export class Deck implements DDeck {
 	readonly description: string;
 	@Field(() => [String], { defaultValue: [] })
 	readonly subjectIds: string[];
-
+	
 	@Field()
 	readonly ownerId: string;
+
+	@Field(() => [String], { defaultValue: [] })
+	readonly subscribedUserIds: string[];
 }
 
 @InputType()
