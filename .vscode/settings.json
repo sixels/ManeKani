@@ -1,0 +1,11 @@
+{
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "driver": "PostgreSQL",
+      "name": "manekani",
+      "connectString": "postgres://manekani:secret@localhost:5433/manekani"
+    }
+  ]
+}

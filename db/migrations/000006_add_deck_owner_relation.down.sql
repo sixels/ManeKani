@@ -1,0 +1,1 @@
+ALTER TABLE decks DROP CONSTRAINT IF EXISTS created_by_user_id_fk;

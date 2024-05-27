@@ -1,0 +1,96 @@
+{%- import "./PermissionsTable.html" as pt -%}
+<div id="api-key-form">
+    <form class="space-y-6 mt-6">
+        <p>
+            API tokens are used to authenticate your application with the server.
+            They are used to grant access to your data, so be careful with what
+            permissions you give to each token.
+        </p>
+        <section class="w-full">
+            <div class="relative">
+                {%match generated_api_key%}
+                {%when Some with (_)%}
+                <input id="key_name" type="text" name="name" placeholder=" " readonly disabled
+                    class="text-input peer" />
+                {%when None%}
+                <input id="key_name" type="text" name="name" placeholder=" " class="text-input peer" />
+                {%endmatch%}
+
+                <label for="key_name" class="text-input-label">
+                    API key name <span class="text-red-600">*</span>
+                </label>
+            </div>
+        </section>
+        <section class="w-full">
+            <h2 class="section-title-sm">
+                Permissions
+            </h2>
+
+            <p>
+                Every token have read access to your data (being able to see
+                your decks, cards, study materials and so on).
+            </p>
+            <p>
+                By checking the options below, applications may have the power
+                to create, update, and delete your data, according to the
+                permissions you give to it.
+            </p>
+            <div class="w-full mt-6">
+                {% call pt::permissions_table(false) %}
+            </div>
+        </section>
+
+        {# disabled={
+        isUpdating || (tokenIsActive==userToken.isActive && (tokenName.length==0 ||
+        tokenName==userToken.name)) } #}
+        {# type="submit" #}
+        {# name="action" #}
+        {%match generated_api_key%}
+        {%when Some with (_)%}
+        <button class="wk-btn wk-btn-primary" disabled>
+            Create
+        </button>
+        {%when None%}
+        <button class="wk-btn wk-btn-primary" hx-post="/settings/api-keys/create" hx-trigger="click" hx-swap="outerHTML"
+            hx-target="#api-key-form">
+            Create
+        </button>
+        {%endmatch%}
+    </form>
+    {%call created_dialog(generated_api_key)%}
+</div>
+
+
+{%macro created_dialog(generated_api_key)%}
+{%match generated_api_key%}
+{%when Some with (key)%}
+<dialog class="modal modal-bottom bg-black/50 sm:modal-middle mt-0" open="">
+    {%call dialog_content(key)%}
+</dialog>
+{%when None%}
+<dialog class="modal modal-bottom bg-black/50 sm:modal-middle mt-0">
+    {%call dialog_content("")%}
+</dialog>
+{%endmatch%}
+{%endmacro%}
+
+{%macro dialog_content(key)%}
+<div class="modal-box">
+    <div class="border-b border-background-200 px-6 pb-3 pt-4">
+        <h3 class="text-lg font-medium text-text-200">API key created</h3>
+    </div>
+    <div class="my-4 space-y-3 px-4">
+        <p class="text-text-300">You have successfully created a new API key! For security reasons, this key
+            will only be shown once, make sure to copy it and store in a safe place.</p>
+
+        <input type="text" id="api_key_name" name="api_key_name" class="peer text-input" value="{{key}}" readonly />
+    </div>
+
+    <div class="border-gray-300 px-6 pb-4 pt-2">
+        <div class="flex w-full gap-4">
+            <button class="wk-btn wk-btn-secondary w-full">Copy</button>
+            <a href="/settings/api-keys" class="wk-btn wk-btn-primary">Continue</a>
+        </div>
+    </div>
+</div>
+{%endmacro%}

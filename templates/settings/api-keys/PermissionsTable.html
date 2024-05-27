@@ -1,0 +1,35 @@
+{%macro permissions_table_scope(name, scope)%}
+{%match scope %}
+{% when Some with (enabled) %}
+<input name="{{permission.id}}_{{name}}" type="checkbox" class="checkbox checkbox-primary w-5 h-5" {%if
+    readonly%}disabled readonly{%endif%} {%if enabled%}checked{%endif%} />
+{%when None%}
+{%endmatch%}
+{%endmacro%}
+
+{%macro permissions_table(readonly) %}
+<table class="text-sm text-left w-full rounded-sm shadow-sm text-text-500">
+    <thead class="text-xs text-text-300 font-medium bg-background-100 border-b border-background-200">
+        <tr>
+            <th scope="col" class="text-text-100 px-6 py-4 whitespace-nowrap">Resource</th>
+            <th scope="col" class="text-text-100 px-6 py-4 whitespace-nowrap text-center">Modify</th>
+            <th scope="col" class="text-text-100 px-6 py-4 whitespace-nowrap text-center">Delete</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-background-200">
+        {% for permission in permissions %}
+        <tr class="bg-background-50 hover:bg-background-100 text-text-600">
+            <th scope="row" class="px-6 py-4 capitalize font-medium text-text-100">
+                {{permission.name}}
+            </th>
+            <td class="px-6 py-4 text-center">
+                {%call permissions_table_scope("write", permission.scopes.write)%}
+            </td>
+            <td class="px-6 py-4 text-center">
+                {%call permissions_table_scope("delete", permission.scopes.delete)%}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{%endmacro%}

@@ -1,0 +1,1 @@
+ALTER TABLE subjects DROP CONSTRAINT IF EXISTS deck_id_fk;

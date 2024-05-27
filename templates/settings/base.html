@@ -1,0 +1,21 @@
+{% extends "../base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-background flex flex-col">
+    <div class="flex h-full w-full">
+        {#
+        <Sidebar /> #}
+        <div class="page w-full relative mb-28">
+            {#
+            <Navbar user={userInfo} /> #}
+            <main class="mt-4 max-w-screen-2xl w-full md:p-2.5">
+                {% block main %}
+                ...
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+    {#
+    <Footer /> #}
+</div>
+{% endblock %}

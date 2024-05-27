@@ -1,0 +1,17 @@
+{%- import "../../components/macros.html" as components -%}
+{% extends "../base.html" %}
+{% block main %}
+<section class="px-5 w-full">
+    {# method="post" #}
+
+    <div class="flex gap-4">
+        <div class="w-full">
+            {% call components::navigate_back("/settings/api-keys", "API keys") %}
+            <h1>Create API Key</h1>
+            <p class="max-w-3xl">Create a new API key</p>
+        </div>
+    </div>
+
+    {%include "./CreateKeyForm.html"%}
+</section>
+{% endblock %}

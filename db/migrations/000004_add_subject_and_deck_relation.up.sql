@@ -1,0 +1,2 @@
+ALTER TABLE subjects
+ADD CONSTRAINT deck_id_fk FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE CASCADE;

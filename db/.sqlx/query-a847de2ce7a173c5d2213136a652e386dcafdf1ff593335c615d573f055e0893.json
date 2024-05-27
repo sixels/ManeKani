@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO subjects_similarity (similar_from_id, similar_to_id)\n            SELECT $1::UUID AS similar_from_id, * FROM UNNEST($2::UUID[]) AS similar_to_id\n        RETURNING similar_to_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "similar_to_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a847de2ce7a173c5d2213136a652e386dcafdf1ff593335c615d573f055e0893"
+}

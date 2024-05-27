@@ -1,0 +1,71 @@
+{%- import "../../components/macros.html" as components -%}
+{%- import "./PermissionsTable.html" as pt -%}
+{% extends "../base.html" %}
+{%block main%}
+<section class="px-5 w-full">
+    <form class="space-y-6">
+        <div class="flex gap-4">
+            <div class="w-full">
+                {% call components::navigate_back("/settings/api-keys", "API keys") %}
+                <h1>
+                    Manage API Key
+                </h1>
+                <p class="max-w-3xl">View or update key data</p>
+            </div>
+            <div class="flex w-max items-center float-right">
+                <div class="flex items-center justify-end gap-6">
+                    <button class="wk-btn wk-btn-primary" hx-post="/settings/api-keys/manage/{{api_key.id}}"
+                        hx-trigger="click" hx-swap="outerHTML" hx-target="#api-key-form">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+        {#
+        <div class="bg-white rounded-sm border border-neutral-200 w-full " />
+        #}
+        <div class="relative">
+            <input id="key_name" type="text" name="name" placeholder=" " value="{{api_key.name}}"
+                class="text-input peer" />
+            <label for="key_name" class="text-input-label">
+                API key name <span class="text-red-600">*</span>
+            </label>
+        </div>
+        <div>
+            <span class="block text-sm font-medium mb-2 text-neutral-500 rounded-sm overflow-hidden">
+                Status
+            </span>
+            <label class="relative inline-flex h-10 select-none items-center cursor-pointer gap-6 z-[0]">
+                {%match api_key.revoked_at%}
+                {%when Some with (_)%}
+                <input name="key_is_active" type="checkbox" defaultValue="" class="sr-only peer" />
+                {%when None%}
+                <input name="key_is_active" type="checkbox" defaultValue="" class="sr-only peer" checked />
+                {%endmatch%}
+
+                <div class="absolute w-full h-10 rounded-sm peer peer-checked:after:-translate-x-full after:content-['']
+                        after:absolute after:right-0 after:bg-primary-800 peer-active:after:bg-primary-900 peer-focus:ring
+                        peer-active:ring ring-offset-1 ring-primary-200 peer-hover:after:bg-primary-900 -z-[1]
+                        after:rounded-sm after:h-full after:w-1/2 after:transition-all"></div>
+
+                <span class="peer-checked:text-primary-100 text-text text-sm flex-grow font-medium px-3">
+                    Active
+                </span>
+                <span class="text-primary-100 peer-checked:text-text px-3 text-sm flex-grow font-medium">
+                    Paused
+                </span>
+            </label>
+        </div>
+        <div>
+            <span class="block text-sm font-medium mb-2 text-neutral-500 rounded-sm overflow-hidden">
+                Permissions (read-only)
+            </span>
+            {% call pt::permissions_table(true) %}
+        </div>
+
+        <button name="action" hx-delete="/settings/api-keys/manage/{{api_key.id}}" class="wk-btn wk-btn-red">
+            Delete API Key
+        </button>
+    </form>
+</section>
+{%endblock%}

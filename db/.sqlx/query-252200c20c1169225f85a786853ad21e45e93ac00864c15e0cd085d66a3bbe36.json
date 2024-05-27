@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO subjects_dependency (depended_by_id, depends_on_id)\n            SELECT $1::UUID AS depended_by_id, * FROM UNNEST($2::UUID[]) AS depends_on_id\n        RETURNING depended_by_id, depends_on_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "depended_by_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "depends_on_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "252200c20c1169225f85a786853ad21e45e93ac00864c15e0cd085d66a3bbe36"
+}

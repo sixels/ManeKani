@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO allowed_users_deck (deck_id, user_id)\n                SELECT $1::UUID AS deck_id, * FROM UNNEST($2::TEXT[]) AS user_id\n            RETURNING user_id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7ba338e358c136fc864f8218aac6b76ff94cc790ba67953ae8de7d7b60968a3d"
+}

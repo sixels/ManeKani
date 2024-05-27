@@ -1,0 +1,11 @@
+{
+  "name": "manekani-ui",
+  "private": true,
+  "version": "1.0.0",
+  "author": "Sixels",
+  "license": "MIT",
+  "devDependencies": {
+    "daisyui": "^4.11.1",
+    "tailwindcss": "^3.4.3"
+  }
+}
