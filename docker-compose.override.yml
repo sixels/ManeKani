@@ -41,6 +41,9 @@ services:
       - "3000:3000"
     environment:
       - KRATOS_BROWSER_URL=http://127.0.0.1:4433/
+      - COOKIE_SECRET=ABCD1234
+      - CSRF_COOKIE_NAME=manekani_auth_csrf
+      - CSRF_COOKIE_SECRET=1234ABCD
 
   mailslurper:
     ports:
@@ -86,7 +89,7 @@ services:
   manekani:
     user: 1000:1000
     ports:
-      - "10011:3000"
+      - "10099:3000"
     env_file:
       - ./env/.env.postgres-manekani.local
       - ./env/.env.minio.local

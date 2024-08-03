@@ -19,6 +19,7 @@ services:
     networks:
       - other
 
+  # TODO: REMOVE
   ory-proxy:
     image: oryd/ory
     restart: on-failure
@@ -28,6 +29,7 @@ services:
     networks:
       - core
       - auth_infra
+
 
   manekani-migrate:
     <<: *manekani-common

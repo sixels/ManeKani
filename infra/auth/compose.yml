@@ -1,5 +1,5 @@
 x-kratos-common: &kratos-common
-  image: oryd/kratos:v1.0.0
+  image: oryd/kratos:v1.2.0
   environment:
     - DSN=postgres://kratos:secret@postgres-kratos:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
     - LOG_LEVEL=trace
@@ -78,7 +78,7 @@ services:
       - auth_infra
 
   kratos-selfservice-ui-node:
-    image: oryd/kratos-selfservice-ui-node:v0.13.0-4
+    image: oryd/kratos-selfservice-ui-node:v1.2.0
     restart: on-failure
     environment:
       - KRATOS_PUBLIC_URL=http://kratos:4433/
