@@ -4,30 +4,35 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["db"]
+members = ["auth", "db"]
 
 [dependencies]
-askama = { version = "0.12.1", features = ["with-axum"] }
-askama_axum = "0.4.0"
+actix-web = { version = "4.7.0", default-features = false, features = [
+    "macros",
+    "cookies",
+    "http2",
+    "compat",
+    "unicode",
+] }
+actix-files = "0.6.6"
+futures-util = "0.3.30"
+askama = { version = "0.12.1", features = ["with-actix-web"] }
+askama_actix = "0.14.0"
 async-graphql = { version = "7.0.3", features = ["uuid", "time", "graphiql"] }
-async-graphql-axum = "7.0.3"
-axum = "0.7.5"
+async-graphql-actix-web = "7.0.3"
 base16ct = { version = "0.2.0", features = ["alloc"] }
 bs58 = "0.5.1"
+cookie = "0.18.1"
+http = "1.1.0"
 lazy_static = "1.4.0"
+manekani-auth = { version = "0.1.0", path = "auth" }
 manekani-db = { version = "0.1.0", path = "db" }
 rand = "0.8.5"
-serde = { version = "1.0.200", features = ["derive"] }
-serde_json = "1.0.116"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 sha2 = "0.10.8"
-thiserror = "1.0.59"
-time = { version = "0.3.36", features = ["formatting"] }
-tokio = { version = "1.37.0", features = [
-    "macros",
-    "rt-multi-thread",
-    "test-util",
-] }
-tower-http = { version = "0.5.2", features = ["fs", "normalize-path"] }
-tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+thiserror = "1.0"
+time = { version = "0.3", features = ["formatting"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
 uuid = "1.8.0"

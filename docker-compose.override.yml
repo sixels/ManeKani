@@ -1,0 +1,73 @@
+# THIS COMPOSE FILE IS MEANT FOR DEVELOPMENT.
+# DON'T PUT ANY SENSITIVE DATA HERE!
+
+services:
+  postgres-kratos:
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=kratos
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=kratos
+
+  kratos-migrate:
+    command: migrate -c /etc/config/kratos/kratos.dev.yml sql -e --yes
+  kratos:
+    command: serve -c /etc/config/kratos/kratos.dev.yml --dev --watch-courier
+
+
+  kratos-selfservice-ui-node:
+    ports:
+      - "3000:3000"
+    environment:
+      - KRATOS_BROWSER_URL=http://127.0.0.1:4433/
+      - COOKIE_SECRET=ABCD1234
+      - CSRF_COOKIE_NAME=manekani_auth_csrf
+      - CSRF_COOKIE_SECRET=1234ABCD
+
+  mailslurper:
+    ports:
+      - "4436:4436"
+      - "4437:4437"
+
+  postgres-manekani:
+    ports:
+      - "5433:5432"
+    env_file:
+      - ./env/.env.postgres-manekani.config.local
+
+  manekani-migrate:
+    user: 1000:1000
+    env_file:
+      - ./env/.env.postgres-manekani.local
+    build:
+      dockerfile: ./docker/Dockerfile.dev
+      target: dev-migrate
+
+  manekani:
+    user: 1000:1000
+    ports:
+      - "9999:9999"
+    env_file:
+      - ./env/.env.postgres-manekani.local
+    build:
+      dockerfile: ./docker/Dockerfile.dev
+      target: dev
+  manekani-ums:
+    ports:
+      - "9998:9998"
+    env_file:
+      - ./env/.env.postgres-manekani.local
+
+
+
+    # environment:
+      # - TOKEN_ENCRYPTION_KEY=cE0SC2E2A4qNoeCdlWo8vA218Uzqbnw4
+
+      # - S3_URL=minio:9000
+      # - AWS_ACCESS_KEY_ID=tIMp6AKWumjCiw2LoK9r
+      # - AWS_SECRET_ACCESS_KEY=nvHwZgCv0ZUTT5zBUjdFiOIVbJFnG99AtbpoWyFi
+
+      # - DB_URI=postgres://manekani:secret@postgres-manekani/manekani
+
+      # - MANEKANI_SERVER_PORT=10010

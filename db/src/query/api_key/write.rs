@@ -7,7 +7,7 @@ pub struct CreateApiKey {
     pub token: String,
     pub prefix: String,
     pub claims: serde_json::Value,
-    pub user_id: String,
+    pub user_id: Uuid,
 }
 
 #[derive(Debug, thiserror::Error)]

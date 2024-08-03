@@ -10,5 +10,5 @@ pub struct ApiKeyModel {
     pub used_at: Option<OffsetDateTime>,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
-    pub created_by_user_id: String,
+    pub created_by_user_id: Uuid,
 }

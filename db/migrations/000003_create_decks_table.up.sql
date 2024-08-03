@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS decks (
     is_public BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-    created_by_user_id TEXT NOT NULL
+    created_by_user_id UUID NOT NULL
 );

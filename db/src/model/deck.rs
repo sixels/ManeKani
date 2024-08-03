@@ -13,6 +13,6 @@ pub struct DeckModel {
     pub is_public: bool,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
-    pub created_by_user_id: String,
-    pub allowed_users: Option<Vec<String>>,
+    pub created_by_user_id: Uuid,
+    pub allowed_users: Option<Vec<Uuid>>,
 }

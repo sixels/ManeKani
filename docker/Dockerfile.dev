@@ -1,0 +1,13 @@
+FROM rust:1.78 as base
+
+WORKDIR /usr/src/manekani
+
+COPY ./Cargo.toml ./Cargo.lock ./
+
+FROM base as dev
+EXPOSE 9999
+CMD ["./target/debug/manekani"]
+
+FROM base as dev-migrate
+ENTRYPOINT ["./scripts/migrate.sh"]
+

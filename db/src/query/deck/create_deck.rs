@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 use crate::{model::deck::DeckModel, Database};
 
 pub struct CreateDeck {
@@ -8,13 +10,13 @@ pub struct CreateDeck {
     pub tags: Vec<String>,
     pub is_featured: bool,
     pub visibility: DeckVisibility,
-    pub created_by_user_id: String,
+    pub created_by_user_id: Uuid,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum DeckVisibility {
     Public,
-    Private { allowed_users: Vec<String> },
+    Private { allowed_users: Vec<Uuid> },
 }
 
 pub async fn create_deck(db: &Database, deck: CreateDeck) -> Result<DeckModel, sqlx::Error> {
@@ -47,7 +49,7 @@ pub async fn create_deck(db: &Database, deck: CreateDeck) -> Result<DeckModel, s
     .fetch_one(&mut *tx)
     .await?;
 
-    let mut allowed_users: Option<Vec<String>> = None;
+    let mut allowed_users: Option<Vec<Uuid>> = None;
     if let DeckVisibility::Private {
         allowed_users: users,
     } = deck.visibility
@@ -55,7 +57,7 @@ pub async fn create_deck(db: &Database, deck: CreateDeck) -> Result<DeckModel, s
         let allowed_users_result = sqlx::query!(
             r#"
             INSERT INTO allowed_users_deck (deck_id, user_id)
-                SELECT $1::UUID AS deck_id, * FROM UNNEST($2::TEXT[]) AS user_id
+                SELECT $1::UUID AS deck_id, * FROM UNNEST($2::UUID[]) AS user_id
             RETURNING user_id
             "#,
             &result.id,

@@ -38,9 +38,9 @@ pub struct GetApiKeysResponse(pub Vec<ApiKey>);
 
 pub async fn get_user_api_keys(
     db: &Database,
-    user: String,
+    user_id: Uuid,
 ) -> Result<GetApiKeysResponse, GetApiKeysError> {
-    let result = api_key::read::get_user_api_keys(db, user).await?;
+    let result = api_key::read::get_user_api_keys(db, user_id).await?;
     Ok(GetApiKeysResponse(
         result.into_iter().map(ApiKey::from).collect(),
     ))
@@ -58,7 +58,7 @@ pub struct CreateApiKeyResponse {
 
 pub async fn create_api_key(
     db: &Database,
-    user_id: &str,
+    user_id: Uuid,
     data: CreateApiKeyRequest,
 ) -> Result<CreateApiKeyResponse, CreateApiKeyError> {
     if api_key::read::count_user_api_keys(db, user_id).await? >= 10 {
@@ -76,7 +76,7 @@ pub async fn create_api_key(
             prefix: token.prefix,
             token: token.hash,
             claims: json_claims,
-            user_id: user_id.to_string(),
+            user_id,
         },
     )
     .await?;

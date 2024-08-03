@@ -1,6 +1,6 @@
 use rand::{rngs::OsRng, RngCore};
 
-use crate::util::sha256;
+use crate::misc::sha256;
 
 pub struct TokenData {
     pub prefix: String,

@@ -42,7 +42,7 @@ pub enum GetUserApiKeysError {
 
 pub async fn get_user_api_keys(
     db: &Database,
-    user: String,
+    user_id: Uuid,
 ) -> Result<Vec<ApiKeyModel>, GetUserApiKeysError> {
     let result = sqlx::query_as!(
         ApiKeyModel,
@@ -60,7 +60,7 @@ pub async fn get_user_api_keys(
         FROM api_keys WHERE created_by_user_id = $1
         ORDER BY created_at DESC
         "#,
-        user,
+        user_id,
     )
     .fetch_all(&db.pool)
     .await?;
@@ -76,7 +76,7 @@ pub enum CountUserApiKeysError {
 
 pub async fn count_user_api_keys(
     db: &Database,
-    user_id: &str,
+    user_id: Uuid,
 ) -> Result<usize, CountUserApiKeysError> {
     let result = sqlx::query!(
         r#"

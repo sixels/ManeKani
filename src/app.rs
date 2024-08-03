@@ -1,21 +1,45 @@
-use axum::Router;
-use tokio::net::{TcpListener, ToSocketAddrs};
+use std::{fmt::Debug, net::ToSocketAddrs};
 
-use crate::{routing::router::setup_router, state::AppState};
+use actix_web::{
+    guard,
+    middleware::{NormalizePath, TrailingSlash},
+    web, App, HttpServer,
+};
 
-pub struct App {
-    router: Router,
+use crate::{
+    routing::router::{graphiql, ManeKaniGQLApi, SettingsRouter},
+    state::AppState,
+};
+
+pub struct ManeKani {
+    state: AppState,
 }
 
-impl App {
+impl ManeKani {
     pub fn new(state: AppState) -> Self {
-        let router = setup_router(state);
-        Self { router }
+        Self { state }
     }
 
-    pub async fn listen<S: ToSocketAddrs>(self, addr: S) -> std::io::Result<()> {
-        let listener = TcpListener::bind(addr).await?;
-        axum::serve(listener, self.router).await?;
+    pub async fn listen<A: ToSocketAddrs + Debug>(self, addr: A) -> std::io::Result<()> {
+        let AppState { db, auth_manager } = self.state.clone();
+
+        HttpServer::new(move || {
+            App::new()
+                .wrap(NormalizePath::trim())
+                .app_data(web::Data::from(db.clone()))
+                .app_data(web::Data::from(auth_manager.clone()))
+                .service(actix_files::Files::new("/assets", "./assets"))
+                .service(SettingsRouter.scope())
+                .service(web::resource("/graphiql").guard(guard::Get()).to(graphiql))
+                .setup_graphql(db.clone())
+        })
+        .bind(&addr)
+        .inspect(|_| {
+            println!("Server started at http://{:?}", addr);
+        })?
+        .run()
+        .await?;
+
         Ok(())
     }
 }
